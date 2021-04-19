@@ -202,7 +202,7 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
   <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><i>Wszedł <b>mój kolega</b>. <b>On</b> był szczęśliwy.</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyszli</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
 </table>
 
-1. Only subject zero anaphors are covered. Object zero anaphors, e.g. <i>Wypiłeś <b>wodę</b>? <b>Tak, wypiłem.</b></i> are not in scope because they are mainly used colloquially and do not normally occur in the types of text for which [Coreferee is primarily designed](#background-information). Handling them would require creating or locating a detailed dictionary of verb valencies.
+1. Only subject zero anaphors are covered. Object zero anaphors, e.g. <i>Wypiłeś <b>wodę</b>? Tak, <b>wypiłem.</b></i> are not in scope because they are mainly used colloquially and do not normally occur in the types of text for which [Coreferee is primarily designed](#background-information). Handling them would require creating or locating a detailed dictionary of verb valencies.
 
 2. Polish has a restricted use of anaphoric prepositions in some formal registers, e.g. *Skończyło się to __dlań__ smutno*. Because the Polish spaCy models were trained on news texts, they do not recognise such prepositions, meaning that Coreferee cannot capture them either.  
 
