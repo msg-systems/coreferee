@@ -54,7 +54,7 @@ if args.command == 'train':
 elif args.command == 'install':
     file_system_root = pkg_resources.resource_filename(__name__, '')
     models_dirname = ''.join((file_system_root, os.sep, '..', os.sep, 'models', os.sep, args.lang))
-    if os.path.isdir(models_dirname):
+    if 'site-packages' not in models_dirname and os.path.isdir(models_dirname):
         run_command(' '.join((
             sys.executable, '-m pip install --force-reinstall', models_dirname)))
     else:
