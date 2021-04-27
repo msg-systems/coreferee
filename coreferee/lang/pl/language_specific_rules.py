@@ -305,7 +305,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
             if possibly_virile == 2 and referred_nonvirile and referring_nonvirile:
                 return 2
-            if referred_nonvirile or referred_virile:
+            if (referred_nonvirile or referred_virile) and not \
+                    (referred_masc and referred_fem and referred_neut): # proper name where
+                                                                        # anything is accepted
                 return 0
             if possibly_virile != 0 and referring_virile:
                 return 0

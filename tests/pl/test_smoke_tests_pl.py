@@ -210,3 +210,11 @@ class PolishSmokeTest(unittest.TestCase):
         self.compare_annotations(
             'Ponieważ bardzo zajęty był swoją pracą, Janek miał jej dość. Postanowili z jego żoną, że potrzebują wakacji. Pojechali do Hiszpanii, bo bardzo im się ten kraj podobał.',
             '[0: [3], [4], [7], [12], [14], 1: [5], [9], 2: [12, 15], [18], [21], [27], 3: [23], [30]]', excluded_nlps=['core_news_md', 'core_news_sm'])
+
+    def test_double_possessive_pronoun_within_conjunctive_coordination(self):
+        self.compare_annotations(
+            'Widzieli Piotra, jego żonę i jego dzieci.', '[0: [1], [3], [6]]')
+
+    def test_double_possessive_pronoun_within_comitative_coordination(self):
+        self.compare_annotations(
+            'Widzieli Piotra z jego żoną i jego dziećmi.', '[0: [1], [3], [6]]')
