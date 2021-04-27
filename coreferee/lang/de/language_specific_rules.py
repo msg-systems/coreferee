@@ -92,9 +92,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             if token.i == \
                     token.doc._.coref_chains.temp_sent_starts[token._.coref_chains.temp_sent_index]:
                 return False
-            # 'sie machte es damit, dass ...'
-            if len([child for child in token.children if child.pos_ == 'VERB']) > 0:
-                return False
             if not token.lemma_.lower().startswith('da'):
                 return False
             if token.lemma_.lower() in ('daher', 'dahin'):
@@ -103,6 +100,18 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         # pleonastic 'es'
         if token.dep_ == 'ep':
             return False
+
+        if token.tag_ == 'PROAV' or self.has_morph(token, 'Gender', 'Neut'):
+            # 'sie machte es damit, dass ...'
+            if len([child for child in token.children if child.pos_ == 'VERB']) > 0:
+                return False
+            # 'wir haben es darauf angelegt'
+            # 'wir haben es angeregt'
+            for verb_ancestor in (v for v in token.ancestors if v.pos_ in ('AUX', 'VERB')):
+                if len([1 for c in verb_ancestor.children if c.pos_ in ('AUX' 'VERB') and
+                        c.dep_ in ('mo', 'oc', 're') and c not in token.ancestors and ',' in
+                        [t.text for t in token.doc[token.i:c.i]]]) > 0:
+                    return False
 
         # 'das'
         if token.text.lower() == 'das':
@@ -192,7 +201,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         # e.g. 'die Männer und die Frauen' ... 'sie': 'sie' cannot refer only to
         # 'die Männer' or 'die Frauen'
         if len(referred.token_indexes) == 1 and referring_plur and \
-                self.is_involved_in_non_or_conjunction(referred_root):
+                self.is_involved_in_non_or_conjunction(referred_root) and not \
+                (len(referred_root._.coref_chains.temp_dependent_siblings) > 0 and
+                referring.i > referred.root_index and
+                referring.i < referred_root._.coref_chains.temp_dependent_siblings[-1].i):
             return 0
 
         referred_masc = referred_fem = referred_neut = referred_plur = False
@@ -235,7 +247,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     return 0
 
             # 'damit' cannot refer forward to a noun
-            if referring.i < referred.root_index:
+            if referring.i < referred.token_indexes[-1]:
                 return 0
 
         if directly:
@@ -249,7 +261,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 working_token = referring
                 while working_token.dep_ != self.root_dep:
                     if working_token.head.i in referred.token_indexes and not \
-                            working_token.dep_ in self.conjunction_deps:
+                            working_token.dep_ in self.conjunction_deps and not \
+                            working_token.dep_ in self.dependent_sibling_deps:
                         return 0
                     if working_token.dep_ not in self.conjunction_deps and \
                             working_token.dep_ not in self.dependent_sibling_deps and \
@@ -269,20 +282,34 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         return 2
 
-    def is_potentially_indefinite(self, token:Token) -> bool:
-
+    def has_operator_child_with_lemma_beginning(self, token:Token, lemma_beginnings:tuple):
         for child in (child for child in token.children if child.pos_ in self.term_operator_pos):
-            for lemma_beginning in ('ein', 'irgendein'):
+            for lemma_beginning in lemma_beginnings:
                 if child.lemma_.lower().startswith(lemma_beginning):
                     return True
         return False
 
+    def is_potentially_indefinite(self, token:Token) -> bool:
+        if self.has_operator_child_with_lemma_beginning(token, ('ein', 'irgendein')):
+            return True
+        if len([child for child in token.children if child.dep_ not in self.conjunction_deps and
+                child.dep_ not in self.dependent_sibling_deps]) == 0 and \
+                token._.coref_chains.temp_governing_sibling is not None:
+            if self.has_operator_child_with_lemma_beginning(
+                    token._.coref_chains.temp_governing_sibling, ('ein', 'irgendein')):
+                return True
+        return False
+
     def is_potentially_definite(self, token:Token) -> bool:
 
-        for child in (child for child in token.children if child.pos_ in self.term_operator_pos):
-            for lemma_beginning in ('der', 'dies', 'jen'):
-                if child.lemma_.lower().startswith(lemma_beginning):
-                    return True
+        if self.has_operator_child_with_lemma_beginning(token, ('der', 'dies', 'jen')):
+            return True
+        if len([child for child in token.children if child.dep_ not in self.conjunction_deps and
+                child.dep_ not in self.dependent_sibling_deps]) == 0 and \
+                token._.coref_chains.temp_governing_sibling is not None:
+            if self.has_operator_child_with_lemma_beginning(
+                    token._.coref_chains.temp_governing_sibling, ('der', 'dies', 'jen')):
+                return True
         return False
 
     def is_reflexive_anaphor(self, token:Token) -> int:
@@ -328,6 +355,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     return False
             return False
 
+        if referring.i < referred_root.i:
+            return False
+            
         referring_ancestor = self.get_ancestor_spanning_any_preposition(referring)
         referred_ancestor = self.get_ancestor_spanning_any_preposition(referred_root)
         return referring_ancestor is not None and (referring_ancestor == referred_ancestor

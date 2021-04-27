@@ -242,6 +242,10 @@ class CommonRulesTest(unittest.TestCase):
         self.compare_potential_noun_pair(
             'I spoke to the boss of Lehman Brothers. The person went bust', 7, 10, False)
 
+    def test_potential_noun_pair_single_letters(self):
+        self.compare_potential_noun_pair(
+            'This is a ©. The © is here.', 3, 6, False)
+
     def test_potentially_independent_nouns_stored_on_token(self):
         doc = self.sm_nlp('They went to look at the space suits')
         self.sm_rules_analyzer.initialize(doc)

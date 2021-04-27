@@ -251,6 +251,33 @@ class GermanRulesTest(unittest.TestCase):
     def test_possessive_pronouns(self):
         self.compare_potential_anaphor('Mein Haus, dein Haus, sein Haus, ihr Haus.', [6, 9])
 
+    def test_pleonastic_es_object_position_1(self):
+        self.compare_potential_anaphor('Wir haben es angeregt, dass er es tut.', [6, 7])
+
+    def test_pleonastic_es_object_position_2(self):
+        self.compare_potential_anaphor('Wir haben es angeregt, es zu tun.', [5])
+
+    def test_pleonastic_es_object_aux_position_1(self):
+        self.compare_potential_anaphor('Wir werden es anregen können, dass er es tut.', [7, 8])
+
+    def test_pleonastic_es_object_aux_position_2(self):
+        self.compare_potential_anaphor('Wir hätten es anregen sollen, es zu tun.', [6])
+
+    def test_pleonastic_darauf_1(self):
+        self.compare_potential_anaphor('Es kam darauf an, dass er es tut.', [6, 7])
+
+    def test_pleonastic_darauf_2(self):
+        self.compare_potential_anaphor('Es kam darauf an, es zu tun.', [5])
+
+    def test_pleonastic_darauf_aux_1(self):
+        self.compare_potential_anaphor('Es wäre darauf angekommen, dass er es tut.', [0, 6, 7])
+
+    def test_pleonastic_darauf_aux_2(self):
+        self.compare_potential_anaphor('Es wäre darauf angekommen, es zu tun.', [0, 5])
+
+    def test_pleonastic_dessen_object_positions(self):
+        self.compare_potential_anaphor('Das war die Idee dessen, was wir taten.', [])
+
     def compare_potentially_indefinite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
 
@@ -288,6 +315,17 @@ class GermanRulesTest(unittest.TestCase):
     def test_potentially_indefinite_common_noun_conjunction_second_member_control(self):
         self.compare_potentially_indefinite('Ich sprach mit dem Mann und der Frau', 7, False)
 
+    def test_potentially_indefinite_twoway_conjunction_second_member_no_article(self):
+        self.compare_potentially_indefinite('Ich sprach mit einigen Männern und Frauen', 6, True)
+
+    def test_potentially_indefinite_threeway_conjunction_second_member_no_article(self):
+        self.compare_potentially_indefinite('Ich sprach mit einigen Männern, Frauen und Kindern', 6,
+            True)
+
+    def test_potentially_indefinite_threeway_conjunction_third_member_no_article(self):
+        self.compare_potentially_indefinite('Ich sprach mit einigen Männern, Frauen und Kindern',
+            8, True)
+
     def compare_potentially_definite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
 
@@ -324,6 +362,17 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_potentially_definite_common_noun_conjunction_second_member_control(self):
         self.compare_potentially_definite('Ich sprach mit einem Mann und der Frau', 4, False)
+
+    def test_potentially_definite_twoway_conjunction_second_member_no_article(self):
+        self.compare_potentially_definite('Ich sprach mit den Männern und Frauen', 6, True)
+
+    def test_potentially_definite_threeway_conjunction_second_member_no_article(self):
+        self.compare_potentially_definite('Ich sprach mit den Männern, Frauen und Kindern', 6,
+            True)
+
+    def test_potentially_definite_threeway_conjunction_third_member_no_article(self):
+        self.compare_potentially_definite('Ich sprach mit den Männern, Frauen und Kindern', 8,
+            True)
 
     def compare_potential_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, *, excluded_nlps=[], directly=True):
@@ -802,12 +851,22 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_reflexive_pair('Er sah es, und sein Chef gratulierte sich.',
             0, False, 8, 0, False, 2)
 
-    def test_reflexive_with_to(self):
+    def test_reflexive_pronoun_before_referent(self):
         self.compare_potential_reflexive_pair(
             'Sie wollten, dass sich der Junge kennt.',
             6, False, 4, 2, True, 2)
 
-    def test_reflexive_with_to_antecedent_within_noun_phrase(self):
+    def test_reflexive_pronoun_before_referent_control(self):
+        self.compare_potential_reflexive_pair(
+            'Sie wollten, dass sich der Junge wegen des Erfolgs kennt.',
+            9, False, 4, 0, False, 2)
+
+    def test_reflexive_with_(self):
+        self.compare_potential_reflexive_pair(
+            'Sie wollten, dass sich der Junge kennt.',
+            6, False, 4, 2, True, 2)
+
+    def test_reflexive_with_referent_within_noun_phrase(self):
         self.compare_potential_reflexive_pair(
             'Sie diskutierten die Möglichkeit, dass sich ein Individuum selbst sieht.',
             8, False, 6, 2, True, 2)

@@ -136,6 +136,16 @@ class GermanSmokeTest(unittest.TestCase):
             '[0: [1], [12], 1: [2], [9, 12]]',
             alternative_expected_coref_chains='[0: [1], [2], [9, 12]]')
 
+    def test_possessive_pronoun_within_threeway_coordination(self):
+        self.compare_annotations(
+            'Wir sahen Peter, seine Frau und seine Kinder.',
+            '[0: [2], [4], [7]]')
+
+    def test_anaphoric_preposition_within_coordination(self):
+        self.compare_annotations(
+            'Die Maßnahmen sowie die daraus resultierenden Probleme wurden betrachtet.',
+            '[0: [1], [4]]')
+
     def test_pronominal_anaphor(self):
         self.compare_annotations(
             'Sie fand ein Messer und aß damit einen Apfel.',

@@ -732,6 +732,17 @@ class EnglishRulesTest(unittest.TestCase):
     def test_potentially_indefinite_common_noun_conjunction_second_member_control(self):
         self.compare_potentially_indefinite('I spoke to the man and the woman', 7, False)
 
+    def test_potentially_indefinite_twoway_conjunction_second_member_no_article(self):
+        self.compare_potentially_indefinite('I spoke to some men and women', 6, True)
+
+    def test_potentially_indefinite_threeway_conjunction_second_member_no_article(self):
+        self.compare_potentially_indefinite('I spoke to some men, women and children', 6,
+            True)
+
+    def test_potentially_indefinite_threeway_conjunction_third_member_no_article(self):
+        self.compare_potentially_indefinite('I spoke to some men, women and children',
+            8, True)
+
     def compare_potentially_definite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
 
@@ -768,3 +779,14 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_potentially_definite_common_noun_conjunction_second_member_control(self):
         self.compare_potentially_definite('I spoke to a man and the woman', 4, False)
+
+    def test_potentially_definite_twoway_conjunction_second_member_no_article(self):
+        self.compare_potentially_definite('I spoke to the men and women', 6, True)
+
+    def test_potentially_definite_threeway_conjunction_second_member_no_article(self):
+        self.compare_potentially_definite('I spoke to the men, women and children', 6,
+            True)
+
+    def test_potentially_definite_threeway_conjunction_third_member_no_article(self):
+        self.compare_potentially_definite('I spoke to the men, women and children',
+            8, True)

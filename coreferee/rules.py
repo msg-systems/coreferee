@@ -348,7 +348,8 @@ class RulesAnalyzer(ABC):
             return False
         if referred.lemma_ == referring.lemma_ and \
                 referred.morph.get(self.number_morph_key) == \
-                referring.morph.get(self.number_morph_key):
+                referring.morph.get(self.number_morph_key) and \
+                len(referring.lemma_) > 1: # get rid of copyright signs etc.
             return True
         return False
 
