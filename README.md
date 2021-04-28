@@ -20,8 +20,11 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
         -   [3.1.3 Building the chains](#building-the-chains)
     -   [3.2 The neural ensemble](#the-neural-ensemble)
 -   [4. Adding support for a new language](#adding-support-for-a-new-language)
--   [5. Open issues/requests for assistance](#open-issues)
-
+-   [5. Version history]('#version-history')
+    -   [5.1 Version 1.0.0](#version-100)
+    -   [5.2 Version 1.0.1](#version-101)
+    -   [5.3 Version 1.0.2](#version-102)
+-   [6. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
 ### 1. Introduction
@@ -199,7 +202,7 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
   <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td colspan="3">Anaphor expression</td><td rowspan="2">Agreement classes</td><td colspan="2">Coordination expression</td></tr><tr><td align="center">Pronominal</td><td align="center">Verbal</td><td align="center">Prepositional</td><td align="center">Conjunctive</td><td align="center">Comitative</td></tr>
   <tr><td align="center">English</td><td align="center">en</td><td align="center"><i><b>My friend</b> came in. <b>He</b> was happy.</i><td align="center">-</td><td align="center">-</td><td align="center">Three singular (natural genders) and one plural class.</td><td align="center"><i><b>Peter and Mary</b></i></td><td align="center">-</td></tr>
   <tr><td align="center">German</td><td align="center">de</td><td align="center"><i><b>Mein Freund</b> kam rein. <b>Er</b> war glücklich.</i><td align="center">-</td><td align="center"><i>Ich benutzte <b>das Auto</b> und hatte <b>damit</b> einige Probleme.</i></td><td align="center">Three singular (grammatical genders) and one plural class.</td><td align="center"><i><b>Peter und Maria</b></i></td><td align="center">-</td></tr>
-  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><i>Wszedł <b>mój kolega</b>. <b>On</b> był szczęśliwy.</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyszli</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
+  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><i>Wszedł <b>mój kolega</b>. Widzieliście jaki <b>on</b> był szczęśliwy?</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyjechali do Warszawy</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
 </table>
 
 1. Only subject zero anaphors are covered. Object zero anaphors, e.g. <i>Wypiłeś <b>wodę</b>? Tak, <b>wypiłem.</b></i> are not in scope because they are mainly used colloquially and do not normally occur in the types of text for which [Coreferee is primarily designed](#background-information). Handling them would require creating or locating a detailed dictionary of verb valencies.
@@ -213,7 +216,7 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
   <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td rowspan="2">Training corpora</td><td rowspan="2">Total words in training corpora</td><td colspan="2"><code>*_trf</code> models</td><td colspan="2"><code>*_lg</code> models</td><td colspan="2"><code>*_md</code> models</td><td colspan="2"><code>*_sm</code> models</td></tr>  
   <tr><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td></tr>
   <tr><td align="center">English</td><td align="center">en</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2967</b></td><td align="center"><b>83.52</b><td align="center"><b>2903</b></td><td align="center"><b>83.98</b></td></td><td align="center">2907</td><td align="center">83.21</td><td align="center">2878</td><td align="center">82.49</td></tr>
-  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>625</b></td><td align="center"><b>77.28</b></td><td align="center">620</td><td align="center">77.10</td><td align="center">625</td><td align="center">76.00</td></tr>
+  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>627</b></td><td align="center"><b>77.83</b></td><td align="center">621</td><td align="center">76.01</td><td align="center">629</td><td align="center">75.99</td></tr>
   <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1553</b></td><td align="center"><b>72.12</b></td><td align="center">1521</td><td align="center">71.07</td><td align="center">1383</td><td align="center">70.21</td></tr>
 </table>
 
@@ -469,8 +472,29 @@ python3 -m coreferee install <ISO 639-1>
 
 15) Issue a pull request. We ask that you supply us with the zip file generated during training. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard.hudson@msg.group">send it out of band</a> rather than attaching it to the pull request.
 
+<a id="version-history"></a>
+#### 5 Version history
+
+<a id="version-100"></a>
+##### 5.1 Version 1.0.0
+
+The initial open-source version.
+
+<a id="version-101"></a>
+##### 5.2 Version 1.0.1
+
+-  Fixing of a bug where already installed models were reinstalled from `site-packages` rather than the new model being pulled from GitHub.
+
+<a id="version-102"></a>
+##### 5.3 Version 1.0.2
+
+-  Fixing of several bugs in the German-language rules
+-  Regeneration of the German-language models, although the old models are still fundamentally compatible with the new code
+-  Fixing of minor issues in the English-language and Polish-language rules
+-  Improvement of the Polish examples in [section 1.4.1](#covered-relevant-linguistic-features) to make them more pragmatically correct - many thanks to Małgorzata Styś for her valuable advice on this.
+
 <a id="open-issues"></a>
-### 5. Open issues / requests for assistance
+### 6. Open issues / requests for assistance
 
 1) At present Coreferee uses Keras with TensorFlow, which leads to the limitation that `nlp.pipe()` cannot be called with `n_process > 1` with forked processes. It would be greatly preferable if Coreferee could be converted to use Thinc instead: this would get rid of this limitation and generally fit much better into the spaCy ecosystem.
 
