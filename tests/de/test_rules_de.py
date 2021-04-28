@@ -664,6 +664,9 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_proav_cataphoric(self):
         self.compare_potential_pair('Er aß damit und nahm einen Löffel', 6, False, 2, 0)
 
+    def test_potential_pair_proav_preceding_word(self):
+        self.compare_potential_pair('Er aß das Fleisch damit', 3, False, 4, 0)
+
     def test_potential_pair_possessive_in_genitive_phrase_simple(self):
         self.compare_potential_pair('Der Mann seines Freundes', 1, False, 2, 0)
 
@@ -862,6 +865,11 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_reflexive_pair(
             "Die Meinung meines Freundes über ihn war übertrieben.",
             1, False, 5, 0, True, 0)
+
+    def test_reflexive_referred_in_prepositional_phrase_control(self):
+        self.compare_potential_reflexive_pair(
+            "Aus dieser Überlegung ergab sich ein Problem.",
+            2, False, 4, 0, False, 2)
 
     def test_reflexive_double_coordination_without_preposition(self):
         self.compare_potential_reflexive_pair('Wolfgang und Marie sahen ihn und sie.',

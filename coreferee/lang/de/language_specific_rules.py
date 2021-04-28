@@ -103,7 +103,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if token.tag_ == 'PROAV' or self.has_morph(token, 'Gender', 'Neut'):
             # 'sie machte es damit, dass ...'
-            if len([child for child in token.children if child.pos_ == 'VERB']) > 0:
+            if len([1 for c in token.children if c.pos_ in ('AUX', 'VERB') and ',' in
+                    [t.text for t in token.doc[token.i:c.i]]]) > 0:
                 return False
             # 'wir haben es darauf angelegt'
             # 'wir haben es angeregt'
@@ -250,6 +251,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             if referring.i < referred.token_indexes[-1]:
                 return 0
 
+            # 'damit' cannot refer to the an immediately preceding noun
+            if referring.i == referred.root_index + 1:
+                return 0
+
         if directly:
             if self.is_potential_reflexive_pair(referred, referring) != \
                     (self.is_reflexive_anaphor(referring) == 2):
@@ -342,6 +347,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return False
 
         referring_ancestor = self.get_ancestor_spanning_any_preposition(referring)
-        referred_ancestor = self.get_ancestor_spanning_any_preposition(referred_root)
+        referred_ancestor = referred_root.head
         return referring_ancestor is not None and (referring_ancestor == referred_ancestor
             or referring_ancestor.i in referred.token_indexes)
