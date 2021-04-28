@@ -290,27 +290,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         return False
 
     def is_potentially_indefinite(self, token:Token) -> bool:
-        if self.has_operator_child_with_lemma_beginning(token, ('ein', 'irgendein')):
-            return True
-        if len([child for child in token.children if child.dep_ not in self.conjunction_deps and
-                child.dep_ not in self.dependent_sibling_deps]) == 0 and \
-                token._.coref_chains.temp_governing_sibling is not None:
-            if self.has_operator_child_with_lemma_beginning(
-                    token._.coref_chains.temp_governing_sibling, ('ein', 'irgendein')):
-                return True
-        return False
+        return self.has_operator_child_with_lemma_beginning(token, ('ein', 'irgendein'))
 
     def is_potentially_definite(self, token:Token) -> bool:
-
-        if self.has_operator_child_with_lemma_beginning(token, ('der', 'dies', 'jen')):
-            return True
-        if len([child for child in token.children if child.dep_ not in self.conjunction_deps and
-                child.dep_ not in self.dependent_sibling_deps]) == 0 and \
-                token._.coref_chains.temp_governing_sibling is not None:
-            if self.has_operator_child_with_lemma_beginning(
-                    token._.coref_chains.temp_governing_sibling, ('der', 'dies', 'jen')):
-                return True
-        return False
+        return self.has_operator_child_with_lemma_beginning(token, ('der', 'dies', 'jen'))
 
     def is_reflexive_anaphor(self, token:Token) -> int:
         if token.tag_ == 'PRF':
@@ -357,7 +340,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if referring.i < referred_root.i:
             return False
-            
+
         referring_ancestor = self.get_ancestor_spanning_any_preposition(referring)
         referred_ancestor = self.get_ancestor_spanning_any_preposition(referred_root)
         return referring_ancestor is not None and (referring_ancestor == referred_ancestor

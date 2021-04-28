@@ -237,27 +237,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             and child.lemma_ in lemmas]) > 0
 
     def is_potentially_indefinite(self, token:Token) -> bool:
-        if self.has_determiner_with_lemma(token, ('a', 'an', 'some', 'another')):
-            return True
-        if len([child for child in token.children if child.dep_ not in self.conjunction_deps and
-                child.dep_ not in self.dependent_sibling_deps]) == 0 and \
-                token._.coref_chains.temp_governing_sibling is not None:
-            if self.has_determiner_with_lemma(token._.coref_chains.temp_governing_sibling,
-                    ('a', 'an', 'some', 'another')):
-                return True
-        return False
+        return self.has_determiner_with_lemma(token, ('a', 'an', 'some', 'another'))
 
     def is_potentially_definite(self, token:Token) -> bool:
-
-        if self.has_determiner_with_lemma(token, ('that', 'the', 'these', 'this', 'those')):
-            return True
-        if len([child for child in token.children if child.dep_ not in self.conjunction_deps and
-                child.dep_ not in self.dependent_sibling_deps]) == 0 and \
-                token._.coref_chains.temp_governing_sibling is not None:
-            if self.has_determiner_with_lemma(token._.coref_chains.temp_governing_sibling,
-                    ('that', 'the', 'these', 'this', 'those')):
-                return True
-        return False
+        return self.has_determiner_with_lemma(token, ('that', 'the', 'these', 'this', 'those'))
 
     def is_reflexive_anaphor(self, token:Token) -> int:
         if self.has_morph(token, 'Reflex', 'Yes'):

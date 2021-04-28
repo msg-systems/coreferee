@@ -315,17 +315,6 @@ class GermanRulesTest(unittest.TestCase):
     def test_potentially_indefinite_common_noun_conjunction_second_member_control(self):
         self.compare_potentially_indefinite('Ich sprach mit dem Mann und der Frau', 7, False)
 
-    def test_potentially_indefinite_twoway_conjunction_second_member_no_article(self):
-        self.compare_potentially_indefinite('Ich sprach mit einigen Männern und Frauen', 6, True)
-
-    def test_potentially_indefinite_threeway_conjunction_second_member_no_article(self):
-        self.compare_potentially_indefinite('Ich sprach mit einigen Männern, Frauen und Kindern', 6,
-            True)
-
-    def test_potentially_indefinite_threeway_conjunction_third_member_no_article(self):
-        self.compare_potentially_indefinite('Ich sprach mit einigen Männern, Frauen und Kindern',
-            8, True)
-
     def compare_potentially_definite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
 
@@ -362,17 +351,6 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_potentially_definite_common_noun_conjunction_second_member_control(self):
         self.compare_potentially_definite('Ich sprach mit einem Mann und der Frau', 4, False)
-
-    def test_potentially_definite_twoway_conjunction_second_member_no_article(self):
-        self.compare_potentially_definite('Ich sprach mit den Männern und Frauen', 6, True)
-
-    def test_potentially_definite_threeway_conjunction_second_member_no_article(self):
-        self.compare_potentially_definite('Ich sprach mit den Männern, Frauen und Kindern', 6,
-            True)
-
-    def test_potentially_definite_threeway_conjunction_third_member_no_article(self):
-        self.compare_potentially_definite('Ich sprach mit den Männern, Frauen und Kindern', 8,
-            True)
 
     def compare_potential_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, *, excluded_nlps=[], directly=True):

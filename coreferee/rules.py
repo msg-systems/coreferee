@@ -296,15 +296,27 @@ class RulesAnalyzer(ABC):
             return True
 
         # Definite noun phrases with additional children, e.g. 'the man who ...'
-        return  self.is_potentially_definite(token) and len([child for child in token.children if
-            child.pos_ not in self.term_operator_pos and child.dep_ not in self.conjunction_deps
-            and child.dep_ not in self.dependent_sibling_deps]) > 0
+        if self.is_potentially_definite(token) and len([1 for c in token.children if
+                c.pos_ not in self.term_operator_pos and c.dep_ not in self.conjunction_deps
+                and c.dep_ not in self.dependent_sibling_deps]) > 0:
+            return True
+
+        return token._.coref_chains.temp_governing_sibling is not None and len([1 for c in
+                token.children if c.dep_ not in self.conjunction_deps and c.dep_ not in
+                self.dependent_sibling_deps]) == 0 and \
+                self.is_potentially_introducing_noun(token._.coref_chains.temp_governing_sibling)
 
     def is_potentially_referring_back_noun(self, token:Token) -> bool:
 
-        return self.is_potentially_definite(token) and len([child for child in token.children if
-            child.pos_ not in self.term_operator_pos and child.dep_ not in self.conjunction_deps
-            and child.dep_ not in self.dependent_sibling_deps]) == 0
+        if self.is_potentially_definite(token) and len([1 for c in token.children if
+                c.pos_ not in self.term_operator_pos and c.dep_ not in self.conjunction_deps
+                and c.dep_ not in self.dependent_sibling_deps]) == 0:
+            return True
+
+        return token._.coref_chains.temp_governing_sibling is not None and len([1 for c in
+                token.children if c.dep_ not in self.conjunction_deps and c.dep_ not in
+                self.dependent_sibling_deps]) == 0 and \
+                self.is_potentially_referring_back_noun(token._.coref_chains.temp_governing_sibling)
 
     def is_potential_coreferring_noun_pair(self, referred:Token, referring:Token) -> bool:
         """ Returns *True* if *referred* and *referring* are potentially coreferring nouns.
@@ -312,6 +324,9 @@ class RulesAnalyzer(ABC):
             already returned *True* for both *referred* and *referring* and that
             *referred* precedes *referring* within the document.
         """
+        if len(referred.text) == 1 and len(referring.text) == 1:
+            return False # get rid of copyright signs etc.
+
         if referred.pos_ not in self.noun_pos or referring.pos_ not in self.noun_pos:
             return False
 
@@ -348,8 +363,7 @@ class RulesAnalyzer(ABC):
             return False
         if referred.lemma_ == referring.lemma_ and \
                 referred.morph.get(self.number_morph_key) == \
-                referring.morph.get(self.number_morph_key) and \
-                len(referring.lemma_) > 1: # get rid of copyright signs etc.
+                referring.morph.get(self.number_morph_key):
             return True
         return False
 
