@@ -35,9 +35,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     quote_tuples = [("'", "'"), ('"', '"'), ('“', '”'), ('‘', '’')]
 
-    dependent_sibling_deps = ('conj')
+    dependent_sibling_deps = ('conj', 'appos')
 
-    conjunction_deps = ('appos', 'cc', 'punct')
+    conjunction_deps = ('cc', 'punct')
 
     adverbial_clause_deps = ('advcl', 'acl')
 

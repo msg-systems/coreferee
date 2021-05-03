@@ -21,9 +21,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     random_word = 'Freude'
 
-    dependent_sibling_deps = ('cj')
+    dependent_sibling_deps = ('cj','app')
 
-    conjunction_deps = ('app', 'cd', 'punct')
+    conjunction_deps = ('cd', 'punct')
 
     adverbial_clause_deps = ('mo', 'oc')
 

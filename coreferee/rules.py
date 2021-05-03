@@ -333,6 +333,11 @@ class RulesAnalyzer(ABC):
         if referring in referred._.coref_chains.temp_dependent_siblings:
             return False
 
+        if referring._.coref_chains.temp_governing_sibling is not None and \
+                referring._.coref_chains.temp_governing_sibling == \
+                referred._.coref_chains.temp_governing_sibling:
+            return False
+
         # If *referred* and *referring* are names that potentially consist of several words,
         # the text of *referring* must correspond to the end of the text of *referred*
         # e.g. 'Richard Paul Hudson' -> 'Hudson'
