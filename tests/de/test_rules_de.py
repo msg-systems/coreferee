@@ -883,6 +883,19 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_reflexive_pair('Wolfgang und Marie sprachen mit ihm und ihr.',
             2, False, 7, 0, True, 0)
 
+    def test_reflexive_relative_clause_subject(self):
+        self.compare_potential_reflexive_pair('Der Mann, der ihn sah, kam heim.',
+            1, False, 4, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_1(self):
+        self.compare_potential_reflexive_pair('Der Mann, den er sah, kam heim.',
+            1, False, 4, 0, True, 0)
+
+    def test_reflexive_relative_clause_with_conjunction(self):
+        self.compare_potential_reflexive_pair('Der Mann und die Frau, die sie sahen, kamen heim.',
+            1, True, 7, 0, True, 0)
+
+
     def compare_potential_noun_pair(self, doc_text, referred_index, referring_index,
             expected_truth, *, excluded_nlps=[]):
 

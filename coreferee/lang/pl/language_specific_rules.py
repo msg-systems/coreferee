@@ -241,6 +241,42 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         referred_root = doc[referred.root_index]
         uncertain = False
 
+        if directly:
+            if self.is_potential_reflexive_pair(referred, referring) and \
+                    self.is_reflexive_anaphor(referring) == 0:
+                return 0
+
+            if not self.is_potential_reflexive_pair(referred, referring) and \
+                    self.is_reflexive_anaphor(referring) == 2:
+                return 0
+
+            # possessive pronouns cannot refer back to the head within a genitive phrase.
+            # This functionality is under 'directly' to improve performance.
+            working_token = referring
+            while working_token.dep_ != self.root_dep:
+                if working_token.head.i in referred.token_indexes and \
+                        working_token.dep_ not in self.dependent_sibling_deps and \
+                        self.has_morph(working_token, 'Case', 'Gen'):
+                    return 0
+                if working_token.dep_ not in self.dependent_sibling_deps and \
+                        (working_token.dep_ != 'nmod' or not self.has_morph(
+                        working_token, 'Case', 'Gen')) and not \
+                        self.is_reflexive_possessive_pronoun(working_token):
+                    break
+                working_token = working_token.head
+
+        # Some verbs like 'mówić' require a personal subject
+        referring_governing_sibling = referring
+        if referring._.coref_chains.temp_governing_sibling is not None:
+            referring_governing_sibling = referring._.coref_chains.temp_governing_sibling
+        if (referring_governing_sibling.dep_.startswith('nsubj') and
+                referring_governing_sibling.head.lemma_ in self.verbs_with_personal_subject) or \
+                referring.lemma_ in self.verbs_with_personal_subject:
+            uncertain = True
+            for working_token in (doc[index] for index in referred.token_indexes):
+                if working_token.pos_ == self.propn_pos or working_token.ent_type_ == 'persName':
+                    uncertain = False
+
         referring_masc, referring_fem, referring_neut, referring_nonvirile, referring_virile = \
             get_gender_number_info_for_single_token(referring)
 
@@ -261,7 +297,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if not directly and len(comitative_siblings) > 0 and (referring_nonvirile or
                 referring_virile):
-            return 2
+            return 1 if uncertain else 2
 
         all_involved_referreds.extend(comitative_siblings)
 
@@ -281,7 +317,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                         return 0
                 elif not referring_nonvirile:
                     return 0
-                return 2
+                return 1 if uncertain else 2
 
             if len(referreds_included_here) > 1:
                 # implies len(all_involved_referreds) > len(referreds_included_here)
@@ -289,7 +325,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     are_coordinated_tokens_possibly_virile(referreds_included_here)
                 if referring_nonvirile and possibly_virile == 2 and \
                         referreds_included_here_possibly_virile == 0:
-                    return 2
+                    return 1 if uncertain else 2
                 return 0
 
             referred_masc, referred_fem, referred_neut, referred_nonvirile, referred_virile = \
@@ -301,10 +337,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 'Plur') and self.has_morph(c, 'Case', 'Ins') and c.i != referring.i]
             if not directly and len(referred_comitative_siblings) > 0 and (referred_nonvirile
                     or referred_virile):
-                return 2
+                return 1 if uncertain else 2
 
             if possibly_virile == 2 and referred_nonvirile and referring_nonvirile:
-                return 2
+                return 1 if uncertain else 2
             if (referred_nonvirile or referred_virile) and not \
                     (referred_masc and referred_fem and referred_neut): # proper name where
                                                                         # anything is accepted
@@ -337,42 +373,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if referred_root.head.i == referring.i:
             return 0
-
-        if directly:
-            if self.is_potential_reflexive_pair(referred, referring) and \
-                    self.is_reflexive_anaphor(referring) == 0:
-                return 0
-
-            if not self.is_potential_reflexive_pair(referred, referring) and \
-                    self.is_reflexive_anaphor(referring) == 2:
-                return 0
-
-            # possessive pronouns cannot refer back to the head within a genitive phrase.
-            # This functionality is under 'directly' to improve performance.
-            working_token = referring
-            while working_token.dep_ != self.root_dep:
-                if working_token.head.i in referred.token_indexes and \
-                        working_token.dep_ not in self.dependent_sibling_deps and \
-                        self.has_morph(working_token, 'Case', 'Gen'):
-                    return 0
-                if working_token.dep_ not in self.dependent_sibling_deps and \
-                        (working_token.dep_ != 'nmod' or not self.has_morph(
-                        working_token, 'Case', 'Gen')) and not \
-                        self.is_reflexive_possessive_pronoun(working_token):
-                    break
-                working_token = working_token.head
-
-        # Some verbs like 'mówić' require a personal subject
-        referring_governing_sibling = referring
-        if referring._.coref_chains.temp_governing_sibling is not None:
-            referring_governing_sibling = referring._.coref_chains.temp_governing_sibling
-        if (referring_governing_sibling.dep_.startswith('nsubj') and
-                referring_governing_sibling.head.lemma_ in self.verbs_with_personal_subject) or \
-                referring.lemma_ in self.verbs_with_personal_subject:
-            for working_token in (doc[index] for index in referred.token_indexes):
-                if working_token.pos_ == self.propn_pos or working_token.ent_type_ == 'persName':
-                    return 2
-            return 1
 
         return 1 if uncertain else 2
 
@@ -408,7 +408,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_reflexive_pair(self, referred:Mention, referring:Token) -> bool:
 
-        if referring.pos_ != 'PRON' and not self.is_reflexive_possessive_pronoun(referring):
+        if referring.pos_ != 'PRON' and not self.is_reflexive_possessive_pronoun(referring) \
+                and referring.dep_ != 'acl':
             return False
 
         referred_root = referring.doc[referred.root_index]
@@ -421,20 +422,29 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if referred_root.dep_.startswith('nsubj') or (referred_root.pos_ in ('VERB', 'AUX') and
                 self.is_potential_anaphor(referred_root)):
-            for referring_ancestor in referring.ancestors:
+            referring_and_ancestors = [referring]
+            referring_and_ancestors.extend(list(referring.ancestors))
+            for referring_or_ancestor in referring_and_ancestors:
 
                 # Loop up through the ancestors of the pronoun
 
-                if referred_root == referring_ancestor or \
-                        referred_root in referring_ancestor.children:
+                if referred_root == referring_or_ancestor or \
+                        referred_root in referring_or_ancestor.children:
+                    return True
+
+                # Relative clauses
+                if referring_or_ancestor.pos_ in ('VERB', 'AUX') and \
+                        referring_or_ancestor.dep_ == 'acl' and \
+                        (referring_or_ancestor.head == referred_root or \
+                        referring_or_ancestor.head.i in referred.token_indexes):
                     return True
 
                 # The ancestor has its own subject, so stop here
-                if len([t for t in referring_ancestor.children if t.dep_.startswith('nsubj')
+                if len([t for t in referring_or_ancestor.children if t.dep_.startswith('nsubj')
                         and t != referred_root]) > 0:
                     return False
 
-                if referring_ancestor._.coref_chains.temp_governing_sibling == referred_root:
+                if referring_or_ancestor._.coref_chains.temp_governing_sibling == referred_root:
                     return False
 
         return referring.dep_ != self.root_dep and referred_root.dep_ != self.root_dep and \

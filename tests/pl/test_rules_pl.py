@@ -278,6 +278,8 @@ class PolishRulesTest(unittest.TestCase):
         self.compare_potential_anaphor('Wtedy umył sobie zęby i zobaczył się w lustrze.',
             [1,2,5], excluded_nlps=['core_news_sm'])
 
+
+
     def test_verb_imperfective_past(self):
         self.compare_potential_anaphor('Szła do domu.',
             [0])
@@ -927,11 +929,11 @@ class PolishRulesTest(unittest.TestCase):
 
     def test_potential_pair_non_personal_subject_personal_verb_control_conjunction(self):
         self.compare_potential_pair('Dom i dom stały. One powiedziały, wszystko dobrze',
-            0, True, 5, 2)
+            0, True, 5, 1)
 
     def test_potential_pair_non_personal_subject_personal_verb_control_z_conjunction(self):
         self.compare_potential_pair('Dom z domem stały. One powiedziały, wszystko dobrze',
-            0, True, 5, 2)
+            0, True, 5, 1)
 
     def test_potential_pair_non_personal_subject_personal_verb_noun_not_recognised(self):
         self.compare_potential_pair('Mężczyzna był. Powiedział, wszystko dobrze.', 0, False, 3, 1)
@@ -1142,6 +1144,24 @@ class PolishRulesTest(unittest.TestCase):
     def test_reflexive_with_non_reflexive_possessive_pronoun(self):
         self.compare_potential_reflexive_pair('Janek zjadł jego kolację.',
             0, False, 2, 2, True, 1)
+
+    def test_reflexive_relative_clause_subject(self):
+        self.compare_potential_reflexive_pair('Mężczyzna, który go widział, przyjechał do domu.',
+            0, False, 3, 0, True, 0)
+
+    def test_reflexive_relative_clause_object(self):
+        self.compare_potential_reflexive_pair('Mężczyzna, którego widział, przyjechał do domu.',
+            0, False, 3, 0, True, 0)
+
+    def test_reflexive_relative_clause_subject_with_conjunction(self):
+        self.compare_potential_reflexive_pair(
+            'Mężczyzna i kobieta, którzy ich widzieli, przyjechali do domu.',
+            0, True, 5, 0, True, 0, excluded_nlps=['core_news_sm'])
+
+    def test_reflexive_relative_clause_object_with_conjunction(self):
+        self.compare_potential_reflexive_pair(
+            'Mężczyzna i kobieta, których widzieli, przyjechali do domu.',
+            0, True, 5, 0, True, 0)
 
     def compare_potentially_introducing(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):

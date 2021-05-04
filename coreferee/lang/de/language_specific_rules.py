@@ -337,6 +337,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 if referred_root in referring_ancestor.children:
                     return True
 
+                # Relative clauses
+                if referring_ancestor.pos_ in ('VERB', 'AUX') and \
+                        referring_ancestor.dep_ == 'rc' and \
+                        (referring_ancestor.head == referred_root or \
+                        referring_ancestor.head.i in referred.token_indexes):
+                    return True
+
                 # The ancestor has its own subject, so stop here
                 if len([t for t in referring_ancestor.children if t.dep_ == 'sb'
                         and t != referred_root]) > 0:

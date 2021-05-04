@@ -280,6 +280,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             for referring_ancestor in referring.ancestors:
                 # Loop up through the verb ancestors of the pronoun
 
+                # Relative clauses
+                if referring_ancestor.pos_ in ('VERB', 'AUX') and \
+                        referring_ancestor.dep_ == 'relcl' and \
+                        (referring_ancestor.head == referred_root or \
+                        referring_ancestor.head.i in referred.token_indexes):
+                    return True
+
                 # Other dependencies imply clause types where reflexivity is no longer possible
                 if referring_ancestor.pos_ in ('VERB', 'AUX') and referring_ancestor.dep_ \
                         not in ('ROOT', 'xcomp', 'pcomp', 'ccomp', 'conj', 'advcl', 'acl'):

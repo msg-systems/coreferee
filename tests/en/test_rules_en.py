@@ -556,6 +556,26 @@ class EnglishRulesTest(unittest.TestCase):
         self.compare_potential_reflexive_pair('He had no idea whether to see him.',
             0, False, 7, 0, True, 0)
 
+    def test_reflexive_relative_clause_subject(self):
+        self.compare_potential_reflexive_pair('The man who saw him came home.',
+            1, False, 4, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_1(self):
+        self.compare_potential_reflexive_pair('The man he saw came home.',
+            1, False, 2, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_2(self):
+        self.compare_potential_reflexive_pair('The man that he saw came home.',
+            1, False, 3, 0, True, 0)
+
+    def test_reflexive_relative_clause_subject_with_conjunction(self):
+        self.compare_potential_reflexive_pair('The man and the woman who saw them came home.',
+            1, True, 7, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_with_conjunction(self):
+        self.compare_potential_reflexive_pair('The man and the woman they saw came home.',
+            1, True, 5, 0, True, 0)
+
     def compare_potential_cataphoric_pair(self, doc_text, referred_index,
         include_dependent_siblings, referring_index, expected_truth, *, excluded_nlps=[]):
 
