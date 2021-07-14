@@ -146,8 +146,8 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_pronoun_noun(self):
         self.compare_independent_noun(
-            'Diejenigen der Jungen, die heimgekommen sind, waren müde',
-            [0, 2], excluded_nlps=['core_news_md'])
+            'Diejenigen der Jungen, die heimgekommen sind, waren müde', [0, 2],
+            excluded_nlps=['core_news_lg'])
 
     def test_blacklisted(self):
         self.compare_independent_noun(
@@ -166,8 +166,8 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_punctuation(self):
         self.compare_independent_noun(
-            '[Enter]',
-            [1])
+            '[ Vogel ]',
+            [1], excluded_nlps=['core_news_sm'])
 
     def compare_potential_anaphor(self, doc_text, expected_per_indexes, *,
         excluded_nlps=[]):
@@ -195,7 +195,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_colloquial_pronouns(self):
         self.compare_potential_anaphor('Die ist rausgegangen, um den zu treffen. Die Frau war da',
-            [0,5], excluded_nlps=['core_news_md'])
+            [0,5])
 
     def test_das_not_colloquial_pronoun(self):
         self.compare_potential_anaphor('Ich sah das Haus. Das war gut.',
@@ -264,10 +264,10 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_anaphor('Wir hätten es anregen sollen, es zu tun.', [6])
 
     def test_pleonastic_darauf_1(self):
-        self.compare_potential_anaphor('Es kam darauf an, dass er es tut.', [6, 7])
+        self.compare_potential_anaphor('Das Ergebnis kam darauf an, dass er es tut.', [7, 8])
 
     def test_pleonastic_darauf_2(self):
-        self.compare_potential_anaphor('Es kam darauf an, es zu tun.', [5])
+        self.compare_potential_anaphor('Das Ergebnis kam darauf an, es zu tun.', [6])
 
     def test_pleonastic_darauf_aux_1(self):
         self.compare_potential_anaphor('Es wäre darauf angekommen, dass er es tut.', [0, 6, 7])
@@ -276,7 +276,8 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_anaphor('Es wäre darauf angekommen, es zu tun.', [0, 5])
 
     def test_pleonastic_dessen_object_positions(self):
-        self.compare_potential_anaphor('Das war die Idee dessen, was wir taten.', [])
+        self.compare_potential_anaphor('Das war die Idee dessen, was wir taten.', [],
+            excluded_nlps=['core_news_sm'])
 
     def compare_potentially_indefinite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
@@ -396,7 +397,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_pair('Ich sah eine Frau. Der lief', 3, False, 5, 0)
 
     def test_potential_pair_trivial_fem_control_2(self):
-        self.compare_potential_pair('Ich sah eine Frau. Es lief', 3, False, 5, 0)
+        self.compare_potential_pair('Ich sah eine Frau. Es betrachtete den Himmel', 3, False, 5, 0)
 
     def test_potential_pair_trivial_fem_control_3(self):
         self.compare_potential_pair('Ich sah eine Frau. Die liefen', 3, False, 5, 0)
@@ -511,7 +512,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_pair('Ich sah ein Kind. Sie stand', 3, False, 5, 2)
 
     def test_potential_pair_person_neut_3(self):
-        self.compare_potential_pair('Ich sah ein Kind. Dann stand es und weinte', 3, False, 7, 2)
+        self.compare_potential_pair('Ich sah ein Kind. Dann lächelte es und weinte', 3, False, 7, 2)
 
     def test_potential_pair_person_neut_control(self):
         self.compare_potential_pair('Ich sah ein Kind. Sie standen', 3, False, 5, 0)
@@ -757,7 +758,7 @@ class GermanRulesTest(unittest.TestCase):
             3, False, 9, 0, False, 2)
 
     def test_reflexive_in_wrong_situation_same_sentence_control(self):
-        self.compare_potential_reflexive_pair('Ich sah den Menschen, während der andere Mensch ihn sah',
+        self.compare_potential_reflexive_pair('Ich sah den Mann, während der andere Mensch ihn sah',
             3, False, 9, 2, False, 0)
 
     def test_non_reflexive_in_wrong_situation_same_sentence(self):

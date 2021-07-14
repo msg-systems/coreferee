@@ -70,18 +70,25 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_independent_noun(self, token:Token) -> bool:
         if not (token.pos_ in self.noun_pos or token.tag_ == 'PIS' or \
-                (token.pos_ == 'PRON' and token.tag_ == 'NN')) or token.dep_ == 'pnc' or \
+                (token.pos_ == 'PRON' and token.tag_ == 'NN')) or \
                 token.text in punctuation:
+            return False
+        if token.dep_ == 'pnc' and token.head.pos_ == 'PROPN':
             return False
         return not self.is_token_in_one_of_phrases(token, self.blacklisted_phrases)
 
     def is_potential_anaphor(self, token:Token) -> bool:
-        if not ((token.pos_ == 'PRON' and token.tag_ in ('PPER', 'PDS', 'PRF')) or
+        if not ((token.pos_ == 'PRON' and token.tag_ in ('PPER', 'PDS', 'PRF', 'ART')) or
                 (token.pos_ == 'DET' and token.tag_ == 'PPOSAT') or
+                (token.pos_ == 'DET' and token.tag_ in ('ART', 'PDS')) or
                 (token.pos_ == 'ADV' and token.tag_ == 'PROAV')):
             return False
         if self.has_morph(token, 'Person', '1') or self.has_morph(token, 'Person', '2'):
             return False
+
+        if token.tag_ == 'ART':
+            return token.lemma_ == 'der' and token.dep_ != self.root_dep and \
+                token.head.pos_ not in self.noun_pos
 
         if token.tag_ == 'PPOSAT' and not token.text.lower().startswith('sein') and not \
                 token.text.lower().startswith('ihr'):

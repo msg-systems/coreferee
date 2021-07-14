@@ -193,14 +193,6 @@ class CommonRulesTest(unittest.TestCase):
         self.compare_potential_noun_pair('I spoke to Peter and Jane. Jane is here',
             5, 7, True)
 
-    def test_potential_noun_pair_referring_back_proper_noun_with_non_proper_noun_child(self):
-        self.compare_potential_noun_pair('I spoke to Peter. Big Peter is here', 3, 6, True,
-            excluded_nlps=['core_web_sm', 'core_web_trf'])
-
-    def test_potential_noun_pair_referring_back_proper_noun_with_proper_noun_child(self):
-        self.compare_potential_noun_pair('I spoke to Peter. Big Peter is here', 3, 6, False,
-            excluded_nlps=['core_web_md', 'core_web_lg'])
-
     def test_potential_noun_pair_referring_back_proper_noun_conjunction_first_member(self):
         self.compare_potential_noun_pair('I spoke to Peter. Peter and Jane are here',
             3, 5, True)

@@ -34,7 +34,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
 
 Coreferences are situations where two or more words within a text refer to the same entity, e.g. *__John__ went home because __he__ was tired*. Resolving coreferences is an important general task within the natural language processing field.
 
-Coreferee is a Python 3 library (tested with version 3.8.7) that is used together with [spaCy](https://spacy.io/) (tested with version 3.0.5) to resolve coreferences within English, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
+Coreferee is a Python 3 library (tested with version 3.9.5) that is used together with [spaCy](https://spacy.io/) (tested with version 3.1.0) to resolve coreferences within English, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
 
 <a id="getting-started"></a>
 #### 1.2 Getting started
@@ -99,11 +99,11 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 >>> nlp.add_pipe('coreferee')
 <coreferee.manager.CorefereeBroker object at 0x0000026E84C63B50>
 >>>
->>> doc = nlp("Weil er mit seiner Arbeit sehr beschäftigt war, hatte Peter genug davon. Er und seine Frau haben entschieden, dass ihnen ein Urlaub gut tun würde. Sie sind nach Spanien gefahren, weil ihnen das Land sehr gefiel.")
+>>> doc = nlp("Weil er mit seiner Arbeit sehr beschäftigt war, hatte Peter davon genug. Er und seine Frau haben entschieden, dass ihnen ein Urlaub gut tun würde. Sie sind nach Spanien gefahren, weil ihnen das Land sehr gefiel.")
 >>>
 >>> doc._.coref_chains.print()
 0: er(1), seiner(3), Peter(10), Er(14), seine(16)
-1: Arbeit(4), davon(12)
+1: Arbeit(4), davon(11)
 2: [Er(14); Frau(17)], ihnen(22), Sie(29), ihnen(36)
 3: Spanien(32), Land(38)
 >>>
@@ -336,6 +336,13 @@ Each chain can also return the index number of the mention within it that is **m
 ```
 
 This information is used as the basis for the `resolve()` method shown in the [initial example](#getting-started-en): the method traverses multiple chains to find the most specific mention or mentions within the text that describe a given anaphor or noun phrase head.
+
+Note that a mention that heads a complex proper noun phrase only refers to the head of that phrase. Some users have expressed a requirement to retrieve all the tokens in such a phrase. Although this functionality is regarded as outside the main scope of Coreferee and is hence not available via the main data model, the information can be retrieved as follows:
+
+```
+rules_analyzer = nlp_en.get_pipe('coreferee').annotator.rules_analyzer
+rules_analyzer.get_propn_subtree(doc[1])
+```
 
 <a id="how-it-works"></a>
 ### 3 How it works

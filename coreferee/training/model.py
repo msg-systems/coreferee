@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import keras
-from keras import layers
+from tensorflow import keras
+from tensorflow.keras import layers
 from spacy.language import Language
 from ..data_model import FeatureTable, Mention
 from ..rules import RulesAnalyzerFactory

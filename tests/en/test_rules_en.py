@@ -184,7 +184,7 @@ class EnglishRulesTest(unittest.TestCase):
     def test_non_pleonastic_it_with_conjunction(self):
         self.compare_potential_anaphor(
             'It and the man were raining. The man and it were raining',
-            [0, 10])
+            [0, 10], excluded_nlps=['core_web_trf'])
 
     def test_pleonastic_it_avalent_verbs(self):
         self.compare_potential_anaphor(
@@ -330,7 +330,7 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_potential_pair_it_singular_antecedent_proper_name_non_person(self):
         self.compare_potential_pair(
-            'I worked for Skateboards. It was there', 3, False, 5, 2)
+            'I worked for Skateboards plc. It was there', 4, False, 6, 2)
 
     def test_potential_pair_he_she_antecedent_non_person_noun(self):
         self.compare_potential_pair('I saw the house. She was there', 3, False, 5, 0)
@@ -339,7 +339,7 @@ class EnglishRulesTest(unittest.TestCase):
         self.compare_potential_pair('I spoke to Jenny. She was there', 3, False, 5, 2)
 
     def test_potential_pair_he_she_antecedent_non_person_proper_noun(self):
-        self.compare_potential_pair('I worked for Skateboards. She was there', 3, False, 5, 1)
+        self.compare_potential_pair('I worked for Skateboards plc. She was there', 4, False, 6, 1)
 
     def test_potential_pair_it_exclusively_person_antecedent(self):
         self.compare_potential_pair('I saw the lady. It was there', 3, False, 5, 0)
@@ -500,7 +500,7 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_reflexive_with_verb_coordination_two_subjects(self):
         self.compare_potential_reflexive_pair('He saw it and his boss congratulated himself',
-            0, False, 7, 1, False, 1)
+            0, False, 7, 1, False, 1, excluded_nlps=['core_web_md'])
 
     def test_reflexive_with_to(self):
         self.compare_potential_reflexive_pair(

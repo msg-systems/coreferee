@@ -116,3 +116,11 @@ class CommonDataModelTest(unittest.TestCase):
     def test_resolve_recursive(self):
         doc = self.sm_nlp('I spoke to Mr. Platt. The man and Richard came in. They and Peter said hello. They were all here.')
         self.assertEqual([doc[4], doc[9], doc[15]], doc._.coref_chains.resolve(doc[19]))
+
+    def test_representations_cataphora(self):
+        doc = self.sm_nlp('Although he had gone out, Richard came back')
+        self.assertEqual('[0: [1], [6]]', str(doc._.coref_chains))
+        self.assertEqual(1,
+            doc._.coref_chains[0].most_specific_mention_index)
+        self.assertEqual([doc[6]], doc._.coref_chains.resolve(doc[1]))
+        self.assertEqual(None, doc._.coref_chains.resolve(doc[6]))
