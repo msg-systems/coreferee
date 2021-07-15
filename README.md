@@ -23,7 +23,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
 -   [5. Version history]('#version-history')
     -   [5.1 Version 1.0.0](#version-100)
     -   [5.2 Version 1.0.1](#version-101)
-    -   [5.3 Version 1.0.2](#version-102)
+    -   [5.3 Version 1.1.0](#version-110)
 -   [6. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
@@ -215,8 +215,8 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
 <table style="text-align:center; vertical-align:middle">
   <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td rowspan="2">Training corpora</td><td rowspan="2">Total words in training corpora</td><td colspan="2"><code>*_trf</code> models</td><td colspan="2"><code>*_lg</code> models</td><td colspan="2"><code>*_md</code> models</td><td colspan="2"><code>*_sm</code> models</td></tr>  
   <tr><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td></tr>
-  <tr><td align="center">English</td><td align="center">en</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2967</b></td><td align="center"><b>83.52</b><td align="center"><b>2903</b></td><td align="center"><b>83.98</b></td></td><td align="center">2907</td><td align="center">83.21</td><td align="center">2878</td><td align="center">82.49</td></tr>
-  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>627</b></td><td align="center"><b>77.83</b></td><td align="center">621</td><td align="center">76.01</td><td align="center">629</td><td align="center">75.99</td></tr>
+  <tr><td align="center">English</td><td align="center">en</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2940</b></td><td align="center"><b>83.67</b><td align="center"><b>2886</b></td><td align="center"><b>83.75</b></td></td><td align="center">2905</td><td align="center">82.89</td><td align="center">2874</td><td align="center">82.39</td></tr>
+  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>624</b></td><td align="center"><b>77.4</b></td><td align="center">624</td><td align="center">76.92</td><td align="center">606</td><td align="center">77.39</td></tr>
   <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1553</b></td><td align="center"><b>72.12</b></td><td align="center">1521</td><td align="center">71.07</td><td align="center">1383</td><td align="center">70.21</td></tr>
 </table>
 
@@ -492,9 +492,10 @@ The initial open-source version.
 
 -  Fixing of a bug where already installed models were reinstalled from `site-packages` rather than the new model being pulled from GitHub.
 
-<a id="version-102"></a>
-##### 5.3 Version 1.0.2
+<a id="version-110"></a>
+##### 5.3 Version 1.1.0
 
+-  Upgrade to Python 3.9 and spaCy 3.1
 -  Fixing of several bugs in the German-language rules
 -  Regeneration of the German-language models, although the old models are still fundamentally compatible with the new code
 -  Fixing of minor issues in the English-language and Polish-language rules
