@@ -198,6 +198,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                             (self.has_morph(token, 'Case', 'Acc') or
                             self.has_morph(token, 'Case', 'Gen')):
                         plur = True
+                if self.has_morph(token, 'Number', 'Sing') and \
+                        not masc and not fem and not neut:
+                    masc = True
+                    neut = True
             return masc, fem, neut, plur
 
         doc = referring.doc

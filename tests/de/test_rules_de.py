@@ -721,6 +721,9 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_neuter_subject_personal_verb_control_conjunction_2(self):
         self.compare_potential_pair('Das Haus und Peter waren da. Sie sagten, alles OK.', 1, True, 7, 2)
 
+    def test_potential_pair_gender_not_marked_on_anaphoric_pronoun(self):
+        self.compare_potential_pair('Peter kam rein. Ich folgte ihm', 0, False, 6, 2)
+
     def compare_potential_reflexive_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, expected_reflexive_truth,
         is_reflexive_anaphor_truth, *, excluded_nlps=[]):
