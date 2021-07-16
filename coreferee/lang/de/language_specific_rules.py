@@ -202,6 +202,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                         not masc and not fem and not neut:
                     masc = True
                     neut = True
+                if token.text.lower() == 'sie' and not fem and not plur:
+                    fem = True
+                    plur = True
             return masc, fem, neut, plur
 
         doc = referring.doc

@@ -724,6 +724,9 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_gender_not_marked_on_anaphoric_pronoun(self):
         self.compare_potential_pair('Peter kam rein. Ich folgte ihm', 0, False, 6, 2)
 
+    def test_potential_pair_sie_gender_not_marked(self):
+        self.compare_potential_pair('Es gab Hunde. Jemand verkaufte sie.', 2, False, 6, 2)
+
     def compare_potential_reflexive_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, expected_reflexive_truth,
         is_reflexive_anaphor_truth, *, excluded_nlps=[]):
