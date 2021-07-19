@@ -67,7 +67,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_get_dependent_sibling_info('Richard und Christine gingen heim', 2,
             '[]', 0, False)
 
-    def test_get_depfendent_sibling_info_two_member_conjunction_phrase_or(self):
+    def test_get_dependent_sibling_info_two_member_conjunction_phrase_or(self):
         self.compare_get_dependent_sibling_info('Richard oder Christine ging heim', 0,
             '[Christine]', None, True)
 
@@ -278,6 +278,18 @@ class GermanRulesTest(unittest.TestCase):
     def test_pleonastic_dessen_object_positions(self):
         self.compare_potential_anaphor('Das war die Idee dessen, was wir taten.', [],
             excluded_nlps=['core_news_sm'])
+
+    def test_you_Sie_mid_sentence(self):
+        self.compare_potential_anaphor('Was möchten Sie?.', [])
+
+    def test_you_Sie_mid_sentence_control(self):
+        self.compare_potential_anaphor('Was möchten sie?', [2])
+
+    def test_possible_you_Sie_beginning_of_sentence_one_sentence(self):
+        self.compare_potential_anaphor('Sie wollten nach Hause.', [0])
+
+    def test_possible_you_Sie_beginning_of_sentence_two_sentences(self):
+        self.compare_potential_anaphor('Der Tag war kalt. Sie wollten nach Hause.', [5])
 
     def compare_potentially_indefinite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):

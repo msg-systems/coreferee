@@ -85,6 +85,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return False
         if self.has_morph(token, 'Person', '1') or self.has_morph(token, 'Person', '2'):
             return False
+        if token.text == 'Sie' and token.i != token.sent[0].i:
+            return False
 
         if token.tag_ == 'ART':
             return token.lemma_ == 'der' and token.dep_ != self.root_dep and \
