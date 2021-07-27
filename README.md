@@ -20,11 +20,12 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
         -   [3.1.3 Building the chains](#building-the-chains)
     -   [3.2 The neural ensemble](#the-neural-ensemble)
 -   [4. Adding support for a new language](#adding-support-for-a-new-language)
--   [5. Version history]('#version-history')
-    -   [5.1 Version 1.0.0](#version-100)
-    -   [5.2 Version 1.0.1](#version-101)
-    -   [5.3 Version 1.1.0](#version-110)
--   [6. Open issues/requests for assistance](#open-issues)
+-   [5. Adding support for a custom spaCy model](#adding-support-for-a-custom-spaCy-model)
+-   [6. Version history]('#version-history')
+    -   [6.1 Version 1.0.0](#version-100)
+    -   [6.2 Version 1.0.1](#version-101)
+    -   [6.3 Version 1.1.0](#version-110)
+-   [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
 ### 1. Introduction
@@ -479,21 +480,30 @@ python3 -m coreferee install <ISO 639-1>
 
 15) Issue a pull request. We ask that you supply us with the zip file generated during training. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard.hudson@msg.group">send it out of band</a> rather than attaching it to the pull request.
 
+<a id="adding-support-for-a-custom-spaCy-model"></a>
+### 5. Adding support for a custom spaCy model
+
+If you are using a custom spaCy model, you should generate a corresponding custom Coreferee model. Use points 2), 8), 9) and 10) from the [preceding section](#adding-support-for-a-new-language) as a guide. If you do not have your own training data, you can use the [same training data](#model-performance) that was used to generate the standard Coreferee models.
+
+The language-specific rules expect specific entity tags as 'magic values'. This is unfortunate but there is no obvious alternative solution because there is no way of knowing which entities a new tag might refer to. The best advice is to use the same entity tags in your custom model as are used in the standard spaCy models when referring to similar entity classes.
+
+For many entity tags, the impact will be minimal if you cannot adhere to this, but what is crucial is that you use the `PERSON` and `PER` tags to refer to people in English and German respectively. If this is not possible, change the language-specific-rule code and reinstall Coreferee locally (`python -m pip install .` from the root directory).
+
 <a id="version-history"></a>
-#### 5 Version history
+#### 6 Version history
 
 <a id="version-100"></a>
-##### 5.1 Version 1.0.0
+##### 6.1 Version 1.0.0
 
 The initial open-source version.
 
 <a id="version-101"></a>
-##### 5.2 Version 1.0.1
+##### 6.2 Version 1.0.1
 
 -  Fixing of a bug where already installed models were reinstalled from `site-packages` rather than the new model being pulled from GitHub.
 
 <a id="version-110"></a>
-##### 5.3 Version 1.1.0
+##### 6.3 Version 1.1.0
 
 -  Upgrade to Python 3.9 and spaCy 3.1
 -  Fixing of several bugs in the German-language rules
@@ -502,7 +512,7 @@ The initial open-source version.
 -  Improvement of the Polish examples in [section 1.4.1](#covered-relevant-linguistic-features) to make them more pragmatically correct - many thanks to Małgorzata Styś for her valuable advice on this.
 
 <a id="open-issues"></a>
-### 6. Open issues / requests for assistance
+### 7. Open issues / requests for assistance
 
 1) At present Coreferee uses Keras with TensorFlow, which leads to the limitation that `nlp.pipe()` cannot be called with `n_process > 1` with forked processes. It would be greatly preferable if Coreferee could be converted to use Thinc instead: this would get rid of this limitation and generally fit much better into the spaCy ecosystem.
 
