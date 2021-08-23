@@ -135,6 +135,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_anaphoric_pair(self, referred:Mention, referring:Token, directly:bool) -> bool:
 
+        def get_governing_verb(token:Token) -> Token:
+            for ancestor in token.ancestors:
+                if ancestor.pos_ in ('VERB', 'AUX'):
+                    return ancestor
+            return None
+
         def lemma_ends_with_word_in_list(token, word_list):
             lower_lemma = token.lemma_.lower()
             for word in word_list:
@@ -275,6 +281,15 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             if self.is_potential_reflexive_pair(referred, referring) != \
                     (self.is_reflexive_anaphor(referring) == 2):
                 return 0
+
+            if referred_root.dep_ in ('nk') and referred_root.head.pos_ == 'ADP' and \
+                    self.is_reflexive_anaphor(referring) == 0:
+                referred_governing_verb = get_governing_verb(referred_root)
+                if referred_governing_verb is not None and referred_governing_verb == \
+                        get_governing_verb(referring):
+                    # In welchem Raum ist er?
+                    return 0
+
 
             if referring.tag_ == 'PPOSAT':
                 # possessive pronouns cannot refer back to the head within a genitive phrase.

@@ -129,6 +129,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_anaphoric_pair(self, referred:Mention, referring:Token, directly:bool) -> bool:
 
+        def get_governing_verb(token:Token) -> Token:
+            for ancestor in token.ancestors:
+                if ancestor.pos_ in ('VERB', 'AUX'):
+                    return ancestor
+            return None
+
         doc = referring.doc
         referred_root = doc[referred.root_index]
         uncertain = False
@@ -230,6 +236,14 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     self.is_reflexive_anaphor(referring) == 1:
                 uncertain = True
 
+            if referred_root.dep_ in ('pobj', 'pcomp') and \
+                    self.is_reflexive_anaphor(referring) == 0:
+                referred_governing_verb = get_governing_verb(referred_root)
+                if referred_governing_verb is not None and referred_governing_verb == \
+                        get_governing_verb(referring):
+                    # In which room is it?
+                    return 0
+
         return 1 if uncertain else 2
 
     def has_determiner_with_lemma(self, token:Token, lemmas:tuple):
@@ -261,10 +275,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_reflexive_pair(self, referred:Mention, referring:Token) -> bool:
 
-        if referred.root_index > referring.i: # reflexives must follow their referents in English
+        if referred.root_index > referring.i:
+            # reflexives must follow their referents in English
             return False
 
         referred_root = referring.doc[referred.root_index]
+
         syntactic_subject_dep = ('nsubj', 'nsubjpass')
 
         if referred_root._.coref_chains.temp_governing_sibling is not None:
