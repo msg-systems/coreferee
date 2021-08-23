@@ -120,7 +120,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         # finite verb without subject (zero anaphora)
         if token.pos_ in ('VERB', 'AUX') and token.tag_ in ('FIN', 'PRAET', 'BEDZIE') and \
-                len([child for child in token.children if child.dep_.startswith('nsubj')]) == 0 \
+                len([child for child in token.children if child.dep_.startswith('nsubj') and
+                self.has_morph(child, 'Case', 'Nom')]) == 0 \
                 and not self.has_morph(token, 'Person', '1') \
                 and not self.has_morph(token, 'Person', '2'):
 
@@ -136,7 +137,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
             # exclude structures like 'okazało się, że ...'
             return not (len([child for child in token.children if child.dep_ == 'expl:pv']) > 0 and
-                    len([child for child in token.children if child.dep_ == 'ccomp']) > 0 and
+                    len([child for child in token.children
+                    if child.dep_ in ('ccomp', 'csubj')]) > 0 and
                     not self.has_morph(token, 'Gender', 'Masc') and
                     not self.has_morph(token, 'Gender', 'Fem'))
         return False
@@ -384,7 +386,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             if child.lemma_.lower() in ('ten', 'tego', 'temu', 'tym', 'to', 'ta', 'tę', 'tą',
                     'tej', 'ci', 'te', 'tych', 'tymi', 'tym', 'tych'):
                 return False
-            if child.pos_ == 'DET' and child.tag_ == 'ADJ' and child.dep_ == 'det' and \
+            if child.pos_ == 'DET' and child.tag_ == 'ADJ' and child.dep_.startswith('det') and \
                     self.has_morph(child, 'Poss', 'Yes'):
                 return False
         return True
@@ -409,7 +411,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
     def is_potential_reflexive_pair(self, referred:Mention, referring:Token) -> bool:
 
         if referring.pos_ != 'PRON' and not self.is_reflexive_possessive_pronoun(referring) \
-                and referring.dep_ != 'acl':
+                and not referring.dep_.startswith('acl'):
             return False
 
         referred_root = referring.doc[referred.root_index]
@@ -434,7 +436,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
                 # Relative clauses
                 if referring_or_ancestor.pos_ in ('VERB', 'AUX') and \
-                        referring_or_ancestor.dep_ == 'acl' and \
+                        referring_or_ancestor.dep_.startswith('acl') and \
                         (referring_or_ancestor.head == referred_root or \
                         referring_or_ancestor.head.i in referred.token_indexes):
                     return True

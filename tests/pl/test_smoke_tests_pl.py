@@ -111,11 +111,6 @@ class PolishSmokeTest(unittest.TestCase):
             'Widziałem Piotra i Agnieszkę. Polował z Richardem na kota',
             '[0: [1], [5]]')
 
-    def test_z_conjunction_with_verb_anaphor_virile_verb(self):
-        self.compare_annotations(
-            'Widziałem Piotra i Agnieszkę. Polowali z Richardem na kota. Szczęśliwi byli',
-            '[0: [1, 3], [5], 1: [5, 7], [12]]', excluded_nlps=['core_news_md'])
-
     def test_z_conjunction_with_verb_anaphor_nonvirile_verb(self):
         self.compare_annotations(
             'Widziałem Piotra i Agnieszkę. Polowały z koleżanką na kota. Szczęśliwe były.',
@@ -149,7 +144,8 @@ class PolishSmokeTest(unittest.TestCase):
 
     def test_proper_noun_coreference_with_gender_difference(self):
         self.compare_annotations(
-            'Pracował dla Eurocash. Jest to wielkie przedsiębiorstwo. Miało wiele sukcesów na polskim rynku.', '[0: [2], [7], [9]]', excluded_nlps=['core_news_sm'])
+            'Pracował dla Eurocash. Jest to wielkie przedsiębiorstwo. Miało wiele sukcesów na polskim rynku.', '[0: [0], [4], 1: [2], [7], [9]]',
+            excluded_nlps=['core_news_md', 'core_news_sm'])
 
     def test_common_noun_coreference(self):
         self.compare_annotations(
@@ -176,10 +172,10 @@ class PolishSmokeTest(unittest.TestCase):
             'Piotr i Kasia weszli. Widzieli go.',
             '[0: [0, 2], [5]]')
 
-    def test_reflexive_preceding(self):
+    def test_reflexive_preceding_verb(self):
         self.compare_annotations(
-            'Chciał, żeby sobie jego syn lepiej poradzał',
-            '[0: [0], [4], 1: [3], [5]]')
+            'Chciał, żeby jego syn lepiej sobie poradzał',
+            '[0: [0], [3], 1: [4], [6]]')
 
     def test_cataphora_simple_verb(self):
         self.compare_annotations(
@@ -190,21 +186,6 @@ class PolishSmokeTest(unittest.TestCase):
         self.compare_annotations(
             'Pomimo, że on był zmęczony, Piotr poszedł do domu.',
             '[0: [3], [7]]')
-
-    def test_cataphora_with_coordination_verb(self):
-        self.compare_annotations(
-            'Pomimo, że osiągnęli swój dom, mężczyzna i kobieta byli smutni.',
-            '[0: [3], [4], [7, 9]]', excluded_nlps=['core_news_md', 'core_news_sm'])
-
-    def test_cataphora_with_coordination_pronoun(self):
-        self.compare_annotations(
-            'Pomimo, że oni osiągnęli ich dom, byli mężczyzna i kobieta smutni.',
-            '[0: [3], [5], [9, 11]]', excluded_nlps=['core_news_sm'])
-
-    def test_cataphora_with_coordination_different_possessive_pronoun(self):
-        self.compare_annotations(
-            'Pomimo, że oni osiągnęli jego dom, byli mężczyzna i kobieta smutni.',
-            '[0: [3], [9, 11], 1: [5], [9]]', excluded_nlps=['core_news_sm'])
 
     def test_documentation_example(self):
         self.compare_annotations(
