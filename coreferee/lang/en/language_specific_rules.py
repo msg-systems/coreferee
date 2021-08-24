@@ -35,9 +35,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     quote_tuples = [("'", "'"), ('"', '"'), ('“', '”'), ('‘', '’')]
 
-    dependent_sibling_deps = ('conj')
+    dependent_sibling_deps = ('conj', 'appos')
 
-    conjunction_deps = ('appos', 'cc', 'punct')
+    conjunction_deps = ('cc', 'punct')
 
     adverbial_clause_deps = ('advcl', 'acl')
 
@@ -128,6 +128,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         return True
 
     def is_potential_anaphoric_pair(self, referred:Mention, referring:Token, directly:bool) -> bool:
+
+        def get_governing_verb(token:Token) -> Token:
+            for ancestor in token.ancestors:
+                if ancestor.pos_ in ('VERB', 'AUX'):
+                    return ancestor
+            return None
 
         doc = referring.doc
         referred_root = doc[referred.root_index]
@@ -230,17 +236,25 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     self.is_reflexive_anaphor(referring) == 1:
                 uncertain = True
 
+            if referred_root.dep_ in ('pobj', 'pcomp') and \
+                    self.is_reflexive_anaphor(referring) == 0:
+                referred_governing_verb = get_governing_verb(referred_root)
+                if referred_governing_verb is not None and referred_governing_verb == \
+                        get_governing_verb(referring):
+                    # In which room is it?
+                    return 0
+
         return 1 if uncertain else 2
 
-    def is_potentially_indefinite(self, token:Token) -> bool:
-
+    def has_determiner_with_lemma(self, token:Token, lemmas:tuple):
         return len([1 for child in token.children if child.tag_ == 'DT' and child.dep_ == 'det'
-            and child.lemma_ in ('a', 'an', 'some', 'another')]) > 0
+            and child.lemma_ in lemmas]) > 0
+
+    def is_potentially_indefinite(self, token:Token) -> bool:
+        return self.has_determiner_with_lemma(token, ('a', 'an', 'some', 'another'))
 
     def is_potentially_definite(self, token:Token) -> bool:
-
-        return len([1 for child in token.children if child.tag_ == 'DT' and child.dep_ == 'det'
-            and child.lemma_ in ('that', 'the', 'these', 'this', 'those')]) > 0
+        return self.has_determiner_with_lemma(token, ('that', 'the', 'these', 'this', 'those'))
 
     def is_reflexive_anaphor(self, token:Token) -> int:
         if self.has_morph(token, 'Reflex', 'Yes'):
@@ -261,10 +275,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_reflexive_pair(self, referred:Mention, referring:Token) -> bool:
 
-        if referred.root_index > referring.i: # reflexives must follow their referents in English
+        if referred.root_index > referring.i:
+            # reflexives must follow their referents in English
             return False
 
         referred_root = referring.doc[referred.root_index]
+
         syntactic_subject_dep = ('nsubj', 'nsubjpass')
 
         if referred_root._.coref_chains.temp_governing_sibling is not None:
@@ -279,6 +295,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if referred_root.dep_ in syntactic_subject_dep:
             for referring_ancestor in referring.ancestors:
                 # Loop up through the verb ancestors of the pronoun
+
+                # Relative clauses
+                if referring_ancestor.pos_ in ('VERB', 'AUX') and \
+                        referring_ancestor.dep_ == 'relcl' and \
+                        (referring_ancestor.head == referred_root or \
+                        referring_ancestor.head.i in referred.token_indexes):
+                    return True
 
                 # Other dependencies imply clause types where reflexivity is no longer possible
                 if referring_ancestor.pos_ in ('VERB', 'AUX') and referring_ancestor.dep_ \

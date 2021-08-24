@@ -67,7 +67,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_get_dependent_sibling_info('Richard und Christine gingen heim', 2,
             '[]', 0, False)
 
-    def test_get_depfendent_sibling_info_two_member_conjunction_phrase_or(self):
+    def test_get_dependent_sibling_info_two_member_conjunction_phrase_or(self):
         self.compare_get_dependent_sibling_info('Richard oder Christine ging heim', 0,
             '[Christine]', None, True)
 
@@ -146,8 +146,8 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_pronoun_noun(self):
         self.compare_independent_noun(
-            'Diejenigen der Jungen, die heimgekommen sind, waren müde',
-            [0, 2], excluded_nlps=['core_news_md'])
+            'Diejenigen der Jungen, die heimgekommen sind, waren müde', [0, 2],
+            excluded_nlps=['core_news_lg'])
 
     def test_blacklisted(self):
         self.compare_independent_noun(
@@ -166,8 +166,8 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_punctuation(self):
         self.compare_independent_noun(
-            '[Enter]',
-            [1])
+            '[ Vogel ]',
+            [1], excluded_nlps=['core_news_sm'])
 
     def compare_potential_anaphor(self, doc_text, expected_per_indexes, *,
         excluded_nlps=[]):
@@ -195,7 +195,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_colloquial_pronouns(self):
         self.compare_potential_anaphor('Die ist rausgegangen, um den zu treffen. Die Frau war da',
-            [0,5], excluded_nlps=['core_news_md'])
+            [0,5])
 
     def test_das_not_colloquial_pronoun(self):
         self.compare_potential_anaphor('Ich sah das Haus. Das war gut.',
@@ -250,6 +250,46 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_possessive_pronouns(self):
         self.compare_potential_anaphor('Mein Haus, dein Haus, sein Haus, ihr Haus.', [6, 9])
+
+    def test_pleonastic_es_object_position_1(self):
+        self.compare_potential_anaphor('Wir haben es angeregt, dass er es tut.', [6, 7])
+
+    def test_pleonastic_es_object_position_2(self):
+        self.compare_potential_anaphor('Wir haben es angeregt, es zu tun.', [5])
+
+    def test_pleonastic_es_object_aux_position_1(self):
+        self.compare_potential_anaphor('Wir werden es anregen können, dass er es tut.', [7, 8])
+
+    def test_pleonastic_es_object_aux_position_2(self):
+        self.compare_potential_anaphor('Wir hätten es anregen sollen, es zu tun.', [6])
+
+    def test_pleonastic_darauf_1(self):
+        self.compare_potential_anaphor('Das Ergebnis kam darauf an, dass er es tut.', [7, 8])
+
+    def test_pleonastic_darauf_2(self):
+        self.compare_potential_anaphor('Das Ergebnis kam darauf an, es zu tun.', [6])
+
+    def test_pleonastic_darauf_aux_1(self):
+        self.compare_potential_anaphor('Es wäre darauf angekommen, dass er es tut.', [0, 6, 7])
+
+    def test_pleonastic_darauf_aux_2(self):
+        self.compare_potential_anaphor('Es wäre darauf angekommen, es zu tun.', [0, 5])
+
+    def test_pleonastic_dessen_object_positions(self):
+        self.compare_potential_anaphor('Das war die Idee dessen, was wir taten.', [],
+            excluded_nlps=['core_news_sm'])
+
+    def test_you_Sie_mid_sentence(self):
+        self.compare_potential_anaphor('Was möchten Sie?.', [])
+
+    def test_you_Sie_mid_sentence_control(self):
+        self.compare_potential_anaphor('Was möchten sie?', [2])
+
+    def test_possible_you_Sie_beginning_of_sentence_one_sentence(self):
+        self.compare_potential_anaphor('Sie wollten nach Hause.', [0])
+
+    def test_possible_you_Sie_beginning_of_sentence_two_sentences(self):
+        self.compare_potential_anaphor('Der Tag war kalt. Sie wollten nach Hause.', [5])
 
     def compare_potentially_indefinite(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
@@ -369,7 +409,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_pair('Ich sah eine Frau. Der lief', 3, False, 5, 0)
 
     def test_potential_pair_trivial_fem_control_2(self):
-        self.compare_potential_pair('Ich sah eine Frau. Es lief', 3, False, 5, 0)
+        self.compare_potential_pair('Ich sah eine Frau. Es betrachtete den Himmel', 3, False, 5, 0)
 
     def test_potential_pair_trivial_fem_control_3(self):
         self.compare_potential_pair('Ich sah eine Frau. Die liefen', 3, False, 5, 0)
@@ -484,7 +524,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_pair('Ich sah ein Kind. Sie stand', 3, False, 5, 2)
 
     def test_potential_pair_person_neut_3(self):
-        self.compare_potential_pair('Ich sah ein Kind. Dann stand es und weinte', 3, False, 7, 2)
+        self.compare_potential_pair('Ich sah ein Kind. Dann lächelte es und weinte', 3, False, 7, 2)
 
     def test_potential_pair_person_neut_control(self):
         self.compare_potential_pair('Ich sah ein Kind. Sie standen', 3, False, 5, 0)
@@ -637,6 +677,9 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_proav_cataphoric(self):
         self.compare_potential_pair('Er aß damit und nahm einen Löffel', 6, False, 2, 0)
 
+    def test_potential_pair_proav_preceding_word(self):
+        self.compare_potential_pair('Er aß das Fleisch damit', 3, False, 4, 0)
+
     def test_potential_pair_possessive_in_genitive_phrase_simple(self):
         self.compare_potential_pair('Der Mann seines Freundes', 1, False, 2, 0)
 
@@ -690,6 +733,15 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_neuter_subject_personal_verb_control_conjunction_2(self):
         self.compare_potential_pair('Das Haus und Peter waren da. Sie sagten, alles OK.', 1, True, 7, 2)
 
+    def test_potential_pair_gender_not_marked_on_anaphoric_pronoun(self):
+        self.compare_potential_pair('Peter kam rein. Ich folgte ihm', 0, False, 6, 2)
+
+    def test_potential_pair_sie_gender_not_marked(self):
+        self.compare_potential_pair('Es gab Hunde. Jemand verkaufte sie.', 2, False, 6, 2)
+
+    def test_potential_pair_antecedent_in_prepositional_phrase_in_question(self):
+        self.compare_potential_pair('In welchem Raum war er?', 2, False, 4, 0)
+
     def compare_potential_reflexive_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, expected_reflexive_truth,
         is_reflexive_anaphor_truth, *, excluded_nlps=[]):
@@ -727,7 +779,7 @@ class GermanRulesTest(unittest.TestCase):
             3, False, 9, 0, False, 2)
 
     def test_reflexive_in_wrong_situation_same_sentence_control(self):
-        self.compare_potential_reflexive_pair('Ich sah den Menschen, während der andere Mensch ihn sah',
+        self.compare_potential_reflexive_pair('Ich sah den Mann, während der andere Mensch ihn sah',
             3, False, 9, 2, False, 0)
 
     def test_non_reflexive_in_wrong_situation_same_sentence(self):
@@ -802,12 +854,22 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_reflexive_pair('Er sah es, und sein Chef gratulierte sich.',
             0, False, 8, 0, False, 2)
 
-    def test_reflexive_with_to(self):
+    def test_reflexive_pronoun_before_referent(self):
         self.compare_potential_reflexive_pair(
             'Sie wollten, dass sich der Junge kennt.',
             6, False, 4, 2, True, 2)
 
-    def test_reflexive_with_to_antecedent_within_noun_phrase(self):
+    def test_reflexive_pronoun_before_referent_control(self):
+        self.compare_potential_reflexive_pair(
+            'Sie wollten, dass sich der Junge wegen des Erfolgs kennt.',
+            9, False, 4, 0, False, 2)
+
+    def test_reflexive_with_(self):
+        self.compare_potential_reflexive_pair(
+            'Sie wollten, dass sich der Junge kennt.',
+            6, False, 4, 2, True, 2)
+
+    def test_reflexive_with_referent_within_noun_phrase(self):
         self.compare_potential_reflexive_pair(
             'Sie diskutierten die Möglichkeit, dass sich ein Individuum selbst sieht.',
             8, False, 6, 2, True, 2)
@@ -826,6 +888,11 @@ class GermanRulesTest(unittest.TestCase):
             "Die Meinung meines Freundes über ihn war übertrieben.",
             1, False, 5, 0, True, 0)
 
+    def test_reflexive_referred_in_prepositional_phrase_control(self):
+        self.compare_potential_reflexive_pair(
+            "Aus dieser Überlegung ergab sich ein Problem.",
+            2, False, 4, 0, False, 2)
+
     def test_reflexive_double_coordination_without_preposition(self):
         self.compare_potential_reflexive_pair('Wolfgang und Marie sahen ihn und sie.',
             0, False, 4, 0, True, 0)
@@ -837,6 +904,19 @@ class GermanRulesTest(unittest.TestCase):
             0, False, 5, 0, True, 0)
         self.compare_potential_reflexive_pair('Wolfgang und Marie sprachen mit ihm und ihr.',
             2, False, 7, 0, True, 0)
+
+    def test_reflexive_relative_clause_subject(self):
+        self.compare_potential_reflexive_pair('Der Mann, der ihn sah, kam heim.',
+            1, False, 4, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_1(self):
+        self.compare_potential_reflexive_pair('Der Mann, den er sah, kam heim.',
+            1, False, 4, 0, True, 0)
+
+    def test_reflexive_relative_clause_with_conjunction(self):
+        self.compare_potential_reflexive_pair('Der Mann und die Frau, die sie sahen, kamen heim.',
+            1, True, 7, 0, True, 0)
+
 
     def compare_potential_noun_pair(self, doc_text, referred_index, referring_index,
             expected_truth, *, excluded_nlps=[]):

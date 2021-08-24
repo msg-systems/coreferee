@@ -20,7 +20,7 @@ from sys import exc_info
 from packaging import version
 import spacy
 import pkg_resources
-import keras
+from tensorflow import keras
 from spacy.language import Language
 from spacy.tokens import Doc, Token
 from thinc.api import Config

@@ -237,42 +237,42 @@ class CommonTendenciesTest(unittest.TestCase):
 
         doc = self.sm_nlp('Richard said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[2, 0, 1, 0.30341318, 3]',
+        self.assertEqual('[2, 0, 1, 0.26251248, 3]',
             str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2])))
 
     def test_get_compatibility_map_coordination(self):
 
         doc = self.sm_nlp('Richard and Jane said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 1, 0.23422348, 3]',
+        self.assertEqual('[4, 0, 1, 0.20765561, 3]',
             str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4])))
 
     def test_get_compatibility_map_different_sentences(self):
 
         doc = self.sm_nlp('Richard called. He said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[3, 1, 0, 0.507851, 6]',
+        self.assertEqual('[3, 1, 0, 0.52525896, 6]',
             str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3])))
 
     def test_get_compatibility_map_same_sentence_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, he said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 0, 0.045050576, 5]',
+        self.assertEqual('[4, 0, 0, -0.12525316, 5]',
             str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
 
     def test_get_compatibility_map_same_sentence_lefthand_sibling_governance(self):
 
         doc = self.lg_nlp('Richard said Peter and he were entering the big house')
         self.lg_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 1, 0.15999001, 3]',
+        self.assertEqual('[4, 0, 1, 0.15999001, 4]',
             str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
 
     def test_get_compatibility_map_same_sentence_lefthand_sibling_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, Peter and he said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[5, 0, 0, 0.41453412, 1]',
+        self.assertEqual('[5, 0, 0, 0.32681236, 6]',
             str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6])))
 
     def test_get_cosine_similarity_lg(self):
@@ -294,7 +294,7 @@ class CommonTendenciesTest(unittest.TestCase):
 
         doc = self.lg_nlp('After Richard arrived, he saifefefwefefd he was entering the big house')
         self.lg_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 0, 0.4391515, 2]',
+        self.assertEqual('[4, 0, 0, 0.59521705, 3]',
             str(self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
 
     def test_get_cosine_similarity_sm_root_1(self):

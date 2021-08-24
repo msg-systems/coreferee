@@ -120,7 +120,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         # finite verb without subject (zero anaphora)
         if token.pos_ in ('VERB', 'AUX') and token.tag_ in ('FIN', 'PRAET', 'BEDZIE') and \
-                len([child for child in token.children if child.dep_.startswith('nsubj')]) == 0 \
+                len([child for child in token.children if child.dep_.startswith('nsubj') and
+                self.has_morph(child, 'Case', 'Nom')]) == 0 \
                 and not self.has_morph(token, 'Person', '1') \
                 and not self.has_morph(token, 'Person', '2'):
 
@@ -136,7 +137,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
             # exclude structures like 'okazało się, że ...'
             return not (len([child for child in token.children if child.dep_ == 'expl:pv']) > 0 and
-                    len([child for child in token.children if child.dep_ == 'ccomp']) > 0 and
+                    len([child for child in token.children
+                    if child.dep_ in ('ccomp', 'csubj')]) > 0 and
                     not self.has_morph(token, 'Gender', 'Masc') and
                     not self.has_morph(token, 'Gender', 'Fem'))
         return False
@@ -241,101 +243,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         referred_root = doc[referred.root_index]
         uncertain = False
 
-        referring_masc, referring_fem, referring_neut, referring_nonvirile, referring_virile = \
-            get_gender_number_info_for_single_token(referring)
-
-        if self.is_involved_in_non_or_conjunction(referred_root):
-            if referred_root._.coref_chains.temp_governing_sibling is not None:
-                all_involved_referreds = [referred_root._.coref_chains.temp_governing_sibling]
-            else:
-                all_involved_referreds = [referred_root]
-            all_involved_referreds.extend(
-                all_involved_referreds[0]._.coref_chains.temp_dependent_siblings)
-        else:
-            all_involved_referreds = [referred_root]
-
-        # e.g. 'Janek był w domu. Zadzwonili z żoną ...'
-        comitative_siblings = [c for c in referring._.coref_chains.temp_dependent_siblings if
-            referring.pos_ in ('VERB', 'AUX') and self.has_morph(referring, 'Number', 'Plur') and
-            self.has_morph(c, 'Case', 'Ins') and c.i not in referred.token_indexes]
-
-        if not directly and len(comitative_siblings) > 0 and (referring_nonvirile or
-                referring_virile):
-            return 2
-
-        all_involved_referreds.extend(comitative_siblings)
-
-        referreds_included_here = [doc[i] for i in referred.token_indexes]
-        referreds_included_here.extend(comitative_siblings)
-
-        if len(all_involved_referreds) > 1:
-
-            possibly_virile = are_coordinated_tokens_possibly_virile(all_involved_referreds)
-
-            if len(referreds_included_here) == len(all_involved_referreds):
-                if possibly_virile == 2:
-                    if not referring_virile:
-                        return 0
-                elif possibly_virile == 1:
-                    if not referring_nonvirile and not referring_virile:
-                        return 0
-                elif not referring_nonvirile:
-                    return 0
-                return 2
-
-            if len(referreds_included_here) > 1:
-                # implies len(all_involved_referreds) > len(referreds_included_here)
-                referreds_included_here_possibly_virile = \
-                    are_coordinated_tokens_possibly_virile(referreds_included_here)
-                if referring_nonvirile and possibly_virile == 2 and \
-                        referreds_included_here_possibly_virile == 0:
-                    return 2
-                return 0
-
-            referred_masc, referred_fem, referred_neut, referred_nonvirile, referred_virile = \
-                get_gender_number_info_for_single_token(referred_root)
-
-            referred_comitative_siblings = [c for c in
-                referred_root._.coref_chains.temp_dependent_siblings if
-                referred_root.pos_ in ('VERB', 'AUX') and self.has_morph(referred_root, 'Number',
-                'Plur') and self.has_morph(c, 'Case', 'Ins') and c.i != referring.i]
-            if not directly and len(referred_comitative_siblings) > 0 and (referred_nonvirile
-                    or referred_virile):
-                return 2
-
-            if possibly_virile == 2 and referred_nonvirile and referring_nonvirile:
-                return 2
-            if referred_nonvirile or referred_virile:
-                return 0
-            if possibly_virile != 0 and referring_virile:
-                return 0
-            if possibly_virile != 2 and referring_nonvirile:
-                return 0
-
-        referred_masc = referred_fem = referred_neut = referred_nonvirile = referred_virile = \
-            False
-
-        for working_token in (doc[index] for index in referred.token_indexes):
-            working_masc, working_fem, working_neut, working_nonvirile, working_virile = \
-                get_gender_number_info_for_single_token(working_token)
-            referred_masc = referred_masc or working_masc
-            referred_fem = referred_fem or working_fem
-            referred_neut = referred_neut or working_neut
-            referred_nonvirile = referred_nonvirile or working_nonvirile
-            referred_virile = referred_virile or working_virile
-
-        if not (referred_masc and referring_masc) and not (referred_fem and referring_fem) \
-                and not (referred_neut and referring_neut) and not (referred_nonvirile and
-                referring_nonvirile) and not (referred_virile and referring_virile):
-            return 0
-
-        if self.is_reflexive_possessive_pronoun(referring) and \
-                referring.head.i in referred.token_indexes:
-            return 0
-
-        if referred_root.head.i == referring.i:
-            return 0
-
         if directly:
             if self.is_potential_reflexive_pair(referred, referring) and \
                     self.is_reflexive_anaphor(referring) == 0:
@@ -367,10 +274,107 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (referring_governing_sibling.dep_.startswith('nsubj') and
                 referring_governing_sibling.head.lemma_ in self.verbs_with_personal_subject) or \
                 referring.lemma_ in self.verbs_with_personal_subject:
+            uncertain = True
             for working_token in (doc[index] for index in referred.token_indexes):
                 if working_token.pos_ == self.propn_pos or working_token.ent_type_ == 'persName':
-                    return 2
-            return 1
+                    uncertain = False
+
+        referring_masc, referring_fem, referring_neut, referring_nonvirile, referring_virile = \
+            get_gender_number_info_for_single_token(referring)
+
+        if self.is_involved_in_non_or_conjunction(referred_root):
+            if referred_root._.coref_chains.temp_governing_sibling is not None:
+                all_involved_referreds = [referred_root._.coref_chains.temp_governing_sibling]
+            else:
+                all_involved_referreds = [referred_root]
+            all_involved_referreds.extend(
+                all_involved_referreds[0]._.coref_chains.temp_dependent_siblings)
+        else:
+            all_involved_referreds = [referred_root]
+
+        # e.g. 'Janek był w domu. Zadzwonili z żoną ...'
+        comitative_siblings = [c for c in referring._.coref_chains.temp_dependent_siblings if
+            referring.pos_ in ('VERB', 'AUX') and self.has_morph(referring, 'Number', 'Plur') and
+            self.has_morph(c, 'Case', 'Ins') and c.i not in referred.token_indexes]
+
+        if not directly and len(comitative_siblings) > 0 and (referring_nonvirile or
+                referring_virile):
+            return 1 if uncertain else 2
+
+        all_involved_referreds.extend(comitative_siblings)
+
+        referreds_included_here = [doc[i] for i in referred.token_indexes]
+        referreds_included_here.extend(comitative_siblings)
+
+        if len(all_involved_referreds) > 1:
+
+            possibly_virile = are_coordinated_tokens_possibly_virile(all_involved_referreds)
+
+            if len(referreds_included_here) == len(all_involved_referreds):
+                if possibly_virile == 2:
+                    if not referring_virile:
+                        return 0
+                elif possibly_virile == 1:
+                    if not referring_nonvirile and not referring_virile:
+                        return 0
+                elif not referring_nonvirile:
+                    return 0
+                return 1 if uncertain else 2
+
+            if len(referreds_included_here) > 1:
+                # implies len(all_involved_referreds) > len(referreds_included_here)
+                referreds_included_here_possibly_virile = \
+                    are_coordinated_tokens_possibly_virile(referreds_included_here)
+                if referring_nonvirile and possibly_virile == 2 and \
+                        referreds_included_here_possibly_virile == 0:
+                    return 1 if uncertain else 2
+                return 0
+
+            referred_masc, referred_fem, referred_neut, referred_nonvirile, referred_virile = \
+                get_gender_number_info_for_single_token(referred_root)
+
+            referred_comitative_siblings = [c for c in
+                referred_root._.coref_chains.temp_dependent_siblings if
+                referred_root.pos_ in ('VERB', 'AUX') and self.has_morph(referred_root, 'Number',
+                'Plur') and self.has_morph(c, 'Case', 'Ins') and c.i != referring.i]
+            if not directly and len(referred_comitative_siblings) > 0 and (referred_nonvirile
+                    or referred_virile):
+                return 1 if uncertain else 2
+
+            if possibly_virile == 2 and referred_nonvirile and referring_nonvirile:
+                return 1 if uncertain else 2
+            if (referred_nonvirile or referred_virile) and not \
+                    (referred_masc and referred_fem and referred_neut): # proper name where
+                                                                        # anything is accepted
+                return 0
+            if possibly_virile != 0 and referring_virile:
+                return 0
+            if possibly_virile != 2 and referring_nonvirile:
+                return 0
+
+        referred_masc = referred_fem = referred_neut = referred_nonvirile = referred_virile = \
+            False
+
+        for working_token in (doc[index] for index in referred.token_indexes):
+            working_masc, working_fem, working_neut, working_nonvirile, working_virile = \
+                get_gender_number_info_for_single_token(working_token)
+            referred_masc = referred_masc or working_masc
+            referred_fem = referred_fem or working_fem
+            referred_neut = referred_neut or working_neut
+            referred_nonvirile = referred_nonvirile or working_nonvirile
+            referred_virile = referred_virile or working_virile
+
+        if not (referred_masc and referring_masc) and not (referred_fem and referring_fem) \
+                and not (referred_neut and referring_neut) and not (referred_nonvirile and
+                referring_nonvirile) and not (referred_virile and referring_virile):
+            return 0
+
+        if self.is_reflexive_possessive_pronoun(referring) and \
+                referring.head.i in referred.token_indexes:
+            return 0
+
+        if referred_root.head.i == referring.i:
+            return 0
 
         return 1 if uncertain else 2
 
@@ -382,7 +386,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             if child.lemma_.lower() in ('ten', 'tego', 'temu', 'tym', 'to', 'ta', 'tę', 'tą',
                     'tej', 'ci', 'te', 'tych', 'tymi', 'tym', 'tych'):
                 return False
-            if child.pos_ == 'DET' and child.tag_ == 'ADJ' and child.dep_ == 'det' and \
+            if child.pos_ == 'DET' and child.tag_ == 'ADJ' and child.dep_.startswith('det') and \
                     self.has_morph(child, 'Poss', 'Yes'):
                 return False
         return True
@@ -406,7 +410,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_reflexive_pair(self, referred:Mention, referring:Token) -> bool:
 
-        if referring.pos_ != 'PRON' and not self.is_reflexive_possessive_pronoun(referring):
+        if referring.pos_ != 'PRON' and not self.is_reflexive_possessive_pronoun(referring) \
+                and not referring.dep_.startswith('acl'):
             return False
 
         referred_root = referring.doc[referred.root_index]
@@ -419,20 +424,29 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if referred_root.dep_.startswith('nsubj') or (referred_root.pos_ in ('VERB', 'AUX') and
                 self.is_potential_anaphor(referred_root)):
-            for referring_ancestor in referring.ancestors:
+            referring_and_ancestors = [referring]
+            referring_and_ancestors.extend(list(referring.ancestors))
+            for referring_or_ancestor in referring_and_ancestors:
 
                 # Loop up through the ancestors of the pronoun
 
-                if referred_root == referring_ancestor or \
-                        referred_root in referring_ancestor.children:
+                if referred_root == referring_or_ancestor or \
+                        referred_root in referring_or_ancestor.children:
+                    return True
+
+                # Relative clauses
+                if referring_or_ancestor.pos_ in ('VERB', 'AUX') and \
+                        referring_or_ancestor.dep_.startswith('acl') and \
+                        (referring_or_ancestor.head == referred_root or \
+                        referring_or_ancestor.head.i in referred.token_indexes):
                     return True
 
                 # The ancestor has its own subject, so stop here
-                if len([t for t in referring_ancestor.children if t.dep_.startswith('nsubj')
+                if len([t for t in referring_or_ancestor.children if t.dep_.startswith('nsubj')
                         and t != referred_root]) > 0:
                     return False
 
-                if referring_ancestor._.coref_chains.temp_governing_sibling == referred_root:
+                if referring_or_ancestor._.coref_chains.temp_governing_sibling == referred_root:
                     return False
 
         return referring.dep_ != self.root_dep and referred_root.dep_ != self.root_dep and \

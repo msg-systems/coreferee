@@ -184,7 +184,7 @@ class EnglishRulesTest(unittest.TestCase):
     def test_non_pleonastic_it_with_conjunction(self):
         self.compare_potential_anaphor(
             'It and the man were raining. The man and it were raining',
-            [0, 10])
+            [0, 10], excluded_nlps=['core_web_trf'])
 
     def test_pleonastic_it_avalent_verbs(self):
         self.compare_potential_anaphor(
@@ -330,7 +330,7 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_potential_pair_it_singular_antecedent_proper_name_non_person(self):
         self.compare_potential_pair(
-            'I worked for Skateboards. It was there', 3, False, 5, 2)
+            'I worked for Skateboards plc. It was there', 4, False, 6, 2)
 
     def test_potential_pair_he_she_antecedent_non_person_noun(self):
         self.compare_potential_pair('I saw the house. She was there', 3, False, 5, 0)
@@ -339,7 +339,7 @@ class EnglishRulesTest(unittest.TestCase):
         self.compare_potential_pair('I spoke to Jenny. She was there', 3, False, 5, 2)
 
     def test_potential_pair_he_she_antecedent_non_person_proper_noun(self):
-        self.compare_potential_pair('I worked for Skateboards. She was there', 3, False, 5, 1)
+        self.compare_potential_pair('I worked for Skateboards plc. She was there', 4, False, 6, 1)
 
     def test_potential_pair_it_exclusively_person_antecedent(self):
         self.compare_potential_pair('I saw the lady. It was there', 3, False, 5, 0)
@@ -397,6 +397,9 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_potential_pair_person_word_capitalized_exclusively_person_word(self):
         self.compare_potential_pair('I saw a Copt. He was there', 3, False, 5, 2)
+
+    def test_potential_pair_antecedent_in_prepositional_phrase_in_question(self):
+        self.compare_potential_pair('In which room was it?', 2, False, 4, 0)
 
     def compare_potential_reflexive_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, expected_reflexive_truth,
@@ -500,7 +503,7 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_reflexive_with_verb_coordination_two_subjects(self):
         self.compare_potential_reflexive_pair('He saw it and his boss congratulated himself',
-            0, False, 7, 1, False, 1)
+            0, False, 7, 1, False, 1, excluded_nlps=['core_web_md'])
 
     def test_reflexive_with_to(self):
         self.compare_potential_reflexive_pair(
@@ -555,6 +558,26 @@ class EnglishRulesTest(unittest.TestCase):
     def test_reflexive_noun_phrase(self):
         self.compare_potential_reflexive_pair('He had no idea whether to see him.',
             0, False, 7, 0, True, 0)
+
+    def test_reflexive_relative_clause_subject(self):
+        self.compare_potential_reflexive_pair('The man who saw him came home.',
+            1, False, 4, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_1(self):
+        self.compare_potential_reflexive_pair('The man he saw came home.',
+            1, False, 2, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_2(self):
+        self.compare_potential_reflexive_pair('The man that he saw came home.',
+            1, False, 3, 0, True, 0)
+
+    def test_reflexive_relative_clause_subject_with_conjunction(self):
+        self.compare_potential_reflexive_pair('The man and the woman who saw them came home.',
+            1, True, 7, 0, True, 0)
+
+    def test_reflexive_relative_clause_object_with_conjunction(self):
+        self.compare_potential_reflexive_pair('The man and the woman they saw came home.',
+            1, True, 5, 0, True, 0)
 
     def compare_potential_cataphoric_pair(self, doc_text, referred_index,
         include_dependent_siblings, referring_index, expected_truth, *, excluded_nlps=[]):

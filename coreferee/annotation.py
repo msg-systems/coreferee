@@ -66,7 +66,7 @@ class Annotator:
         else:
             token_indexes_without_coordination_to_mention_sets[token.i] = mention_set
 
-    def get_compatibility(self, token:Token, mention_set:list) -> int:
+    def get_compatibility(self, token:Token, mention_set:set) -> int:
         """ Checks the compatibility of *token* with the possible chain represented by *mention_set*
             and expresses it with the semantics of *RuleAnalyzer.is_potential_anaphoric_pair()*.
         """
@@ -188,8 +188,8 @@ class Annotator:
 
     def attempt_rewind_with_previous_token_and_retry_index(
             self, retry_index:int, previous_token:Token, token:Token, sentence_deque:deque,
-            token_indexes_without_coordination_to_mention_sets:list,
-            token_indexes_with_coordination_to_mention_sets:list) -> bool:
+            token_indexes_without_coordination_to_mention_sets:dict,
+            token_indexes_with_coordination_to_mention_sets:dict) -> bool:
         """ Returns *True* if the rewind attempt succeeded. """
         doc = token.doc
         if self.temp_annotate_any_anaphoric_link(previous_token,
@@ -209,8 +209,8 @@ class Annotator:
         return False
 
     def attempt_retry(self, token:Token, coreferring_deque:deque, sentence_deque:deque,
-            token_indexes_without_coordination_to_mention_sets:list,
-            token_indexes_with_coordination_to_mention_sets:list):
+            token_indexes_without_coordination_to_mention_sets:dict,
+            token_indexes_with_coordination_to_mention_sets:dict):
         """ Called when an anaphor could not be assigned to a chain; attempts alternative
             interpretations of the preceding anaphors to see whether any allow all anaphors to be
             assigned. Returns *True* if the rewind attempt succeeded. """

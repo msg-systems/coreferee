@@ -20,8 +20,12 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
         -   [3.1.3 Building the chains](#building-the-chains)
     -   [3.2 The neural ensemble](#the-neural-ensemble)
 -   [4. Adding support for a new language](#adding-support-for-a-new-language)
--   [5. Open issues/requests for assistance](#open-issues)
-
+-   [5. Adding support for a custom spaCy model](#adding-support-for-a-custom-spaCy-model)
+-   [6. Version history]('#version-history')
+    -   [6.1 Version 1.0.0](#version-100)
+    -   [6.2 Version 1.0.1](#version-101)
+    -   [6.3 Version 1.1.0](#version-110)
+-   [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
 ### 1. Introduction
@@ -31,7 +35,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
 
 Coreferences are situations where two or more words within a text refer to the same entity, e.g. *__John__ went home because __he__ was tired*. Resolving coreferences is an important general task within the natural language processing field.
 
-Coreferee is a Python 3 library (tested with version 3.8.7) that is used together with [spaCy](https://spacy.io/) (tested with version 3.0.5) to resolve coreferences within English, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
+Coreferee is a Python 3 library (tested with version 3.9.5) that is used together with [spaCy](https://spacy.io/) (tested with version 3.1.2) to resolve coreferences within English, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
 
 <a id="getting-started"></a>
 #### 1.2 Getting started
@@ -96,11 +100,11 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 >>> nlp.add_pipe('coreferee')
 <coreferee.manager.CorefereeBroker object at 0x0000026E84C63B50>
 >>>
->>> doc = nlp("Weil er mit seiner Arbeit sehr beschäftigt war, hatte Peter genug davon. Er und seine Frau haben entschieden, dass ihnen ein Urlaub gut tun würde. Sie sind nach Spanien gefahren, weil ihnen das Land sehr gefiel.")
+>>> doc = nlp("Weil er mit seiner Arbeit sehr beschäftigt war, hatte Peter davon genug. Er und seine Frau haben entschieden, dass ihnen ein Urlaub gut tun würde. Sie sind nach Spanien gefahren, weil ihnen das Land sehr gefiel.")
 >>>
 >>> doc._.coref_chains.print()
 0: er(1), seiner(3), Peter(10), Er(14), seine(16)
-1: Arbeit(4), davon(12)
+1: Arbeit(4), davon(11)
 2: [Er(14); Frau(17)], ihnen(22), Sie(29), ihnen(36)
 3: Spanien(32), Land(38)
 >>>
@@ -199,7 +203,7 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
   <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td colspan="3">Anaphor expression</td><td rowspan="2">Agreement classes</td><td colspan="2">Coordination expression</td></tr><tr><td align="center">Pronominal</td><td align="center">Verbal</td><td align="center">Prepositional</td><td align="center">Conjunctive</td><td align="center">Comitative</td></tr>
   <tr><td align="center">English</td><td align="center">en</td><td align="center"><i><b>My friend</b> came in. <b>He</b> was happy.</i><td align="center">-</td><td align="center">-</td><td align="center">Three singular (natural genders) and one plural class.</td><td align="center"><i><b>Peter and Mary</b></i></td><td align="center">-</td></tr>
   <tr><td align="center">German</td><td align="center">de</td><td align="center"><i><b>Mein Freund</b> kam rein. <b>Er</b> war glücklich.</i><td align="center">-</td><td align="center"><i>Ich benutzte <b>das Auto</b> und hatte <b>damit</b> einige Probleme.</i></td><td align="center">Three singular (grammatical genders) and one plural class.</td><td align="center"><i><b>Peter und Maria</b></i></td><td align="center">-</td></tr>
-  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><i>Wszedł <b>mój kolega</b>. <b>On</b> był szczęśliwy.</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyszli</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
+  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><i>Wszedł <b>mój kolega</b>. Widzieliście, jaki <b>on</b> był szczęśliwy?</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyjechali do Warszawy</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
 </table>
 
 1. Only subject zero anaphors are covered. Object zero anaphors, e.g. <i>Wypiłeś <b>wodę</b>? Tak, <b>wypiłem.</b></i> are not in scope because they are mainly used colloquially and do not normally occur in the types of text for which [Coreferee is primarily designed](#background-information). Handling them would require creating or locating a detailed dictionary of verb valencies.
@@ -212,14 +216,14 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
 <table style="text-align:center; vertical-align:middle">
   <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td rowspan="2">Training corpora</td><td rowspan="2">Total words in training corpora</td><td colspan="2"><code>*_trf</code> models</td><td colspan="2"><code>*_lg</code> models</td><td colspan="2"><code>*_md</code> models</td><td colspan="2"><code>*_sm</code> models</td></tr>  
   <tr><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td></tr>
-  <tr><td align="center">English</td><td align="center">en</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2967</b></td><td align="center"><b>83.52</b><td align="center"><b>2903</b></td><td align="center"><b>83.98</b></td></td><td align="center">2907</td><td align="center">83.21</td><td align="center">2878</td><td align="center">82.49</td></tr>
-  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>625</b></td><td align="center"><b>77.28</b></td><td align="center">620</td><td align="center">77.10</td><td align="center">625</td><td align="center">76.00</td></tr>
-  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1553</b></td><td align="center"><b>72.12</b></td><td align="center">1521</td><td align="center">71.07</td><td align="center">1383</td><td align="center">70.21</td></tr>
+  <tr><td align="center">English</td><td align="center">en</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2940</b></td><td align="center"><b>83.67</b><td align="center"><b>2886</b></td><td align="center"><b>83.75</b></td></td><td align="center">2905</td><td align="center">82.89</td><td align="center">2874</td><td align="center">82.39</td></tr>
+  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>626</b></td><td align="center"><b>77.96</b></td><td align="center">630</td><td align="center">75.87</td><td align="center">611</td><td align="center">77.91</td></tr>
+  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1681</b></td><td align="center"><b>73.92</b></td><td align="center">1672</td><td align="center">71.98</td><td align="center">-</td><td align="center">-</td></tr>
 </table>
 
 Coreferee produces a range of neural-network models for each language corresponding to the various spaCy models for that language. The [neural network inputs](#the-neural-ensemble) include word vectors. With `_sm` (small) models, both spaCy and Coreferee use context-sensitive tensors as an alternative to word vectors. `_trf` (transformer-based) models, on the other hand, do not use or offer word vectors at all. To remedy this problem, the model configuration files (`config.cfg` in the directory for each language) allow a **vectors model** to be specified for use when a main model does not have its own vectors. Coreferee then combines the linguistic information generated by the main model with vector information returned for the individual words in each document by the vectors model.
 
-Because the Coreferee models are rather large (70GB-80GB for the group of models for a given language) and because many users will only be interested in one language, the group of models for a given language is installed using `python3 -m coreferee install` as demonstrated in the introduction. All Coreferee models are more or less the same size; a larger spaCy model does not equate to a larger Coreferee model. As the figures above demonstrate, the accuracy of Coreferee corresponds closely to the size of the underlying spaCy model, and users are urged to use the larger spaCy models. It is in any case unclear whether there is a situation in which it would make sense to use Coreferee with an `_sm` model as the Coreferee model would then be considerably larger than the spaCy model!
+Because the Coreferee models are rather large (70GB-80GB for the group of models for a given language) and because many users will only be interested in one language, the group of models for a given language is installed using `python3 -m coreferee install` as demonstrated in the introduction. All Coreferee models are more or less the same size; a larger spaCy model does not equate to a larger Coreferee model. As the figures above demonstrate, the accuracy of Coreferee corresponds closely to the size of the underlying spaCy model, and users are urged to use the larger spaCy models. It is in any case unclear whether there is a situation in which it would make sense to use Coreferee with an `_sm` model as the Coreferee model would then be considerably larger than the spaCy model! As this discrepancy is especially extreme for the Polish models, Coreferee no longer supports `pl_core_news_sm` from version 1.1.0 onwards.
 
 Assessing and comparing the precision and recall of anaphor resolution algorithms is notoriously difficult. For one thing, two human annotators of the same data will not always agree (and, indeed, there are some cases where Coreferee and a training annotator disagree where Coreferee's interpretation seems the more plausible!) And the same algorithm may perform with wildly different accuracies with different test documents depending on how clearly the documents are written and how often there are competing interpretations of individual anaphors.
 
@@ -333,6 +337,13 @@ Each chain can also return the index number of the mention within it that is **m
 ```
 
 This information is used as the basis for the `resolve()` method shown in the [initial example](#getting-started-en): the method traverses multiple chains to find the most specific mention or mentions within the text that describe a given anaphor or noun phrase head.
+
+Note that a mention that heads a complex proper noun phrase only refers to the head of that phrase. Some users have expressed a requirement to retrieve all the tokens in such a phrase. Although this functionality is regarded as outside the main scope of Coreferee and is hence not available via the main data model, the information can be retrieved as follows:
+
+```
+rules_analyzer = nlp_en.get_pipe('coreferee').annotator.rules_analyzer
+rules_analyzer.get_propn_subtree(doc[1])
+```
 
 <a id="how-it-works"></a>
 ### 3 How it works
@@ -469,8 +480,38 @@ python3 -m coreferee install <ISO 639-1>
 
 15) Issue a pull request. We ask that you supply us with the zip file generated during training. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard.hudson@msg.group">send it out of band</a> rather than attaching it to the pull request.
 
+<a id="adding-support-for-a-custom-spaCy-model"></a>
+### 5. Adding support for a custom spaCy model
+
+If you are using a custom spaCy model, you should generate a corresponding custom Coreferee model. Use points 2), 8), 9) and 10) from the [preceding section](#adding-support-for-a-new-language) as a guide. If you do not have your own training data, you can use the [same training data](#model-performance) that was used to generate the standard Coreferee models.
+
+The language-specific rules expect specific entity tags as 'magic values'. This is unfortunate but there is no obvious alternative solution because there is no way of knowing which entities a new tag might refer to. The best advice is to use the same entity tags in your custom model as are used in the standard spaCy models when referring to similar entity classes.
+
+For many entity tags, the impact will be minimal if you cannot adhere to this, but what is crucial is that you use the `PERSON` and `PER` tags to refer to people in English and German respectively. If this is not possible, change the language-specific-rule code and reinstall Coreferee locally (`python -m pip install .` from the root directory).
+
+<a id="version-history"></a>
+#### 6 Version history
+
+<a id="version-100"></a>
+##### 6.1 Version 1.0.0
+
+The initial open-source version.
+
+<a id="version-101"></a>
+##### 6.2 Version 1.0.1
+
+-  Fixing of a bug where already installed models were reinstalled from `site-packages` rather than the new model being pulled from GitHub.
+
+<a id="version-110"></a>
+##### 6.3 Version 1.1.0
+
+-  Upgrade to Python 3.9 and spaCy 3.1
+-  Fixing of minor issues in all three rule-sets
+-  Regeneration of all models
+-  Improvement of the Polish examples in [section 1.4.1](#covered-relevant-linguistic-features) to make them more pragmatically correct - many thanks to Małgorzata Styś for her valuable advice on this.
+
 <a id="open-issues"></a>
-### 5. Open issues / requests for assistance
+### 7. Open issues / requests for assistance
 
 1) At present Coreferee uses Keras with TensorFlow, which leads to the limitation that `nlp.pipe()` cannot be called with `n_process > 1` with forked processes. It would be greatly preferable if Coreferee could be converted to use Thinc instead: this would get rid of this limitation and generally fit much better into the spaCy ecosystem.
 

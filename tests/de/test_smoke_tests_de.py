@@ -52,7 +52,8 @@ class GermanSmokeTest(unittest.TestCase):
 
     def test_simple_conjunction_same_word(self):
         self.compare_annotations(
-            'Ich sah einen Hund und einen Hund, und sie jagten eine Katze', '[0: [3, 6], [9]]')
+            'Ich sah einen Hund und einen Hund, und sie jagten eine Katze', '[0: [3, 6], [9]]',
+                excluded_nlps=['core_news_lg'])
 
     def test_simple_conjunction_different_words(self):
         self.compare_annotations(
@@ -60,7 +61,8 @@ class GermanSmokeTest(unittest.TestCase):
 
     def test_conjunction_different_pronouns(self):
         self.compare_annotations(
-            'Ich sah Peter und Jana, und sie und er jagten ein Katze', '[0: [2], [9], 1: [4], [7]]')
+            'Ich sah Peter und Jana, und sie und er jagten ein Katze', '[0: [2], [9], 1: [4], [7]]',
+                alternative_expected_coref_chains='[0: [2, 4], [7]]')
 
     def test_conjunction_involving_pronoun(self):
         self.compare_annotations(
@@ -136,6 +138,16 @@ class GermanSmokeTest(unittest.TestCase):
             '[0: [1], [12], 1: [2], [9, 12]]',
             alternative_expected_coref_chains='[0: [1], [2], [9, 12]]')
 
+    def test_possessive_pronoun_within_threeway_coordination(self):
+        self.compare_annotations(
+            'Wir sahen Peter, seine Frau und seine Kinder.',
+            '[0: [2], [4], [7]]')
+
+    def test_anaphoric_preposition_within_coordination(self):
+        self.compare_annotations(
+            'Die Maßnahmen sowie die daraus resultierenden Probleme wurden betrachtet.',
+            '[0: [1], [4]]')
+
     def test_pronominal_anaphor(self):
         self.compare_annotations(
             'Sie fand ein Messer und aß damit einen Apfel.',
@@ -143,6 +155,6 @@ class GermanSmokeTest(unittest.TestCase):
 
     def test_documentation_example(self):
         self.compare_annotations(
-            'Weil er mit seiner Arbeit sehr beschäftigt war, hatte Peter genug davon. Er und seine Frau haben entschieden, dass ihnen ein Urlaub gut tun würde. Sie sind nach Spanien gefahren, weil ihnen das Land sehr gefiel.',
-            '[0: [1], [3], [10], [14], [16], 1: [4], [12], 2: [14, 17], [22], [29], [36], 3: [32], [38]]', excluded_nlps=['core_news_sm']
+            'Weil er mit seiner Arbeit sehr beschäftigt war, hatte Peter davon genug. Er und seine Frau haben entschieden, dass ihnen ein Urlaub gut tun würde. Sie sind nach Spanien gefahren, weil ihnen das Land sehr gefiel.',
+            '[0: [1], [3], [10], [14], [16], 1: [4], [11], 2: [14, 17], [22], [29], [36], 3: [32], [38]]', excluded_nlps=['core_news_sm']
         )

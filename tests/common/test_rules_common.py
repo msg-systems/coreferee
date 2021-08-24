@@ -193,14 +193,6 @@ class CommonRulesTest(unittest.TestCase):
         self.compare_potential_noun_pair('I spoke to Peter and Jane. Jane is here',
             5, 7, True)
 
-    def test_potential_noun_pair_referring_back_proper_noun_with_non_proper_noun_child(self):
-        self.compare_potential_noun_pair('I spoke to Peter. Big Peter is here', 3, 6, True,
-            excluded_nlps=['core_web_sm', 'core_web_trf'])
-
-    def test_potential_noun_pair_referring_back_proper_noun_with_proper_noun_child(self):
-        self.compare_potential_noun_pair('I spoke to Peter. Big Peter is here', 3, 6, False,
-            excluded_nlps=['core_web_md', 'core_web_lg'])
-
     def test_potential_noun_pair_referring_back_proper_noun_conjunction_first_member(self):
         self.compare_potential_noun_pair('I spoke to Peter. Peter and Jane are here',
             3, 5, True)
@@ -241,6 +233,14 @@ class CommonRulesTest(unittest.TestCase):
     def test_potential_noun_pair_wrong_entity_label_referred(self):
         self.compare_potential_noun_pair(
             'I spoke to the boss of Lehman Brothers. The person went bust', 7, 10, False)
+
+    def test_potential_noun_pair_single_letters(self):
+        self.compare_potential_noun_pair(
+            'This is a ©. The © is here.', 3, 6, False)
+
+    def test_potential_noun_pair_same_governing_sibling(self):
+        self.compare_potential_noun_pair(
+            'The dog, the dog and the dog came home.', 4, 7, False)
 
     def test_potentially_independent_nouns_stored_on_token(self):
         doc = self.sm_nlp('They went to look at the space suits')
@@ -451,6 +451,28 @@ class CommonRulesTest(unittest.TestCase):
     def test_potentially_introducing_common_noun_conjunction_second_member(self):
         self.compare_potentially_introducing('I spoke to a man and a woman', 7, True)
 
+    def test_potentially_introducing_twoway_conjunction_second_member_no_article(self):
+        self.compare_potentially_introducing('I spoke to some men and women', 6, True)
+
+    def test_potentially_introducing_threeway_conjunction_second_member_no_article(self):
+        self.compare_potentially_introducing('I spoke to some men, women and children', 6,
+            True)
+
+    def test_potentially_introducing_threeway_conjunction_third_member_no_article(self):
+        self.compare_potentially_introducing('I spoke to some men, women and children',
+            8, True)
+
+    def test_potentially_introducing_twoway_conjunction_second_member_no_article_control(self):
+        self.compare_potentially_introducing('I spoke to the men and women', 6, False)
+
+    def test_potentially_introducing_threeway_conjunction_second_member_no_article_control(self):
+        self.compare_potentially_introducing('I spoke to the men, women and children', 6,
+            False)
+
+    def test_potentially_introducing_threeway_conjunction_third_member_no_article_control(self):
+        self.compare_potentially_introducing('I spoke to the men, women and children',
+            8, False)
+
     def compare_potentially_referring_back_noun(self, doc_text, index, expected_truth, *,
             excluded_nlps=[]):
 
@@ -488,3 +510,25 @@ class CommonRulesTest(unittest.TestCase):
 
     def test_potentially_referring_back_noun_common_noun_conjunction_second_member(self):
         self.compare_potentially_referring_back_noun('I spoke to the man and the woman', 7, True)
+
+    def test_potentially_referring_back_twoway_conjunction_second_member_no_article(self):
+        self.compare_potentially_referring_back_noun('I spoke to the men and women', 6, True)
+
+    def test_potentially_referring_back_threeway_conjunction_second_member_no_article(self):
+        self.compare_potentially_referring_back_noun('I spoke to the men, women and children', 6,
+            True)
+
+    def test_potentially_referring_back_threeway_conjunction_third_member_no_article(self):
+        self.compare_potentially_referring_back_noun('I spoke to the men, women and children',
+            8, True)
+
+    def test_potentially_referring_back_twoway_conjunction_second_member_no_article_control(self):
+        self.compare_potentially_referring_back_noun('I spoke to some men and women', 6, False)
+
+    def test_potentially_referring_back_threeway_conjunction_second_member_no_article_control(self):
+        self.compare_potentially_referring_back_noun('I spoke to some men, women and children', 6,
+            False)
+
+    def test_potentially_referring_back_threeway_conjunction_third_member_no_article_control(self):
+        self.compare_potentially_referring_back_noun('I spoke to some men, women and children',
+            8, False)
