@@ -515,7 +515,7 @@ The initial open-source version.
 ##### 6.4 Version 1.1.1
 
 - Changed the dependencies to allow Coreferee to run on the Apple M1 chipset
-- Sorted out a problem with the version numbering
+- Sorted out a problem with the supported spaCy versions
 - Improved some of the tests
 
 <a id="open-issues"></a>
