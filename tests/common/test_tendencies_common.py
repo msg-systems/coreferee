@@ -233,99 +233,106 @@ class CommonTendenciesTest(unittest.TestCase):
         position_map = self.sm_tendencies_analyzer.get_position_map(Mention(doc[9], True), doc)
         self.assertEqual([5, 2, 1, 2, 0, 1, 0], position_map)
 
+    def compare_compatibility_map(self, expected_compatibility_map, returned_compatibility_map):
+        self.assertEqual(expected_compatibility_map[0], returned_compatibility_map[0])
+        self.assertEqual(expected_compatibility_map[1], returned_compatibility_map[1])
+        self.assertEqual(expected_compatibility_map[2], returned_compatibility_map[2])
+        self.assertAlmostEqual(expected_compatibility_map[3], returned_compatibility_map[3], 4)
+        self.assertEqual(expected_compatibility_map[4], returned_compatibility_map[4])
+
     def test_get_compatibility_map_simple(self):
 
         doc = self.sm_nlp('Richard said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[2, 0, 1, 0.26251248, 3]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2])))
+        self.compare_compatibility_map([2, 0, 1, 0.26251248, 3],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
 
     def test_get_compatibility_map_coordination(self):
 
         doc = self.sm_nlp('Richard and Jane said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 1, 0.20765561, 3]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4])))
+        self.compare_compatibility_map([4, 0, 1, 0.20765561, 3],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4]))
 
     def test_get_compatibility_map_different_sentences(self):
 
         doc = self.sm_nlp('Richard called. He said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[3, 1, 0, 0.52525896, 6]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3])))
+        self.compare_compatibility_map([3, 1, 0, 0.52525896, 6],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
 
     def test_get_compatibility_map_same_sentence_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, he said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 0, -0.12525316, 5]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
+        self.compare_compatibility_map([4, 0, 0, -0.12525316, 5],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
     def test_get_compatibility_map_same_sentence_lefthand_sibling_governance(self):
 
         doc = self.lg_nlp('Richard said Peter and he were entering the big house')
         self.lg_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 1, 0.15999001, 4]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
+        self.compare_compatibility_map([4, 0, 1, 0.15999001, 4],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
     def test_get_compatibility_map_same_sentence_lefthand_sibling_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, Peter and he said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[5, 0, 0, 0.32681236, 6]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6])))
+        self.compare_compatibility_map([5, 0, 0, 0.32681236, 6],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6]))
 
     def test_get_cosine_similarity_lg(self):
 
         doc = self.lg_nlp('After Richard arrived, he said he was entering the big house')
         self.lg_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 0, 0.3336621, 5]',
-            str(self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
+        self.compare_compatibility_map([4, 0, 0, 0.3336621, 5],
+            self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
     def test_get_cosine_similarity_lg_no_vector_1(self):
 
         doc = self.lg_nlp('After Richard arfewfewfrived, he said he was entering the big house')
         self.lg_rules_analyzer.initialize(doc)
 
-        self.assertEqual('[4, 0, 0, 0.59521705, 5]',
-            str(self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
+        self.compare_compatibility_map([4, 0, 0, 0.59521705, 5],
+            self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
     def test_get_cosine_similarity_lg_no_vector_2(self):
 
         doc = self.lg_nlp('After Richard arrived, he saifefefwefefd he was entering the big house')
         self.lg_rules_analyzer.initialize(doc)
-        self.assertEqual('[4, 0, 0, 0.59521705, 3]',
-            str(self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4])))
+        self.compare_compatibility_map([4, 0, 0, 0.59521705, 3],
+            self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
     def test_get_cosine_similarity_sm_root_1(self):
 
         doc = self.sm_nlp('Richard. He said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
 
-        self.assertEqual('[2, 1, 0, -1, 1]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2])))
+        self.compare_compatibility_map([2, 1, 0, -1, 1],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
 
     def test_get_cosine_similarity_sm_root_2(self):
 
         doc = self.sm_nlp('Richard arrived. He.')
         self.sm_rules_analyzer.initialize(doc)
-        self.assertEqual('[3, 1, 0, -1, 1]',
-            str(self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3])))
+        self.compare_compatibility_map([3, 1, 0, -1, 1],
+            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
 
     def test_get_cosine_similarity_lg_root_1(self):
 
         doc = self.lg_nlp('Richard. He said he was entering the big house')
         self.lg_rules_analyzer.initialize(doc)
 
-        self.assertEqual('[2, 1, 0, -1, 1]',
-            str(self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2])))
+        self.compare_compatibility_map([2, 1, 0, -1, 1],
+            self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
 
     def test_get_cosine_similarity_lg_root_2(self):
 
         doc = self.lg_nlp('Richard arrived. He.')
         self.lg_rules_analyzer.initialize(doc)
-        self.assertEqual('[3, 1, 0, -1, 1]',
-            str(self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3])))
+        self.compare_compatibility_map([3, 1, 0, -1, 1],
+            self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
 
     def test_get_vectors_token_with_head_sm(self):
 
