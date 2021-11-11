@@ -25,6 +25,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
     -   [6.1 Version 1.0.0](#version-100)
     -   [6.2 Version 1.0.1](#version-101)
     -   [6.3 Version 1.1.0](#version-110)
+    -   [6.4 Version 1.1.1](#version-111)
 -   [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
@@ -509,6 +510,13 @@ The initial open-source version.
 -  Fixing of minor issues in all three rule-sets
 -  Regeneration of all models
 -  Improvement of the Polish examples in [section 1.4.1](#covered-relevant-linguistic-features) to make them more pragmatically correct - many thanks to Małgorzata Styś for her valuable advice on this.
+
+<a id="version-111"></a>
+##### 6.4 Version 1.1.1
+
+- Changed the dependencies to allow Coreferee to run on the Apple M1 chipset
+- Sorted out a problem with the version numbering
+- Improved some of the tests
 
 <a id="open-issues"></a>
 ### 7. Open issues / requests for assistance
