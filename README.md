@@ -8,6 +8,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
         -   [1.2.1 English](#getting-started-en)
         -   [1.2.2 German](#getting-started-de)
         -   [1.2.3 Polish](#getting-started-pl)
+		-   [1.2.4 French](#getting-started-fr)
     -   [1.3 Background information](#background-information)
     -   [1.4 Facts and figures](#facts-and-figures)
         -   [1.4.1 Covered relevant linguistic features](#covered-relevant-linguistic-features)
