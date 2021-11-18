@@ -1064,19 +1064,14 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_referreds_maximum_sentence_referential_distance(self):
         self.compare_potential_referreds(
-            "Richard vint. Un homme voit un homme. Un homme voit un homme. Il chuchota.", 15,
-                ['Richard(0)', 'homme(4)', 'homme(7)', 'homme(10)', 'homme(13)'])
+            "Richard vint. Un homme. Un homme. Un homme. Un homme. Il parla.", 15,
+                ['Richard(0)','homme(4)', 'homme(7)', 'homme(10)', 'homme(13)'])
 
     def test_potential_referreds_over_maximum_sentence_referential_distance(self):
         self.compare_potential_referreds(
-            "Richard vint. Un homme voit un homme. Un homme voit un homme. Un homme. Il parla.", 18,
+            "Richard vint. Un homme. Un homme. Un homme. Un homme. Un homme. Il parla.", 18,
                 ['homme(4)', 'homme(7)', 'homme(10)', 'homme(13)', 'homme(16)'])
-    '''
-    #Needs better tokenisation
-    def test_potential_referreds_first_and_last_token(self):
-        self.compare_potential_referreds("Il entra et quelqu'un le vit", 0, None)
-        self.compare_potential_referreds("Il entra et quelqu'un le vit", 5, ['Il(0)'])
-    '''
+                
     def test_potential_referreds_last_token(self):
         self.compare_potential_referreds("Richard entra et un homme le vit", 5,
             ['Richard(0)'], excluded_nlps=["core_news_sm"])
@@ -1120,11 +1115,17 @@ class FrenchRulesTest(unittest.TestCase):
         self.compare_potential_noun_pair(
             'EDF existe depuis 20 ans. La compagnie a plusieurs fois changé de nom.',
             0, 7, True)
+            
     def test_potential_noun_pair_proper_noun_noun_control(self):
         self.compare_potential_noun_pair(
             'EDF existe depuis 20 ans. La femme a plusieurs fois changé de nom.',
-            0, 7, False)   
+            0, 7, False)  
             
+    def test_potential_noun_pair_proper_noun_noun_2(self):
+        self.compare_potential_noun_pair(
+            'Je voyais Mme Dupont. Tout le monde aimait cette femme aimable.',
+            3, 10, True,
+            excluded_nlps='core_news_sm')            
     def test_potential_noun_pair_proper_definite_noun_relative_clause(self):
         self.compare_potential_noun_pair(
             'Le roi que tu as vu est arrivé. Ce roi s\'appelle Alexandre',
@@ -1142,9 +1143,5 @@ class FrenchRulesTest(unittest.TestCase):
     def test_potential_noun_pair_apposition_2(self):
         self.compare_potential_noun_pair('Alexandre, le roi de Macédoine devient empereur. Le roi de Macédoine meurt à 33 ans.',
             0, 10, True) 
-    '''        
-    def test_potential_noun_pair_apposition_different_lemma(self):
-        self.compare_potential_noun_pair('L\'Homme de Macédoine devient empereur. Le roi de Macédoine meurt à 33 ans.',
-            1, 9, True)
-    '''
+
 

@@ -103,8 +103,8 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_entity_coreference(self):
         self.compare_annotations(
-            'Je voyais Mme Dupond. Tout le monde aimait la femme aimable.',
-            '[0: [2], [10]]')
+            'Je voyais Jeanne Dupont. Tout le monde aimait cette femme aimable.',
+            '[0: [2], [10]]', excluded_nlps='core_news_sm')
             
     def test_reflexive_simple(self):
         self.compare_annotations(
@@ -184,13 +184,7 @@ class FrenchSmokeTest(unittest.TestCase):
             "Les australiennes admirent la giraffe et l'hippopotame. Elles boient beaucoup.",
             '[0: [1], [9]]', excluded_nlps='core_news_sm',
             )
-    '''        
-    def test_documentation_example_1(self):
-        self.compare_annotations(
-            'Même s\'il était très occupé par son travail, Pierre en avait marre. Alors, lui et sa femme décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
-            '[0: [2], [7], [10], [11], [15], [17], 1: [8], [12], 2: [16, 18], [21], [27], [32], 3: [30], [35]]'
-        )
-    '''
+            
     def test_documentation_example_1(self):
         self.compare_annotations(
             'Même si elle était très occupée par son travail, Julie en avait marre. Alors, elle et son mari décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
@@ -202,7 +196,7 @@ class FrenchSmokeTest(unittest.TestCase):
         self.compare_annotations(
             'La femme se leva et regarda Dominique. Elle se tourna et la salua',
             '[0: [1], [2], [12], 1: [6], [8], [9]]',
-            excluded_nlps=['core_news_sm'],
+            excluded_nlps=['core_news_md', 'core_news_sm'],
             alternative_expected_coref_chains='[0: [1], [2], [8], [9], 1: [6] [12]')
 
     def test_documentation_example_3(self):
