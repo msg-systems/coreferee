@@ -1,4 +1,5 @@
 # Copyright 2021 msg systems ag
+# Modifications Copyright 2021 Valentin-Gabriel Soumah
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -584,7 +585,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     ' '.join(t.lemma_.lower() for t in referring_propn_subtree)):
                 return True
 
-        # e.g. 'BMW' -> 'the company'
+        # e.g. 'Peugeot' -> 'l'entreprise'
         new_reverse_entity_noun_dictionary = {noun:'PER' for noun in self.person_roles}|\
             self.reverse_entity_noun_dictionary
         if referring.lemma_.lower() in new_reverse_entity_noun_dictionary \

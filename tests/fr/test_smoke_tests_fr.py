@@ -1,4 +1,5 @@
 # Copyright 2021 msg systems ag
+# Modifications Copyright 2021 Valentin-Gabriel Soumah
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
