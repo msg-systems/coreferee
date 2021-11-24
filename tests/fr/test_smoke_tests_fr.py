@@ -94,7 +94,7 @@ class FrenchSmokeTest(unittest.TestCase):
         self.compare_annotations(
             'Charles aime La France. Le pays a Paris pour capitale. On peut y voir la Tour Eiffel',
             '[0: [3], [6], [14]]',
-            excluded_nlps='core_news_sm',#,
+            excluded_nlps='core_news_sm',
             alternative_expected_coref_chains='[0: [3], [6], 1: [8], [14]]')
             
     def test_common_noun_coreference(self):
