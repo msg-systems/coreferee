@@ -27,6 +27,7 @@ Author: <a href="mailto:richard@explosion.ai">Richard Paul Hudson, msg systems a
     -   [6.2 Version 1.0.1](#version-101)
     -   [6.3 Version 1.1.0](#version-110)
     -   [6.4 Version 1.1.1](#version-111)
+    -   [6.5 Version 1.1.2](#version-112)
 -   [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
@@ -519,7 +520,7 @@ python3 -m coreferee install <ISO 639-1>
 
 14) Go through the documentation (`README.md` and `SHORTREADME.md`) adding information about the new language wherever the supported languages are listed in some way.
 
-15) Issue a pull request. We ask that you supply us with the zip file generated during training. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard.hudson@msg.group">send it out of band</a> rather than attaching it to the pull request.
+15) Issue a pull request. We ask that you supply us with the zip file placed into `<log-dir>` in point 9. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard@explosion.ai">send it out of band</a> rather than attaching it to the pull request.
 
 <a id="adding-support-for-a-custom-spaCy-model"></a>
 ### 5. Adding support for a custom spaCy model
@@ -557,6 +558,11 @@ The initial open-source version.
 - Changed the dependencies to allow Coreferee to run on the Apple M1 chipset
 - Sorted out a problem with the supported spaCy versions
 - Improved some of the tests
+
+<a id="version-112"></a>
+##### 6.5 Version 1.1.2
+
+- Added support for French, which was kindly supplied by [Pantalaymon](https://github.com/Pantalaymon
 
 <a id="open-issues"></a>
 ### 7. Open issues / requests for assistance
