@@ -1,13 +1,14 @@
 Coreferee
 =========
-Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg systems ag</a>
+Author: <a href="mailto:richard@explosion.ai">Richard Paul Hudson, msg systems ag</a>
 
 -   [1. Introduction](#introduction)
     -   [1.1 The basic idea](#the-basic-idea)
     -   [1.2 Getting started](#getting-started)
         -   [1.2.1 English](#getting-started-en)
-        -   [1.2.2 German](#getting-started-de)
-        -   [1.2.3 Polish](#getting-started-pl)
+		-   [1.2.2 French](#getting-started-fr)
+        -   [1.2.3 German](#getting-started-de)
+        -   [1.2.4 Polish](#getting-started-pl)
     -   [1.3 Background information](#background-information)
     -   [1.4 Facts and figures](#facts-and-figures)
         -   [1.4.1 Covered relevant linguistic features](#covered-relevant-linguistic-features)
@@ -26,6 +27,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
     -   [6.2 Version 1.0.1](#version-101)
     -   [6.3 Version 1.1.0](#version-110)
     -   [6.4 Version 1.1.1](#version-111)
+    -   [6.5 Version 1.1.2](#version-112)
 -   [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
@@ -36,7 +38,7 @@ Author: <a href="mailto:richard.hudson@msg.group">Richard Paul Hudson, msg syste
 
 Coreferences are situations where two or more words within a text refer to the same entity, e.g. *__John__ went home because __he__ was tired*. Resolving coreferences is an important general task within the natural language processing field.
 
-Coreferee is a Python 3 library (tested with version 3.9.5) that is used together with [spaCy](https://spacy.io/) (tested with version 3.1.2) to resolve coreferences within English, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
+Coreferee is a Python 3 library (tested with version 3.9.5) that is used together with [spaCy](https://spacy.io/) (tested with version 3.1.2) to resolve coreferences within English, French, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
 
 <a id="getting-started"></a>
 #### 1.2 Getting started
@@ -81,8 +83,45 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 >>>
 ```
 
+<a id="getting-started-fr"></a>
+##### 1.2.2 French
+
+Presuming you have already installed [spaCy](https://spacy.io/) and one of the French spacy models, install Coreferee from the command line by typing:
+
+```
+python3 -m pip install coreferee
+python3 -m coreferee install fr
+```
+
+Note that the required command may be `python` rather than `python3` on some operating systems.
+
+Then open a Python prompt (type `python3` or `python` at the command line):
+
+```
+>>> import coreferee, spacy
+>>> nlp = spacy.load('fr_core_news_lg')
+>>> nlp.add_pipe('coreferee')
+<coreferee.manager.CorefereeBroker object at 0x000001F556B4FF10>
+>>>
+>>> doc = nlp("Même si elle était très occupée par son travail, Julie en avait marre. Alors, elle et son mari décidèrent qu'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays")
+>>>
+>>> doc._.coref_chains.print()
+0: elle(2), son(7), Julie(10), elle(17), son(19)
+1: travail(8), en(11)
+2: [elle(17); mari(20)], ils(23), Ils(29), ils(34)
+3: Espagne(32), pays(37)
+>>>
+>>> doc[17]._.coref_chains.print()
+0: elle(2), son(7), Julie(10), elle(17), son(19)
+2: [elle(17); mari(20)], ils(23), Ils(29), ils(34)
+>>>
+>>> doc._.coref_chains.resolve(doc[34])
+[Julie, mari]
+>>>
+```
+
 <a id="getting-started-de"></a>
-##### 1.2.2 German
+##### 1.2.3 German
 
 Presuming you have already installed [spaCy](https://spacy.io/) and one of the German spacy models, install Coreferee from the command line by typing:
 
@@ -119,7 +158,7 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 ```
 
 <a id="getting-started-pl"></a>
-##### 1.2.3 Polish
+##### 1.2.4 Polish
 
 Presuming you have already installed [spaCy](https://spacy.io/) and one of the Polish spacy models, install Coreferee from the command line by typing:
 
@@ -201,11 +240,12 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
 ##### 1.4.1 Covered relevant linguistic features
 
 <table style="text-align:center; vertical-align:middle">
-  <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td colspan="3">Anaphor expression</td><td rowspan="2">Agreement classes</td><td colspan="2">Coordination expression</td></tr><tr><td align="center">Pronominal</td><td align="center">Verbal</td><td align="center">Prepositional</td><td align="center">Conjunctive</td><td align="center">Comitative</td></tr>
-  <tr><td align="center">English</td><td align="center">en</td><td align="center"><i><b>My friend</b> came in. <b>He</b> was happy.</i><td align="center">-</td><td align="center">-</td><td align="center">Three singular (natural genders) and one plural class.</td><td align="center"><i><b>Peter and Mary</b></i></td><td align="center">-</td></tr>
-  <tr><td align="center">German</td><td align="center">de</td><td align="center"><i><b>Mein Freund</b> kam rein. <b>Er</b> war glücklich.</i><td align="center">-</td><td align="center"><i>Ich benutzte <b>das Auto</b> und hatte <b>damit</b> einige Probleme.</i></td><td align="center">Three singular (grammatical genders) and one plural class.</td><td align="center"><i><b>Peter und Maria</b></i></td><td align="center">-</td></tr>
-  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><i>Wszedł <b>mój kolega</b>. Widzieliście, jaki <b>on</b> był szczęśliwy?</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyjechali do Warszawy</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
-</table>
+  <tr><td rowspan="2">ISO 639-1</td><td rowspan="2">Language</td><td colspan="3">Anaphor expression</td><td rowspan="2">Agreement classes</td><td colspan="2">Coordination expression</td></tr><tr><td align="center">Pronominal</td><td align="center">Verbal</td><td align="center">Prepositional</td><td align="center">Conjunctive</td><td align="center">Comitative</td></tr>
+  <tr><td align="center">en</td><td align="center">English</td><td align="center"><i><b>My friend</b> came in. <b>He</b> was happy.</i><td align="center">-</td><td align="center">-</td><td align="center">Three singular (natural genders) and one plural class.</td><td align="center"><i><b>Peter and Mary</b></i></td><td align="center">-</td></tr>
+  <tr><td align="center">de</td><td align="center">German</td><td align="center"><i><b>Mein Freund</b> kam rein. <b>Er</b> war glücklich.</i><td align="center">-</td><td align="center"><i>Ich benutzte <b>das Auto</b> und hatte <b>damit</b> einige Probleme.</i></td><td align="center">Three singular (grammatical genders) and one plural class.</td><td align="center"><i><b>Peter und Maria</b></i></td><td align="center">-</td></tr>
+  <tr><td align="center">fr</td><td align="center">French</td><td align="center"><i><b>Mon ami</b> entra. <b>Il</b> était heureux.</i><td align="center">-</td><td align="center">-</td><td align="center">Two singular (grammatical genders) and two plural (grammatical genders) classes.</td><td align="center"><i><b>Pierre et Marie</b></i></td><td align="center">-</td></tr>
+   <tr><td align="center">pl</td><td align="center">Polish</td><td align="center"><i>Wszedł <b>mój kolega</b>. Widzieliście, jaki <b>on</b> był szczęśliwy?</i><td align="center"><i>Wszedł <b>mój kolega</b>. Szczęśliwy <b>był</b>.<sup>1</sup></i></td><td align="center">-<sup>2</sup></td><td align="center">Three singular (grammatical genders) and two plural (natural genders) classes.</td><td align="center"><i><b>Piotr i Kasia</b></i></td><td align="center">1) <i><b>Piotr z Kasią</b> przyjechali do Warszawy</i>; <br>2)&nbsp;<i>Widziałem Piotra i <b>przyszli z Kasią</i></b></td></tr>
+  </table>
 
 1. Only subject zero anaphors are covered. Object zero anaphors, e.g. <i>Wypiłeś <b>wodę</b>? Tak, <b>wypiłem.</b></i> are not in scope because they are mainly used colloquially and do not normally occur in the types of text for which [Coreferee is primarily designed](#background-information). Handling them would require creating or locating a detailed dictionary of verb valencies.
 
@@ -215,11 +255,12 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
 ##### 1.4.2 Model performance
 
 <table style="text-align:center; vertical-align:middle">
-  <tr><td rowspan="2">Language</td><td rowspan="2">ISO 639-1</td><td rowspan="2">Training corpora</td><td rowspan="2">Total words in training corpora</td><td colspan="2"><code>*_trf</code> models</td><td colspan="2"><code>*_lg</code> models</td><td colspan="2"><code>*_md</code> models</td><td colspan="2"><code>*_sm</code> models</td></tr>  
+  <tr><td rowspan="2">ISO 639-1</td><td rowspan="2">Language</td><td rowspan="2">Training corpora</td><td rowspan="2">Total words in training corpora</td><td colspan="2"><code>*_trf</code> models</td><td colspan="2"><code>*_lg</code> models</td><td colspan="2"><code>*_md</code> models</td><td colspan="2"><code>*_sm</code> models</td></tr>  
   <tr><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td></tr>
-  <tr><td align="center">English</td><td align="center">en</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2940</b></td><td align="center"><b>83.67</b><td align="center"><b>2886</b></td><td align="center"><b>83.75</b></td></td><td align="center">2905</td><td align="center">82.89</td><td align="center">2874</td><td align="center">82.39</td></tr>
-  <tr><td align="center">German</td><td align="center">de</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>626</b></td><td align="center"><b>77.96</b></td><td align="center">630</td><td align="center">75.87</td><td align="center">611</td><td align="center">77.91</td></tr>
-  <tr><td align="center">Polish</td><td align="center">pl</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1681</b></td><td align="center"><b>73.92</b></td><td align="center">1672</td><td align="center">71.98</td><td align="center">-</td><td align="center">-</td></tr>
+  <tr><td align="center">en</td><td align="center">English</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2940</b></td><td align="center"><b>83.67</b><td align="center"><b>2886</b></td><td align="center"><b>83.75</b></td></td><td align="center">2905</td><td align="center">82.89</td><td align="center">2874</td><td align="center">82.39</td></tr>
+  <tr><td align="center">de</td><td align="center">German</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>626</b></td><td align="center"><b>77.96</b></td><td align="center">630</td><td align="center">75.87</td><td align="center">611</td><td align="center">77.91</td></tr>
+  <tr><td align="center">fr</td><td align="center">French</td><td align="center"><a href="https://www.ortolang.fr/market/corpora/democrat/v1.1">DEMOCRAT</a></td><td align="center">323754</td><td align="center">-</td><td align="center">-</td><td align="center"><b>2319</b></td><td align="center"><b>73.91</b></td><td align="center">2399</td><td align="center">73.91</td><td align="center">2216</td><td align="center">72.88</td></tr>
+  <tr><td align="center">pl</td><td align="center">Polish</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1681</b></td><td align="center"><b>73.92</b></td><td align="center">1672</td><td align="center">71.98</td><td align="center">-</td><td align="center">-</td></tr>
 </table>
 
 Coreferee produces a range of neural-network models for each language corresponding to the various spaCy models for that language. The [neural network inputs](#the-neural-ensemble) include word vectors. With `_sm` (small) models, both spaCy and Coreferee use context-sensitive tensors as an alternative to word vectors. `_trf` (transformer-based) models, on the other hand, do not use or offer word vectors at all. To remedy this problem, the model configuration files (`config.cfg` in the directory for each language) allow a **vectors model** to be specified for use when a main model does not have its own vectors. Coreferee then combines the linguistic information generated by the main model with vector information returned for the individual words in each document by the vectors model.
@@ -479,7 +520,7 @@ python3 -m coreferee install <ISO 639-1>
 
 14) Go through the documentation (`README.md` and `SHORTREADME.md`) adding information about the new language wherever the supported languages are listed in some way.
 
-15) Issue a pull request. We ask that you supply us with the zip file generated during training. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard.hudson@msg.group">send it out of band</a> rather than attaching it to the pull request.
+15) Issue a pull request. We ask that you supply us with the zip file placed into `<log-dir>` in point 9. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard@explosion.ai">send it out of band</a> rather than attaching it to the pull request.
 
 <a id="adding-support-for-a-custom-spaCy-model"></a>
 ### 5. Adding support for a custom spaCy model
@@ -518,6 +559,11 @@ The initial open-source version.
 - Sorted out a problem with the supported spaCy versions
 - Improved some of the tests
 
+<a id="version-112"></a>
+##### 6.5 Version 1.1.2
+
+- Added support for French, which was kindly supplied by [Pantalaymon](https://github.com/Pantalaymon)
+
 <a id="open-issues"></a>
 ### 7. Open issues / requests for assistance
 
@@ -527,6 +573,4 @@ The initial open-source version.
 
 3) There are almost certainly changes to the inputs and structure of the neural ensemble that would lead to improvements in accuracy, both cross-linguistically and for specific languages. The only caveat to bear in mind when trying out changes is that it should be possible for someone who does not understand neural networks to write rules for a new language. This means that Coreferee should detect necessary differences in the neural network behaviour between languages automatically rather than requiring the trainer to configure them.
 
-4) It is unclear at present why the accuracy for English is better than for German and why the accuracy for German is better than for Polish. One wholly speculative possibility is that the contents of the [compatibility map](#the-neural-ensemble) are better suited to pronominal than to verbal anaphora. This looks to be a promising avenue of research; understanding why the difference is occurring may well reveal a means of improving accuracy across the board.
-
-5) It would be useful if somebody could find a way of benchmarking Coreferee against other coreference resolution solutions, especially for English. One problem this would probably present is that using a benchmark necessitates a normative scope where a system aims to find exactly those types of coreference marked within the benchmark corpus, whereas the scope of Coreferee was determined by project requirements.
+4) It would be useful if somebody could find a way of benchmarking Coreferee against other coreference resolution solutions, especially for English. One problem this would probably present is that using a benchmark necessitates a normative scope where a system aims to find exactly those types of coreference marked within the benchmark corpus, whereas the scope of Coreferee was determined by project requirements.
