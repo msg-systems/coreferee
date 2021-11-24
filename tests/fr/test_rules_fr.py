@@ -24,7 +24,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def setUp(self):
 
-        self.nlps = get_nlps('fr', add_coreferee=False)
+        self.nlps = get_nlps('fr')
         self.rules_analyzers = [RulesAnalyzerFactory.get_rules_analyzer(nlp) for
             nlp in self.nlps]
 
