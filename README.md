@@ -562,7 +562,7 @@ The initial open-source version.
 <a id="version-112"></a>
 ##### 6.5 Version 1.1.2
 
-- Added support for French, which was kindly supplied by [Pantalaymon](https://github.com/Pantalaymon
+- Added support for French, which was kindly supplied by [Pantalaymon](https://github.com/Pantalaymon)
 
 <a id="open-issues"></a>
 ### 7. Open issues / requests for assistance
