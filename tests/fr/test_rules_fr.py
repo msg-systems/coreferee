@@ -1139,10 +1139,98 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_noun_pair_apposition(self):
         self.compare_potential_noun_pair('Alexandre, le roi de Macédoine devient empereur. Le roi de Macédoine meurt à 33 ans.',
-            0, 3, True)     
+            0, 3, True,
+            excluded_nlps=['core_news_sm', 'core_news_md'])     
             
     def test_potential_noun_pair_apposition_2(self):
         self.compare_potential_noun_pair('Alexandre, le roi de Macédoine devient empereur. Le roi de Macédoine meurt à 33 ans.',
             0, 10, True) 
 
+    def test_potential_noun_pair_same_number(self):
+        self.compare_potential_noun_pair("Nicolas Sarkozy venait d'arriver. Le président portait un costume.",
+            0, 7, True) 
 
+    def test_potential_noun_pair_different_number(self):
+        self.compare_potential_noun_pair("Nicolas Sarkozy venait d'arriver. Les présidents portaient des costumes.",
+            0, 7, False) 
+
+    def test_potential_noun_pair_person_noun_different_gender(self):
+        self.compare_potential_noun_pair("Nicolas Sarkozy venait d'arriver. La présidente portait un costume.",
+            0, 7, False) 
+
+    def test_potential_noun_pair_person_noun_mixed_gender_male_propn(self):
+        self.compare_potential_noun_pair("Nicolas Dupond venait d'arriver. Le juge portait un costume.",
+            0, 7, True) 
+
+    def test_potential_noun_pair_person_noun_mixed_gender_female_propn(self):
+        self.compare_potential_noun_pair("Aurélie Dupond venait d'arriver. Le juge portait un costume.",
+            0, 7, True) 
+
+    def test_potential_noun_pair_person_noun_mixed_gender_male_propn_control(self):
+        self.compare_potential_noun_pair("Nicolas Dupond venait d'arriver. La juge portait un costume.",
+            0, 7, False) 
+
+    def test_potential_noun_pair_same_proposition(self):
+        self.compare_potential_noun_pair("Nicolas Dupond voyait l'homme.",
+            0, 4, False) 
+
+    def test_potential_noun_pair_same_proposition_be_clause(self):
+        self.compare_potential_noun_pair("Nicolas Dupond est l'homme dont il parlait.",
+            0, 4, False) 
+
+    def test_potential_noun_pair_different_propositions_same_sentence_coord(self):
+        self.compare_potential_noun_pair("Nicolas Dupond est arrivé et le ministre sentait la rose.",
+            0, 6, True) 
+
+    def test_potential_noun_pair_different_propositions_same_sentence_comma(self):
+        self.compare_potential_noun_pair("Nicolas Dupond est arrivé , le ministre sentait la rose.",
+            0, 6, True) 
+
+    def test_potential_noun_pair_different_propositions_same_sentence_semicolon(self):
+        self.compare_potential_noun_pair("Nicolas Dupond est arrivé ; le ministre sentait la rose.",
+            0, 6, True) 
+
+    def test_potential_noun_pair_title_complete(self):
+        self.compare_potential_noun_pair("Madame Angela Merkel est arrivée. La chancelière est bien habillée",
+            0, 7, True,
+            excluded_nlps = ['core_news_sm']) 
+
+    def test_potential_noun_pair_title_abbr(self):
+        self.compare_potential_noun_pair("Mme Angela Merkel est arrivée. La chancelière est bien habillée",
+            0, 7, True,
+            excluded_nlps= ['core_news_sm']) 
+
+    def test_potential_noun_pair_title_complete_control(self):
+        self.compare_potential_noun_pair("Madame Angela Merkel est arrivée. Le chancelier est bien habillé",
+            0, 7, False,
+            excluded_nlps = ['core_news_sm']) 
+
+    def test_potential_noun_pair_title_abbr_control(self):
+        self.compare_potential_noun_pair("Mme Angela Merkel est arrivée. Le chancelier est bien habillé",
+            0, 7, False,
+            excluded_nlps= ['core_news_sm']) 
+    
+    def test_potential_noun_pair_mixed_title_mixed__noun(self):
+        self.compare_potential_noun_pair("Docteur Jonas est là. Le médecin est habillé en blanc",
+            0, 6, True,
+            excluded_nlps= ['core_news_sm']) 
+
+    def test_potential_noun_pair_masc_title_mixed__noun(self):
+        self.compare_potential_noun_pair("Monsieur Jonas est là. Le médecin est habillé en blanc",
+            0, 6, True,
+            excluded_nlps= ['core_news_sm'])
+
+    def test_potential_noun_pair_mixed_title_fem_noun(self):
+        self.compare_potential_noun_pair("Docteur Jonas est là. La doctoresse est habillée en blanc",
+            0, 6, True,
+            excluded_nlps= ['core_news_sm']) 
+
+    def test_potential_noun_pair_plur_loc_single_noun(self):
+        self.compare_potential_noun_pair("La semaine prochaine, je vais aux Etats-Unis. J'adore ce pays.",
+            7, 12, True,
+            excluded_nlps= ['core_news_sm']) 
+
+    def test_potential_noun_FLOU(self):
+        self.compare_potential_noun_pair('Même si elle était très occupée par son travail, Julie en avait marre. Alors, elle et son mari décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
+            32, 37, True,
+            excluded_nlps= ['core_news_sm']) 
