@@ -400,10 +400,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 if not any([det_sing, det_plur]):
                     fem, masc = det_fem, det_masc
                 break
-        if not any([sing, plur]):
-            sing = plur = True
-        if not any([fem, masc]):
-            fem = masc = True
+
+        if not det_infos:
+            if not any([sing, plur]):
+                sing = plur = True
+            if not any([fem, masc]):
+                fem = masc = True
         return masc, fem, sing, plur
 
     def is_potential_anaphoric_pair(
@@ -844,7 +846,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
   
         if not (
             (referred_plur and referring_plur) or (referred_sing and referring_sing)
-        ) and referred.ent_type_ != "LOC":
+        ) and not (referred.ent_type_ == "LOC" and referred.lemma_.upper() in self.plural_toponyms):
             # two nouns with different numbers can't corefer. This is true for substantives and propn alike
             return False
         

@@ -1225,12 +1225,12 @@ class FrenchRulesTest(unittest.TestCase):
             0, 6, True,
             excluded_nlps= ['core_news_sm']) 
 
-    def test_potential_noun_pair_plur_loc_single_noun(self):
+    def test_potential_noun_pair_plur_loc_exception_single_noun(self):
         self.compare_potential_noun_pair("La semaine prochaine, je vais aux Etats-Unis. J'adore ce pays.",
             7, 12, True,
             excluded_nlps= ['core_news_sm']) 
 
-    def test_potential_noun_FLOU(self):
-        self.compare_potential_noun_pair('Même si elle était très occupée par son travail, Julie en avait marre. Alors, elle et son mari décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
-            32, 37, True,
+    def test_potential_noun_pair_plur_loc_single_noun(self):
+        self.compare_potential_noun_pair("Christophe Colomb a découvert les Amériques. J'adore ce pays.",
+            5, 10, False,
             excluded_nlps= ['core_news_sm']) 
