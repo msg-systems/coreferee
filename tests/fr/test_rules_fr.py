@@ -556,13 +556,13 @@ class FrenchRulesTest(unittest.TestCase):
     
         
     def test_potential_pair_male_name(self):
-        self.compare_potential_pair('Je voyais Pierre. Il dormait', 2, False, 4, 2)
+        self.compare_potential_pair('Je voyais Gérard. Il dormait', 2, False, 4, 2)
 
     def test_potential_pair_male_name_control_1(self):
-        self.compare_potential_pair('Je voyais Pierre. Elle dormait', 2, False, 4, 0)
+        self.compare_potential_pair('Je voyais Gérard. Elle dormait', 2, False, 4, 0)
 
     def test_potential_pair_male_name_control_2(self):
-        self.compare_potential_pair('Je voyais Pierre. Ils dormaient', 2, False, 4, 0)
+        self.compare_potential_pair('Je voyais Gérard. Ils dormaient', 2, False, 4, 0)
 
     def test_potential_pair_female_name(self):
         self.compare_potential_pair('Je voyais Julie. Elle dormait', 2, False, 4, 2)
@@ -762,6 +762,75 @@ class FrenchRulesTest(unittest.TestCase):
             10, False, 2, 2)
 
 
+    def test_potential_pair_org_pronoun(self):
+        self.compare_potential_pair(
+        "Depuis des années, Sony travaille sur son image de marque. Il change de nom",
+        4, False, 12, 0,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+
+    def test_potential_pair_org_pronoun_with_det(self):
+        self.compare_potential_pair(
+        "Depuis des années, la Société Sony travaille sur son image de marque. Elle change de nom",
+        5, False, 14, 2,
+        excluded_nlps=[]
+        )
+    def test_potential_pair_org_pronoun_control_1(self):
+        self.compare_potential_pair(
+        "Depuis des années, la Société Sony travaille sur son image de marque. Il change de nom",
+        5, False, 14, 0,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+
+    def test_potential_pair_org_pronoun_control_2(self):
+        self.compare_potential_pair(
+        "Depuis des années, Sony travaille sur son image de marque. Il change de nom",
+        4, False, 12, 0,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+
+    def test_potential_pair_loc_pronoun_without_det(self):
+        self.compare_potential_pair(
+        "Paris change de maire. Elle entre dans un nouveau tournant",
+        0, False, 5, 1,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+    
+    def test_potential_pair_loc_pronoun_with_det(self):
+        self.compare_potential_pair(
+        "La France change de président. Elle entre dans un nouveau tournant",
+        1, False, 6, 2,
+        excluded_nlps=[]
+        )
+    
+    def test_potential_pair_loc_pronoun_without_det_2(self):
+        self.compare_potential_pair(
+        "Paris change de maire. Il entre dans un nouveau tournant",
+        0, False, 5, 1,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+
+    def test_potential_pair_loc_pronoun_control(self):
+        self.compare_potential_pair(
+        "La France change de président. Il entre dans un nouveau tournant",
+        1, False, 6, 0,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+    def test_potential_pair_dernier(self):
+        
+        minitext = "Ce sera un cas unique au monde, avance le chercheur de l'Institut économique de Montréal (IEDM). Photo courtoisie. Selon ce dernier, le gouvernement Legault a encore le temps de faire marche arrière et de « sortir » de la vente au détail."
+        self.compare_potential_pair(minitext,
+        10, False, 26, 2,
+        excluded_nlps=["core_news_sm", "core_news_md"]
+        )
+    '''
+    def test_potential_pair_dernier(self):
+        minitext = "Pascal Bérubé dit qu'il «assume toutes les décisions jusqu'au bout». Il ajoute toutefois que «le contexte a changé» et qu'il «va falloir se poser des questions importantes sur beaucoup de choses»."
+        self.compare_potential_pair(minitext,
+        0, False, 4, 2,
+        excluded_nlps=["core_news_sm"]
+        )
+    '''
     def compare_potential_reflexive_pair(self, doc_text, referred_index, include_dependent_siblings,
         referring_index, expected_truth, expected_reflexive_truth,
         is_reflexive_anaphor_truth, *, excluded_nlps=[]):
@@ -857,7 +926,8 @@ class FrenchRulesTest(unittest.TestCase):
     def test_reflexive_with_passive_and_conjunction(self):
         self.compare_potential_reflexive_pair(
             'La maison et la voiture furent achetées par elles-mêmes',
-            1, True, 8, 2, True, 2)
+            1, True, 8, 2, True, 2,
+            excluded_nlps=["core_news_sm"])
 
     def test_reflexive_with_object_antecedent(self):
         self.compare_potential_reflexive_pair('Elle mélangea le produit avec lui-même',
@@ -1138,7 +1208,7 @@ class FrenchRulesTest(unittest.TestCase):
             5, 15, False)
 
     def test_potential_noun_pair_apposition(self):
-        self.compare_potential_noun_pair('Alexandre, le roi de Macédoine devient empereur. Le roi de Macédoine meurt à 33 ans.',
+        self.compare_potential_noun_pair('Alexandre, le souverain de Macédoine devient empereur. Le roi de Macédoine meurt à 33 ans.',
             0, 3, True,
             excluded_nlps=['core_news_sm', 'core_news_md'])     
             
@@ -1176,7 +1246,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_noun_pair_same_proposition_be_clause(self):
         self.compare_potential_noun_pair("Nicolas Dupond est l'homme dont il parlait.",
-            0, 4, False) 
+            0, 4, True) 
 
     def test_potential_noun_pair_different_propositions_same_sentence_coord(self):
         self.compare_potential_noun_pair("Nicolas Dupond est arrivé et le ministre sentait la rose.",
@@ -1234,3 +1304,14 @@ class FrenchRulesTest(unittest.TestCase):
         self.compare_potential_noun_pair("Christophe Colomb a découvert les Amériques. J'adore ce pays.",
             5, 10, False,
             excluded_nlps= ['core_news_sm']) 
+
+    def test_potential_noun_pair_no_gender(self):
+        self.compare_potential_noun_pair("M. Belzile est là. L'économiste est d'avis que le gouvernement devrait instaurer une taxe",
+        0, 6, True,
+        excluded_nlps = ['core_news_sm', 'core_news_md'])
+
+    def test_potential_noun_pair_propn_appos_head(self):
+        test_text = "Vendredi dernier, 106 patients attendaient sur des civières, alors que la capacité d'accueil est de 32, selon Caroline , infirmière depuis quelques années à l'hôpital de Saint-Eustache, dans les Laurentides. La jeune femme souhaite elle aussi témoigner sous le couvert de l'anonymat, par peur de représailles de son employeur."
+        self.compare_potential_noun_pair(test_text,
+        21, 39, True,
+        )
