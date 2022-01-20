@@ -166,7 +166,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_independent_noun(self, token: Token) -> bool:
         if not self.french_word.match(token.text) : return False
-        if token.lemma_ in ("-il","-elle") : return False
+        if token.pos_ == "PROPN" and \
+            re.match("[^A-ZÂÊÎÔÛÄËÏÖÜÀÆÇÉÈŒÙ]",token.lemma_):
+            return False
         if (
             token.lemma_ in {"un", "certains", "certain"}
             or self.has_morph(token, "NumType", "Card")
@@ -203,6 +205,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
             token.i>0 and token.ent_type_ != "" and
             token.doc[token.i-1].ent_type_ == token.ent_type_
+            and token.doc[token.i-1] not in token.subtree
         ):
             return False
         
@@ -422,7 +425,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if token.pos_ == "PRON" and token.lower_ == "le" and plur:
             # Je les vois
             masc = fem = True
-
+        # get grammatical info from det
         if token.pos_ in self.noun_pos + ('ADJ',) and not det_infos:
             for det in token.children:
                 # prevent recurs for single det phrase
@@ -583,7 +586,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 return 0
             if referred_root.ent_type_ == "ORG" and referring.lemma_ != "y":
                 uncertain = True
-            if self.reverse_entity_noun_dictionary.get(referred_root) != "LOC":
+            referred_ent_type = self.reverse_entity_noun_dictionary.get(referred_root) 
+            if referred_ent_type in ("PER","ORG"):
                 uncertain = True
 
 
@@ -650,21 +654,25 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     if not referred_plur and (self.refers_to_person(referred_root)):
                         uncertain = True
 
-            if referring.pos_ == "PRON" and self.has_morph(referring, "Person", "3") and\
-                self.has_morph(referring,"Number") and not self.refers_to_person(referred_root):
+            if (
+                referring.pos_ == "PRON" and self.has_morph(referring, "Person", "3") and
+                self.has_morph(referring,"Number") and not self.refers_to_person(referred_root)
+            ):
                 #Some semantic restrictions on named entities / pronoun pair
                 if referred_root.ent_type_ == "ORG" and referred_root.pos_ in self.propn_pos\
-                    and not self.has_det(referred_root):
+                    and not self.has_det(referred_root) and not \
+                    any(prep for prep in referred_root.children if prep.dep_ == 'case'):
                     # "Twitter ... Il " is not possible
                     return False
-                if referred_root.ent_type_ in {"LOC","MISC"} and referred_root.pos_ in self.propn_pos\
-                    and not self.has_det(referred_root):
+                if (
+                    referred_root.ent_type_ in {"LOC","MISC"} and referred_root.pos_ in self.propn_pos
+                    and not self.has_det(referred_root) and not
+                    any(prep for prep in referred_root.children if prep.dep_ == 'case')
+                ):
                     # "Paris... elle" is possible but unlikely
                     # Except for cases when the toponym has a determiner, such as most country name
                     # "La France...elle" is ok. Same for cities with det : "Le Havre... il"
                     uncertain = True
-
-
 
             if (
                 self.is_potential_reflexive_pair(referred, referring)
@@ -980,22 +988,29 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # two nouns with different numbers can't corefer. This is true for substantives and propn alike
             return False
         
-        if referring.ent_type_ != "" and referring.pos!= "PROPN":
+        if referring.ent_type_ != "" and referring.pos_ != "PROPN":
             # Titles should only be linked the way propn are linked and not common nouns
             # "George est là... Monsieur Jean est arrivé". George and Monsieur must not be linked 
             return False
 
         if (referred.ent_type_ == 'PER' or self.get_noun_core_lemma(referred) in self.person_titles) and \
-            not (referred.pos_ == 'NOUN' and self.get_noun_core_lemma(referred) in self.mixed_gender_person_roles):
-            if not(self.get_noun_core_lemma(referred) in self.mixed_gender_person_roles) :
-                # Gender compatibility is only ensured for person and their roles
-                # And only when the role does not allow mixed gender
-                # "Sophie... l'auteur du livre'" is possible
-                # "Sophie... l'instituteur'" is impossible
-                if not (
-                    (referred_masc and referring_masc) or (referred_fem and referring_fem)
-                    ):
-                    return False
+            not (referring.pos_ == 'NOUN' and self.get_noun_core_lemma(referring) in self.mixed_gender_person_roles):
+            # Gender compatibility is only ensured for person and their roles
+            # And only when the role does not allow mixed gender
+            # "Sophie... l'auteur du livre'" is possible
+            # "Sophie... l'instituteur'" is impossible
+            if not (
+                (referred_masc and referring_masc) or (referred_fem and referring_fem)
+                ):
+                return False
+        if (
+            self.has_morph(referring, "Gender","Masc") and 
+            referring_fem and not referred_fem
+            ):
+            # when fem gender is enforced by det
+            # eg : la juge
+            return False
+            
 
         #Nouns can't corefer in same predication
         verb_referred_ancestors = [t for t in referred.ancestors \
@@ -1015,9 +1030,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # E.g : "Justin Trudeau.... Le Président, Donald Trump". 
             # We don't want "president" to be able to be linked to "Justin"
             appos_children = [c for c in appos_token.children if c.dep_ == "appos"]
-            if any(1 for propn in appos_children 
-                if propn.pos_ == "PROPN" or propn.ent_type_)\
-                and appos_token.pos_ != "PROPN" and not appos_token.ent_type_:
+            if (
+                any(1 for propn in appos_children 
+                if propn.pos_ == "PROPN" or propn.ent_type_)
+                and 
+                appos_token.pos_ != "PROPN" and not appos_token.ent_type_
+            ):
                 return False
 
             if appos_token.pos_ != "PROPN" and appos_token.dep_ == "appos" and \
@@ -1033,9 +1051,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
          for the two noun phrases to corever
         '''
         # Apposition chains
-        if all([referred.ent_type_, referring.ent_type_]) and \
-            referred.ent_type_ != referring.ent_type_:
-            return False
         if referred == referring.head and referring.dep_ == "appos":
             return True
         if referred == referring.head.head and \
@@ -1114,32 +1129,29 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             ).endswith(" ".join(t.lemma_.lower() for t in referring_propn_subtree)):
                 return True
 
-        if not self.language_dependent_is_potential_coreferring_noun_pair(referred, referring):
-            return False
         # e.g. 'Peugeot' -> 'l'entreprise'
         new_reverse_entity_noun_dictionary = {
             noun: "PER" for noun in self.person_roles
         } | self.reverse_entity_noun_dictionary
+
         if (
                 self.get_noun_core_lemma(referring) in new_reverse_entity_noun_dictionary
                 and self.is_potentially_definite(referring)  and 
-                (referred.ent_type_
-                == new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]
-            or 
-            (
-                new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]=="PER"
-                and referred.ent_type_ and self.refers_to_person(referred)
-            )
-            )
-        ):
-            '''
-            (new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]=="PER"
-            and not self.has_det(referred)
-            and referred.lemma_ in ["Caroline","Virginie","Salvador","Maurice","Washington"])
-            or
-            (new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]=="PER")
-            and referred.ent_type == "MISC" and referred.pos_
-            '''
+                self.language_dependent_is_potential_coreferring_noun_pair(referred, referring)
+                and
+                (
+                    (
+                    referred.ent_type_ ==
+                    new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]
+                    )
+                    or 
+                    (
+                    new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]
+                    == "PER"
+                    and referred.ent_type_ and self.refers_to_person(referred)
+                    )
+                )
+            ):
             return True
         
         if not self.is_potentially_referring_back_noun(referring):
