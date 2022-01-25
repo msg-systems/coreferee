@@ -963,12 +963,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         prefix = re.compile("^((vice)|(^ex)|(^co))-")
         return prefix.sub("",token.lemma_).lower()
 
-    def language_dependent_is_potential_coreferring_noun_pair(self,
-         referred: Token, referring: Token) -> bool:
-        '''
-        Returns True if grammatical and pragmatical rules of the language
-        allow the two nouns to corefer
-        '''
+    def is_grammatically_compatible_noun_pair(self, referred : Token, referring:Token):
         (
             referred_masc,
             referred_fem,
@@ -988,10 +983,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # two nouns with different numbers can't corefer. This is true for substantives and propn alike
             return False
         
-        if referring.ent_type_ != "" and referring.pos_ != "PROPN":
-            # Titles should only be linked the way propn are linked and not common nouns
-            # "George est là... Monsieur Jean est arrivé". George and Monsieur must not be linked 
-            return False
 
         if (referred.ent_type_ == 'PER' or self.get_noun_core_lemma(referred) in self.person_titles) and \
             not (referring.pos_ == 'NOUN' and self.get_noun_core_lemma(referring) in self.mixed_gender_person_roles):
@@ -1010,8 +1001,14 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # when fem gender is enforced by det
             # eg : la juge
             return False
+        return True
             
-
+    def is_potential_coreferring_pair_with_substantive(self,
+         referred: Token, referring: Token) -> bool:
+        '''
+        Returns True if  pragmatical rules of the language
+        allow the two nouns to corefer
+        '''
         #Nouns can't corefer in same predication
         verb_referred_ancestors = [t for t in referred.ancestors \
             if t.dep_ == 'ROOT' or t.pos_ in self.clause_root_pos]
@@ -1025,7 +1022,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return False
 
         for appos_token in [referred, referring]:
-            #Prevents any non Propn from appos chain connecting to other nouns
+            #Prevents any non Propn from appos chain from connecting to other nouns
             # That way we ensure that only the propn will be linked to the bigger chains
             # E.g : "Justin Trudeau.... Le Président, Donald Trump". 
             # We don't want "president" to be able to be linked to "Justin"
@@ -1098,8 +1095,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (referred.pos_ not in self.noun_pos and not self.has_det(referred))\
             or (referring.pos_ not in self.noun_pos and not self.has_det(referring)):
             return False
+        grammatically_compatible= self.is_grammatically_compatible_noun_pair(referred,referring)
         # Needs to be here as it covers cases of incorrect parsing
-        if self.language_dependent_is_coreferring_noun_pair(referred, referring):
+        if self.language_dependent_is_coreferring_noun_pair(referred, referring) and\
+            grammatically_compatible:
             return True
 
         if referring in referred._.coref_chains.temp_dependent_siblings:
@@ -1129,6 +1128,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             ).endswith(" ".join(t.lemma_.lower() for t in referring_propn_subtree)):
                 return True
 
+        if not self.is_potential_coreferring_pair_with_substantive(referred, referring):
+            return False
         # e.g. 'Peugeot' -> 'l'entreprise'
         new_reverse_entity_noun_dictionary = {
             noun: "PER" for noun in self.person_roles
@@ -1137,8 +1138,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
                 self.get_noun_core_lemma(referring) in new_reverse_entity_noun_dictionary
                 and self.is_potentially_definite(referring)  and 
-                self.language_dependent_is_potential_coreferring_noun_pair(referred, referring)
-                and
                 (
                     (
                     referred.ent_type_ ==
@@ -1150,7 +1149,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     == "PER"
                     and referred.ent_type_ and self.refers_to_person(referred)
                     )
-                )
+                ) 
+                and grammatically_compatible
+                and not (referring.ent_type_ != "" and referring.pos_ != "PROPN")
             ):
             return True
         
