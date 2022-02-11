@@ -185,7 +185,19 @@ class FrenchSmokeTest(unittest.TestCase):
             "Les australiennes admirent la giraffe et l'hippopotame. Elles boient beaucoup.",
             '[0: [1], [9]]', excluded_nlps='core_news_sm',
             )
-            
+
+    def test_titles_noun_pair_titles(self):
+        self.compare_annotations(
+            "Monsieur Lauret et Madame Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
+            '[0: [0], [14], 1: [3], [22]]', excluded_nlps=['core_news_sm', 'core_news_md'],
+            )
+
+    def test_titles_noun_pair_titles_abbrev(self):
+        self.compare_annotations(
+            "M. Lauret et Mme Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
+            '[0: [0], [14], 1: [3], [22]]', excluded_nlps=['core_news_sm', 'core_news_md'],
+            )
+
     def test_documentation_example_1(self):
         self.compare_annotations(
             'Même si elle était très occupée par son travail, Julie en avait marre. Alors, elle et son mari décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
