@@ -28,6 +28,7 @@ Author: <a href="mailto:richard@explosion.ai">Richard Paul Hudson, msg systems a
     -   [6.3 Version 1.1.0](#version-110)
     -   [6.4 Version 1.1.1](#version-111)
     -   [6.5 Version 1.1.2](#version-112)
+    -   [6.6 Version 1.1.3](#version-113)
 -   [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
@@ -563,6 +564,12 @@ The initial open-source version.
 ##### 6.5 Version 1.1.2
 
 - Added support for French, which was kindly supplied by [Pantalaymon](https://github.com/Pantalaymon)
+
+<a id="version-113"></a>
+##### 6.6 Version 1.1.3
+
+- Updated French rules to new version again supplied by [Pantalaymon](https://github.com/Pantalaymon)
+- Fixed an endless-loop problem in `language_independent_is_anaphoric_pair()`
 
 <a id="open-issues"></a>
 ### 7. Open issues / requests for assistance
