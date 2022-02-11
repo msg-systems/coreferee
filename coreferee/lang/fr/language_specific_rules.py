@@ -16,13 +16,15 @@
 from spacy.tokens import Token
 from ...rules import RulesAnalyzer
 from ...data_model import Mention
+import sys
+import re
 
 
 class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
-    maximum_coreferring_nouns_sentence_referential_distance = 20
-
     maximum_anaphora_sentence_referential_distance = 5
+
+    maximum_coreferring_nouns_sentence_referential_distance = 3
 
     random_word = "albatros"
 
@@ -32,7 +34,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     adverbial_clause_deps = ("advcl", "advmod", "dep")
 
-    or_lemmas = "ou"
+    or_lemmas = ("ou", "soit")
 
     entity_noun_dictionary = {
         "PER": [
@@ -42,7 +44,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             "garçon",
             "fille",
             "individu",
-            "type",
             "gars",
             "dame",
             "demoiselle",
@@ -65,6 +66,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             "nièce",
             "cousin",
             "ami",
+            "amie",
             "mari",
             "époux",
             "épouse",
@@ -112,11 +114,25 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ("“", "”"),
     ]
 
+    person_titles = {"m.","mm.","monsieur",
+                        "messieurs","mgr","monseigneur",
+                        "président", "mme","mmes","madame",
+                        'mesdames',"mlle","mlles",
+                        "mademoiselle","mesdemoiselles",
+                        "vve","veuve", "présidente","docteur","dr", "docteurs", "drs",
+                        "professeur","pr", "professeurs", "prs"
+                        "maitre","maître","me", "ministre"
+    }
+
     term_operator_pos = ("DET", "ADJ")
 
     term_operator_dep = ("det", "amod", "nmod", "nummod")
 
     clause_root_pos = ("VERB", "AUX")
+
+    disjointed_dep = ("dislocated","vocative","parataxis","discourse")
+
+    french_word = re.compile("[\\-\\w][\\-\\w'&\\.]*$")
 
     def get_dependent_siblings(self, token: Token) -> list:
         def add_siblings_recursively(recursed_token: Token, visited_set: set) -> None:
@@ -149,7 +165,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         return sorted(siblings_set)
 
     def is_independent_noun(self, token: Token) -> bool:
-
+        if not self.french_word.match(token.text) : return False
+        if token.pos_ == "PROPN" and \
+            re.match("[^A-ZÂÊÎÔÛÄËÏÖÜÀÆÇÉÈŒÙ]",token.lemma_):
+            return False
         if (
             token.lemma_ in {"un", "certains", "certain"}
             or self.has_morph(token, "NumType", "Card")
@@ -172,16 +191,30 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         elif (
             token.pos_ not in self.noun_pos + ("ADJ", "PRON")
             or token.dep_ in ("fixed", "flat:name", "flat:foreign", "amod")
-            or (
-                token.pos_ in ("ADJ", "PRON")
-                and not any(child for child in token.children if child.dep_ == "det")
-            )
+            or (token.pos_ in ("ADJ", "PRON") and not self.has_det(token))
         ):
+            return False
+        elif  (
+            token.lemma_ == "dernier"
+            and any(
+                self.has_morph(child, "PronType", "Dem") for child in token.children
+            )
+            and token.dep_ not in ("amod", "appos")
+        ):
+            return False
+        if (
+            token.i>0 and token.ent_type_ != "" and
+            token.doc[token.i-1].ent_type_ == token.ent_type_
+            and token.doc[token.i-1] not in token.subtree
+        ):
+            return False
+        
+        if not self.has_det(token) and token.lemma_ in self.blacklisted_nouns:
             return False
         return not self.is_token_in_one_of_phrases(token, self.blacklisted_phrases)
 
     def is_potential_anaphor(self, token: Token) -> bool:
-
+        if not self.french_word.match(token.text) : return False
         # Ce dernier, cette dernière...
         if (
             token.lemma_ == "dernier"
@@ -193,7 +226,15 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return True
         if self.is_emphatic_reflexive_anaphor(token):
             return True
-        if token.lemma_ == "celui":
+        if token.lemma_ in {"celui", "celle"}:
+            return True
+        if token.lower_  in {"-elle"}:
+            return True
+        if (token.lower_ == "-il" and 
+            token.i > 0 and 
+            token.doc[token.i-1].lemma_ != "avoir" and
+            token.dep_ != "expl:subj"
+        ):
             return True
         if not (
             (
@@ -214,7 +255,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             return False
         # When anaphoric , the demonstrative refers almost always to a whole proposition and not a noun phrase
-        if token.lemma_ in {"ce", "ça", "cela"}:
+        if token.lemma_ in {"ce", "ça", "cela", "-ce"}:
             return False
 
         if token.lemma_ == "on":
@@ -242,24 +283,24 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if token.lemma_ in ("-", "ci", "-ci", "-là"):
             return False
         # Avalent Il. In case some are not marked as expletive
+        inclusive_head_children = [token.head] + list(token.head.children)
         if (
             token.dep_ != self.root_dep
             and token.head.pos_ in ("AUX", "VERB")
-            and len(
+            and any(
                 [
-                    child
-                    for child in token.head.subtree
+                    1
+                    for child in inclusive_head_children
                     if child.lemma_ in self.avalent_verbs
                 ]
             )
-            > 0
-        ):
+            ):
             return False
 
         # impersonal constructions
         if (
             token.dep_ in {"expl:comp", "expl:pass", "expl:subj"}
-            and token.lemma_ != "en"
+            and token.lemma_ not in {"en"}
             and not self.has_morph(token, "Reflex", "Yes")
         ):
             return False
@@ -314,101 +355,141 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             return True
         return False
+    
+    def has_det(self, token: Token) ->bool:
+        return any(det for det in token.children if det.dep_ == "det")
 
-    def is_potential_anaphoric_pair(
-        self, referred: Mention, referring: Token, directly: bool
-    ) -> bool:
-        def refers_to_person(token):
-            if (
-                token.ent_type_ == "PER"
-                or self.is_quelqun_head(token)
-                or token.lemma_
-                in self.entity_noun_dictionary["PER"] + self.person_roles
-                or (
-                    token.pos_ == self.propn_pos
-                    and token.lemma_ in self.male_names + self.female_names
-                )
-            ):
-                return True
-            if (
-                token.dep_ in ("nsubj", "nsubj:pass")
-                and token.head.lemma_ in self.verbs_with_personal_subject
-            ):
-                return True
-
-            return False
-
-        def get_gender_number_info(token):
-
-            masc = fem = sing = plur = False
-            if self.is_quelqun_head(token):
-                sing = masc = fem = True
-            elif self.has_morph(token, "Poss", "Yes"):
-                if self.is_potential_anaphor(token):
-                    # the plural morphs of poss determiner don't mark the owner but the owned
-                    if token.lemma_ == "leur":
-                        plur = True
-                    if token.lemma_ == "son":
-                        sing = True
-                    masc = fem = True
-            else:
-                if self.has_morph(token, "Number", "Sing"):
-                    sing = True
-                if self.has_morph(token, "Number", "Plur"):
+    def get_gender_number_info(self, token : Token, directly = False, det_infos = False) -> bool:
+        masc = fem = sing = plur = False
+        if self.is_quelqun_head(token):
+            sing = masc = fem = True
+        elif self.has_morph(token, "Poss", "Yes") and not det_infos:
+            if self.is_potential_anaphor(token):
+                # the plural morphs of poss determiner don't mark the owner but the owned
+                if token.lemma_ == "leur":
                     plur = True
-                if self.has_morph(token, "Gender", "Masc"):
-                    masc = True
-                if self.has_morph(token, "Gender", "Fem"):
-                    fem = True
+                if token.lemma_ == "son":
+                    sing = True
+                masc = fem = True
+        else:
+            if self.has_morph(token, "Number", "Sing"):
+                sing = True
+            if self.has_morph(token, "Number", "Plur"):
+                plur = True
+            if self.has_morph(token, "Gender", "Masc"):
+                masc = True
+            if self.has_morph(token, "Gender", "Fem"):
+                fem = True
 
-                if token.lemma_ in {"ici", "là", "y", "en"}:
+            if token.lemma_ in {"ici", "là", "y", "en"}:
+                masc = fem = sing = plur = True
+
+            elif self.is_potential_anaphor(token):
+                # object pronouns are not well recognized by the  models
+                if token.lower_.startswith("lui"):
+                    masc = True
+                    sing = True
+                elif token.lower_.startswith("eux"):
+                    masc = True
+                    plur = True
+                elif token.lower_.startswith("elles"):
+                    fem = True
+                    plur = True
+                elif token.lower_.startswith("elle"):
+                    fem = True
+                    sing = True
+                elif token.lower_.startswith("soi"):
                     masc = fem = sing = plur = True
 
-                elif self.is_potential_anaphor(token):
-                    # object pronouns are not well recognized by the  models
-                    if token.lower_.startswith("lui"):
-                        masc = True
-                        sing = True
-                    elif token.lower_.startswith("eux"):
-                        masc = True
-                        plur = True
-                    elif token.lower_.startswith("elles"):
-                        fem = True
-                        plur = True
-                    elif token.lower_.startswith("elle"):
-                        fem = True
-                        sing = True
-                    elif token.lower_.startswith("soi"):
-                        masc = fem = sing = plur = True
+                if self.has_morph(token, "Reflex", "Yes"):
+                    #se
+                    if token.head.pos_ in self.clause_root_pos:
+                        sing = self.has_morph(token.head, "Number", "Sing")
+                        plur = self.has_morph(token.head, "Number", "Plur")
+                    masc = fem = True
 
-                    if self.has_morph(token, "Reflex", "Yes"):
-                        if token.head.pos_ in self.clause_root_pos:
-                            sing = self.has_morph(token.head, "Number", "Sing")
-                            plur = self.has_morph(token.head, "Number", "Plur")
-                        masc = fem = True
+            elif token.pos_ == "PROPN":
 
-                elif token.pos_ == "PROPN":
+                if token.lemma_ in self.male_names:
+                    masc = True
+                if token.lemma_ in self.female_names:
+                    fem = True
+                if token.lemma_ not in self.male_names + self.female_names:
+                    masc = fem = True
+                if not plur:
+                    # proper nouns without plur mark are typically singular
+                    sing = True
+                if not directly and not self.has_det(token):
+                    masc = fem  = True
 
-                    if token.lemma_ in self.male_names:
-                        masc = True
-                    if token.lemma_ in self.female_names:
-                        fem = True
-                    if token.lemma_ not in self.male_names + self.female_names:
-                        masc = fem = True
-                    if not plur:
-                        # proper nouns without plur mark are typically singular
-                        sing = True
-                    if not directly:
-                        masc = fem = sing = plur = True
+        if token.pos_ == "PRON" and token.lower_ == "le" and plur:
+            # Je les vois
+            masc = fem = True
+        # get grammatical info from det
+        if token.pos_ in self.noun_pos + ('ADJ',) and not det_infos:
+            for det in token.children:
+                # prevent recurs for single det phrase
+                if det == token : break
+                if det.dep_ != 'det': continue
+                (
+                    det_masc,
+                    det_fem,
+                    det_sing,
+                    det_plur,
+                    ) = self.get_gender_number_info(det, directly=directly, det_infos=True)
+                # If determiner has a decisive information it trumps that of noun
+                #" Especially in case of epicene nouns : e.g "la ministre"
+                if any([det_sing, det_plur]):
+                    sing, plur = det_sing, det_plur
+                # or invariable nouns : le bras / les bras
+                if any([det_fem, det_masc]):
+                    fem, masc = det_fem, det_masc
+                break
 
-            if token.pos_ == "PRON" and token.lower_ == "le" and plur:
-                # Je les vois
-                masc = fem = True
+        if not det_infos:
             if not any([sing, plur]):
                 sing = plur = True
             if not any([fem, masc]):
                 fem = masc = True
-            return masc, fem, sing, plur
+        return masc, fem, sing, plur
+
+    def refers_to_person(self, token) -> bool:
+        
+        if (
+            token.ent_type_ == "PER"
+            or self.is_quelqun_head(token)
+            or token.lemma_.lower()
+            in self.entity_noun_dictionary["PER"] + self.person_roles
+        ):
+            return True
+        if (
+            token.pos_ == self.propn_pos
+            and token.lemma_ in self.male_names + self.female_names
+            and (
+                token.ent_type_ not in ["LOC","ORG"] or
+                token.lemma_ in [
+                    "Caroline",
+                    "Virginie",
+                    "Salvador",
+                    "Maurice",
+                    "Washington"]
+                )
+            ):
+            return True
+
+        if (
+            token.dep_ in ("nsubj", "nsubj:pass")
+        ):
+            verb_lemma = token.head.lemma_
+            if verb_lemma[-1] == "e" and verb_lemma[-2]!="r":
+            # first group verbs that are not lemmatised correctly
+                verb_lemma = verb_lemma + "r"
+            if verb_lemma in self.verbs_with_personal_subject:
+                return True
+        return False    
+    def is_potential_anaphoric_pair(
+        self, referred: Mention, referring: Token, directly: bool
+    ) -> bool:
 
         doc = referring.doc
         referred_root = doc[referred.root_index]
@@ -430,7 +511,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             referring_fem,
             referring_sing,
             referring_plur,
-        ) = get_gender_number_info(referring)
+        ) = self.get_gender_number_info(referring, directly=directly)
         # e.g. 'les hommes et les femmes' ... 'ils': 'ils' cannot refer only to
         # 'les hommes' or 'les femmes'
         if (
@@ -465,7 +546,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 working_fem,
                 working_sing,
                 working_plur,
-            ) = get_gender_number_info(working_token)
+            ) = self.get_gender_number_info(working_token, directly=directly)
             referred_masc = referred_masc or working_masc
             referred_fem = referred_fem or working_fem
             referred_sing = referred_sing or working_sing
@@ -498,17 +579,21 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             if (
                 not self.is_independent_noun(referred_root)
-                and referred_root.lemma_ != referring.lemma_
+                and referred_root.lemma_ not in ["ici","là","y"]
             ):
                 return 0
-            if refers_to_person(
-                referred_root
-            ):  # or working_token.lemma_ in self.animal_names:
+            if self.refers_to_person(referred_root):  
                 return 0
             if referred_root.ent_type_ == "ORG" and referring.lemma_ != "y":
                 uncertain = True
+            referred_ent_type = self.reverse_entity_noun_dictionary.get(referred_root) 
+            if referred_ent_type in ("PER","ORG"):
+                uncertain = True
+
 
         if directly:
+            # possessive det can't be referred to directly
+            if self.has_morph(referred_root, "Poss") and referred_root.pos_ == "DET": return False
             if self.is_potential_anaphor(referring) > 0:
                 try:
                     if (
@@ -525,17 +610,20 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                             )
                         )
                     ):
-                        #'celui-ci' and 'ce dernier' can only refer to last noun phrase
+                        #'celui-ci' and 'ce dernier' can only refer to last grammatically compatible noun phrase
                         if referring.i == 0:
                             return 0
                         for previous_token_index in range(referring.i - 1, 0, -1):
-                            if previous_token_index == referring.i:
-                                continue
-                            if self.is_independent_noun(doc[previous_token_index]):
-                                if previous_token_index not in (referred.token_indexes):
+                            previous_token = doc[previous_token_index]
+                            if self.is_independent_noun(previous_token) and \
+                                self.is_potential_anaphoric_pair(Mention(previous_token), referring, directly=False):
+                                if previous_token_index != referred.root_index :
+                                    if previous_token.dep_ in ("nmod", "appos"):
+                                        continue
+                                    # Except if noun phrase is modifier of other noun phrase
+                                    # eg: "Le président du pays... ce dernier" can refer to both nouns
                                     return 0
-                                else:
-                                    break
+                                break
 
                     if (
                         referring.lemma_ == "celui"
@@ -563,8 +651,28 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     pass
                 if referring.lemma_ == "en":
                     # requires list of mass/countable nouns to be implemented
-                    if not referred_plur and (refers_to_person(referred_root)):
+                    if not referred_plur and (self.refers_to_person(referred_root)):
                         uncertain = True
+
+            if (
+                referring.pos_ == "PRON" and self.has_morph(referring, "Person", "3") and
+                self.has_morph(referring,"Number") and not self.refers_to_person(referred_root)
+            ):
+                #Some semantic restrictions on named entities / pronoun pair
+                if referred_root.ent_type_ == "ORG" and referred_root.pos_ in self.propn_pos\
+                    and not self.has_det(referred_root) and not \
+                    any(prep for prep in referred_root.children if prep.dep_ == 'case'):
+                    # "Twitter ... Il " is not possible
+                    return False
+                if (
+                    referred_root.ent_type_ in {"LOC","MISC"} and referred_root.pos_ in self.propn_pos
+                    and not self.has_det(referred_root) and not
+                    any(prep for prep in referred_root.children if prep.dep_ == 'case')
+                ):
+                    # "Paris... elle" is possible but unlikely
+                    # Except for cases when the toponym has a determiner, such as most country name
+                    # "La France...elle" is ok. Same for cities with det : "Le Havre... il"
+                    uncertain = True
 
             if (
                 self.is_potential_reflexive_pair(referred, referring)
@@ -572,6 +680,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 and not self.has_morph(referred_root, "Poss", "Yes")
             ):
                 # * Les hommes le voyaient. "le" can't refer to "hommes"
+                #print("SUSUSUSU", referred, referring)
                 return 0
 
             if self.is_potential_reflexive_pair(referred, referring) == 0 and (
@@ -580,6 +689,14 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 # * Les hommes étaient sûrs qu'ils se trompaient. "se" can't directly refer to "hommes"
                 return 0
 
+        if self.refers_to_person(referring) and not self.refers_to_person(referred_root):
+                # Le Luxembourg... Il mange ... -> impossible
+            if referred_root.ent_type_ in {"ORG", "LOC", "MISC"} :
+                return False
+            # Le Balcon... il mange... -> impossible but some other nouns are dubious
+            if referred_root.pos_ == "NOUN" :
+                uncertain = True
+                
         referring_governing_sibling = referring
         if referring._.coref_chains.temp_governing_sibling is not None:
             referring_governing_sibling = (
@@ -591,15 +708,17 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             in self.verbs_with_personal_subject
         ):
             for working_token in (doc[index] for index in referred.token_indexes):
-                if refers_to_person(working_token):
+                if self.refers_to_person(working_token):
                     return 2
-            uncertain = True
+            if referred_root.pos == "NOUN":
+                uncertain = True
 
         return 1 if uncertain else 2
 
     def has_operator_child_with_any_morph(self, token: Token, morphs: dict):
         for child in (
-            child for child in token.children if child.pos_ in self.term_operator_pos
+            child for child in token.children if 
+            child.pos_ in self.term_operator_pos + ("ADP",)
         ):
             for morph in morphs:
                 if self.has_morph(child, morph, morphs.get(morph)):
@@ -612,6 +731,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ) or self.is_quelqun_head(token)
 
     def is_potentially_definite(self, token: Token) -> bool:
+
         return self.has_operator_child_with_any_morph(
             token, {"Definite": "Def", "PronType": "Dem"}
         )
@@ -655,6 +775,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             return False
 
+        if  referring.dep_ in self.disjointed_dep:
+            return False
+
         referred_root = referring.doc[referred.root_index]
 
         if referred_root._.coref_chains.temp_governing_sibling is not None:
@@ -662,11 +785,15 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         if referring._.coref_chains.temp_governing_sibling is not None:
             referring = referring._.coref_chains.temp_governing_sibling
-        if referred_root.dep_ in ("nsubj", "nsubj:pass"):
+        
+        if referred_root.dep_ in ("nsubj", "nsubj:pass") and \
+            not any(selon for selon in referring.children 
+            if selon.lemma_ == "selon" and selon.dep_ == "case"):
 
             for referring_ancestor in referring.ancestors:
                 # Loop up through the verb ancestors of the pronoun
-
+                if referring_ancestor.dep_ in self.disjointed_dep: 
+                    return False
                 if referred_root in referring_ancestor.children:
                     return True
                 # Relative clauses
@@ -681,16 +808,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     return True
 
                 # The ancestor has its own subject, so stop here
-                if (
-                    len(
-                        [
+                subjects =  [
                             t
                             for t in referring_ancestor.children
-                            if t.dep_ in ("nsubj", "nsubj:pass") and t != referred_root
+                            if t.dep_ in ("nsubj", "nsubj:pass") 
                         ]
-                    )
-                    > 0
-                ):
+                if any(subjects) and referred_root not in subjects:
                     return False
             return False
 
@@ -769,6 +892,40 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 return True
         return False
 
+    def get_propn_subtree(self, token:Token) -> list:
+        """ Returns a list containing each member M of the subtree of *token* that are proper nouns
+            and where all the tokens between M and *token* are themselves proper nouns. If *token*
+            is itself not a proper noun or if the head of *token* is a proper noun, an empty list
+            is returned.
+        """
+        """"Has to be edited for french as the titles are parsed as heads of the propn 
+        (and are those titles also included in named entities)
+        """
+        def is_propn_part(token:Token) -> bool:
+            if token.lemma_.lower() not in self.person_titles and \
+                token.text[0].upper() != token.text[0] and\
+                re.search("\\W", token.text):
+                return False
+            return token.pos_ in self.propn_pos or \
+                 (token.lemma_.lower() in self.person_titles and token.pos_ in self.noun_pos)
+
+        if not is_propn_part(token):
+            return []
+        if token.dep_ != self.root_dep and token.dep_ not in self.dependent_sibling_deps and \
+                is_propn_part(token.head):
+            return []
+        subtree = list(token.subtree)
+        before_start_index = -1
+        after_end_index = sys.maxsize
+        for subtoken in subtree:
+            if not is_propn_part(subtoken) and subtoken.i < token.i and \
+                    before_start_index < subtoken.i:
+                before_start_index = subtoken.i
+            elif not is_propn_part(subtoken) and subtoken.i > token.i and \
+                    after_end_index > subtoken.i:
+                after_end_index = subtoken.i
+        return ([t for t in subtree if t.i > before_start_index and t.i < after_end_index])
+
     def is_potentially_referring_back_noun(self, token: Token) -> bool:
 
         if (
@@ -802,6 +959,127 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 token._.coref_chains.temp_governing_sibling
             )
         )
+    def get_noun_core_lemma(self, token):
+        prefix = re.compile("^((vice)|(^ex)|(^co))-")
+        return prefix.sub("",token.lemma_).lower()
+
+    def is_grammatically_compatible_noun_pair(self, referred : Token, referring:Token):
+        (
+            referred_masc,
+            referred_fem,
+            referred_sing,
+            referred_plur,
+            ) = self.get_gender_number_info(referred, directly=True)
+        (
+            referring_masc,
+            referring_fem,
+            referring_sing,
+            referring_plur,
+            ) = self.get_gender_number_info(referring, directly=True)
+  
+        if not (
+            (referred_plur and referring_plur) or (referred_sing and referring_sing)
+        ) and not (referred.ent_type_ == "LOC" and referred.lemma_.upper() in self.plural_toponyms):
+            # two nouns with different numbers can't corefer. This is true for substantives and propn alike
+            return False
+        
+
+        if (referred.ent_type_ == 'PER' or self.get_noun_core_lemma(referred) in self.person_titles) and \
+            not (referring.pos_ == 'NOUN' and self.get_noun_core_lemma(referring) in self.mixed_gender_person_roles):
+            # Gender compatibility is only ensured for person and their roles
+            # And only when the role does not allow mixed gender
+            # "Sophie... l'auteur du livre'" is possible
+            # "Sophie... l'instituteur'" is impossible
+            if not (
+                (referred_masc and referring_masc) or (referred_fem and referring_fem)
+                ):
+                return False
+        if (
+            self.has_morph(referring, "Gender","Masc") and 
+            referring_fem and not referred_fem
+            ):
+            # when fem gender is enforced by det
+            # eg : la juge
+            return False
+        return True
+            
+    def is_potential_coreferring_pair_with_substantive(self,
+         referred: Token, referring: Token) -> bool:
+        '''
+        Returns True if  pragmatical rules of the language
+        allow the two nouns to corefer
+        '''
+        #Nouns can't corefer in same predication
+        verb_referred_ancestors = [t for t in referred.ancestors \
+            if t.dep_ == 'ROOT' or t.pos_ in self.clause_root_pos]
+        verb_referring_ancestors = [t for t in referring.ancestors \
+            if t.dep_ == 'ROOT' or t.pos_ in self.clause_root_pos]
+        referred_verb_parent = verb_referred_ancestors[0] if verb_referred_ancestors else referred
+        referring_verb_parent = verb_referring_ancestors[0] if verb_referring_ancestors else referring
+        # Covers cases of unrecognised appos
+        if referred_verb_parent == referring_verb_parent and\
+             referring.dep_ != "xcomp" :
+            return False
+
+        for appos_token in [referred, referring]:
+            #Prevents any non Propn from appos chain from connecting to other nouns
+            # That way we ensure that only the propn will be linked to the bigger chains
+            # E.g : "Justin Trudeau.... Le Président, Donald Trump". 
+            # We don't want "president" to be able to be linked to "Justin"
+            appos_children = [c for c in appos_token.children if c.dep_ == "appos"]
+            if (
+                any(1 for propn in appos_children 
+                if propn.pos_ == "PROPN" or propn.ent_type_)
+                and 
+                appos_token.pos_ != "PROPN" and not appos_token.ent_type_
+            ):
+                return False
+
+            if appos_token.pos_ != "PROPN" and appos_token.dep_ == "appos" and \
+                not appos_token.ent_type_ and \
+                (appos_token.head.pos_ == "PROPN" or appos_token.ent_type_):
+                return False
+        return True
+        
+    def language_dependent_is_coreferring_noun_pair(self,
+         referred: Token, referring: Token) -> bool:
+        '''
+         Return True if language rules make it necessary 
+         for the two noun phrases to corever
+        '''
+        # Apposition chains
+        if referred == referring.head and referring.dep_ == "appos":
+            return True
+        if referred == referring.head.head and \
+            referring.dep_ == "appos" and referring.head.dep_ == "appos":
+            return True
+
+        # Cases of apposition wrongly tagged as conj
+        if (
+            referred == referring.head and referring.dep_ == "conj" 
+            and self.is_involved_in_non_or_conjunction(referring)
+            and referred.dep_ in ("nsubj", "nsubj:pass") 
+            and referred.head.pos_ in ("VERB","AUX")
+        ):
+            
+            *_, referred_sing , referred_plur = self.get_gender_number_info(referred)
+            if referred_sing and not referred_plur and\
+                self.has_morph(referred.head, "Number","Sing"):
+                return True
+        # Copular structures
+        if referring == referred.head and \
+            any(
+                cop for cop in referring.children if cop.dep_ == "cop" and 
+                cop.lemma_ == "être"
+                ):
+            return True
+
+        # state verbs
+        stative_verbs = ["devenir","rester","demeurer"]
+        if referred.dep_ in ("nsubj","nsubj:pass") and referring.dep_ == "obj" and \
+            referring.head == referred.head and referring.head.lemma_ in stative_verbs:
+            return True
+        return False
 
     def is_potential_coreferring_noun_pair(
         self, referred: Token, referring: Token
@@ -811,12 +1089,17 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         already returned *True* for both *referred* and *referring* and that
         *referred* precedes *referring* within the document.
         """
-
         if len(referred.text) == 1 and len(referring.text) == 1:
             return False  # get rid of copyright signs etc.
 
-        if referred.pos_ not in self.noun_pos or referring.pos_ not in self.noun_pos:
+        if (referred.pos_ not in self.noun_pos and not self.has_det(referred))\
+            or (referring.pos_ not in self.noun_pos and not self.has_det(referring)):
             return False
+        grammatically_compatible= self.is_grammatically_compatible_noun_pair(referred,referring)
+        # Needs to be here as it covers cases of incorrect parsing
+        if self.language_dependent_is_coreferring_noun_pair(referred, referring) and\
+            grammatically_compatible:
+            return True
 
         if referring in referred._.coref_chains.temp_dependent_siblings:
             return False
@@ -845,27 +1128,41 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             ).endswith(" ".join(t.lemma_.lower() for t in referring_propn_subtree)):
                 return True
 
+        if not self.is_potential_coreferring_pair_with_substantive(referred, referring):
+            return False
         # e.g. 'Peugeot' -> 'l'entreprise'
         new_reverse_entity_noun_dictionary = {
             noun: "PER" for noun in self.person_roles
         } | self.reverse_entity_noun_dictionary
-        if (
-            referring.lemma_.lower() in new_reverse_entity_noun_dictionary
-            and referred.pos_ in self.propn_pos
-            and referred.ent_type_
-            == new_reverse_entity_noun_dictionary[referring.lemma_.lower()]
-            and self.is_potentially_definite(referring)
-        ):
-            return True
 
+        if (
+                self.get_noun_core_lemma(referring) in new_reverse_entity_noun_dictionary
+                and self.is_potentially_definite(referring)  and 
+                (
+                    (
+                    referred.ent_type_ ==
+                    new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]
+                    )
+                    or 
+                    (
+                    new_reverse_entity_noun_dictionary[self.get_noun_core_lemma(referring)]
+                    == "PER"
+                    and referred.ent_type_ and self.refers_to_person(referred)
+                    )
+                ) 
+                and grammatically_compatible
+                and not (referring.ent_type_ != "" and referring.pos_ != "PROPN")
+            ):
+            return True
+        
         if not self.is_potentially_referring_back_noun(referring):
             return False
         if not self.is_potentially_introducing_noun(
             referred
         ) and not self.is_potentially_referring_back_noun(referred):
             return False
-        if referred.lemma_ == referring.lemma_ and referred.morph.get(
-            self.number_morph_key
-        ) == referring.morph.get(self.number_morph_key):
+        if self.get_noun_core_lemma(referred) == self.get_noun_core_lemma(referring)\
+            and referred.morph.get(self.number_morph_key) == \
+                referring.morph.get(self.number_morph_key):
             return True
         return False
