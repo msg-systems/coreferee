@@ -568,7 +568,7 @@ The initial open-source version.
 <a id="version-113"></a>
 ##### 6.6 Version 1.1.3
 
-- Updated French rules to new version again supplied by [Pantalaymon](https://github.com/Pantalaymon)
+- Updated French rules to new version, again supplied by [Pantalaymon](https://github.com/Pantalaymon)
 - Fixed an endless-loop problem in `language_independent_is_anaphoric_pair()`
 
 <a id="open-issues"></a>
