@@ -405,7 +405,7 @@ class RulesAnalyzer(ABC):
                             break
                     if result == 1:
                         break
-                if referring_or_governor.dep_ == 'ROOT':
+                if referring_or_governor == referring_or_governor.head:
                     break
                 referring_or_governor = referring_or_governor.head
 

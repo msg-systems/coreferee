@@ -132,7 +132,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     disjointed_dep = ("dislocated","vocative","parataxis","discourse")
 
-    french_word = re.compile("[\-\w][\-\w'&\.]*$")
+    french_word = re.compile("[\\-\\w][\\-\\w'&\\.]*$")
 
     def get_dependent_siblings(self, token: Token) -> list:
         def add_siblings_recursively(recursed_token: Token, visited_set: set) -> None:
@@ -904,7 +904,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         def is_propn_part(token:Token) -> bool:
             if token.lemma_.lower() not in self.person_titles and \
                 token.text[0].upper() != token.text[0] and\
-                re.search("\W", token.text):
+                re.search("\\W", token.text):
                 return False
             return token.pos_ in self.propn_pos or \
                  (token.lemma_.lower() in self.person_titles and token.pos_ in self.noun_pos)
