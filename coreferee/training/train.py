@@ -19,17 +19,22 @@ import sys
 import time
 import pickle
 from datetime import datetime
+from random import Random
+from tqdm import tqdm
 from packaging import version
 import pkg_resources
 import spacy
-from thinc.api import Config
+from thinc.api import Config, prefer_gpu
+from thinc.loss import SequenceCategoricalCrossentropy
+from thinc.optimizers import Adam
 from .loaders import GenericLoader
-from .model import ModelGenerator
 from ..annotation import Annotator
+from ..data_model import Mention
 from ..manager import COMMON_MODELS_PACKAGE_NAMEPART, FEATURE_TABLE_FILENAME, \
-    KERAS_MODEL_FILENAME
+    THINC_MODEL_FILENAME
 from ..rules import RulesAnalyzerFactory
-from ..tendencies import TendenciesAnalyzer, ENSEMBLE_SIZE
+from ..tendencies import TendenciesAnalyzer, generate_feature_table, create_thinc_model
+from ..tendencies import DocumentPairInfo, ENSEMBLE_SIZE
 from ..errors import LanguageNotSupportedError
 
 class TrainingManager:
@@ -178,22 +183,36 @@ class TrainingManager:
             [chain.pretty_representation for chain in token._.coref_chains])
         self.writeln(temp_log_file)
 
-    def generate_keras_ensemble(self, model_generator, temp_log_file, training_docs,
-            tendencies_analyzer):
-        keras_model = model_generator.generate_keras_model(training_docs, tendencies_analyzer,
-            ENSEMBLE_SIZE)
-        self.writeln(temp_log_file)
-        self.writeln(temp_log_file, 'Generated Keras model:')
-        keras_model.summary(print_fn=lambda line:self.writeln(temp_log_file, line))
-        self.writeln(temp_log_file, 'Training model ...')
-        keras_history = model_generator.train_keras_model(training_docs, tendencies_analyzer,
-            keras_model)
-        for index in range(ENSEMBLE_SIZE):
-            keras_accuracy = keras_history.history[
-                '_'.join(('output', str(index), 'binary_accuracy'))][-1]
-            self.writeln(temp_log_file, 'Sub-network ', index, ' within ensemble:')
-            self.writeln(temp_log_file, 'Binary accuracy after training is ', keras_accuracy)
-        return keras_model
+    def train_thinc_model(self, document_pair_infos):
+        print()
+        print("Generating model ...")
+        model = create_thinc_model()
+        print()
+        optimizer = Adam(0.001)
+        for epoch in range(1, 4):
+            print("Epoch", epoch)
+            batches = model.ops.minibatch(
+                1, document_pair_infos, shuffle=True
+            )
+            loss_calc = SequenceCategoricalCrossentropy(normalize=True)
+            losses = []
+            for batch_number, X in enumerate(tqdm(batches)):
+                Y = []
+                for x in X:
+                    Y.extend(x.training_outputs)
+                if epoch == 1 and batch_number == 0:
+                    model.initialize(X=X, Y=Y)
+                Yh, backprop = model.begin_update(X)
+                grads, loss = loss_calc(Yh, Y)
+                losses.append(loss.tolist())
+                backprop(grads)
+                model.finish_update(optimizer)
+            print(
+                "Average absolute loss:",
+                round(sum(losses) / (len(losses) * Y[0].shape[1]), 6),
+            )
+            print()
+        return model
 
     def load_documents(self, nlp, rules_analyzer):
         docs = []
@@ -201,7 +220,7 @@ class TrainingManager:
             docs.extend(loader.load(self.data_dir, nlp, rules_analyzer))
         return docs
 
-    def train_model(self, config_entry_name, config_entry, temp_log_file):
+    def train(self, config_entry_name, config_entry, temp_log_file):
         self.writeln(temp_log_file, 'Config entry name: ', config_entry_name)
         nlp_name = '_'.join((self.lang, config_entry['model']))
         nlp = self.nlp_dict[nlp_name]
@@ -219,50 +238,83 @@ class TrainingManager:
 
         rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(nlp)
         docs = self.load_documents(nlp, rules_analyzer)
+        rand = Random(0.89)
+        for _ in range(100):
+            bisection = int(rand.random() * len(docs))
+            docs = docs[bisection:] + docs[:bisection]
+
         # Separate into training and test for first run
         total_words = 0
         docs_to_total_words_position = []
         for doc in docs:
             docs_to_total_words_position.append(total_words)
             total_words += len(doc)
-        split_index = bisect.bisect_right(docs_to_total_words_position, total_words*0.8)
+        split_index = bisect.bisect_right(
+            docs_to_total_words_position, total_words * 0.8
+        )
         training_docs = docs[:split_index]
         test_docs = docs[split_index:]
-        self.writeln(temp_log_file, 'Total words: ', total_words)
-        self.writeln(temp_log_file, 'Training docs: ', len(training_docs), '; test docs: ',
-            len(test_docs))
-        model_generator = ModelGenerator(config_entry_name, nlp, vectors_nlp)
-        feature_table = model_generator.generate_feature_table(training_docs)
-        self.writeln(temp_log_file, 'Feature table: ', feature_table.__dict__)
+        self.writeln(temp_log_file, "Loaders:", self.loaders)
+        self.writeln(temp_log_file, "Data directory:", self.data_dir)
+        self.writeln(temp_log_file, "Total words: ", total_words)
+        self.writeln(
+            temp_log_file,
+            "Training docs: ",
+            len(training_docs),
+            "; test docs: ",
+            len(test_docs),
+        )
+
+        feature_table = generate_feature_table(docs, nlp)
+        self.writeln(temp_log_file, "Feature table: ", feature_table.__dict__)
+
+        print()
         tendencies_analyzer = TendenciesAnalyzer(rules_analyzer, vectors_nlp, feature_table)
-        keras_ensemble = self.generate_keras_ensemble(
-            model_generator, temp_log_file, training_docs, tendencies_analyzer)
-        annotator = Annotator(nlp, vectors_nlp, feature_table, keras_ensemble)
+        prefer_gpu()
+        print("Creating Document Pair Infos ...")
+        document_pair_infos = []
+        for training_doc in tqdm(training_docs):
+            dpi = DocumentPairInfo.from_doc(training_doc, tendencies_analyzer, ENSEMBLE_SIZE, is_train=True)
+            if len(dpi.candidates.dataXd) > 0:
+                document_pair_infos.append(dpi)
+        
+        model = self.train_thinc_model(document_pair_infos)
+        annotator = Annotator(nlp, vectors_nlp, feature_table, model)
         self.writeln(temp_log_file)
         correct_counter = incorrect_counter = 0
-        for test_doc in test_docs:
+        print("Analysing test documents ...")
+        for test_doc in tqdm(test_docs):
+            for token in test_doc:
+                token._.coref_chains.chains = []
             annotator.annotate(test_doc, used_in_training=True)
-            self.writeln(temp_log_file, 'test_doc ', test_doc[:100], '... :')
+            self.writeln(temp_log_file, "test_doc ", test_doc[:100], "... :")
             self.writeln(temp_log_file)
-            self.writeln(temp_log_file, 'Coref chains:')
+            self.writeln(temp_log_file, "Coref chains:")
             self.writeln(temp_log_file)
             for chain in test_doc._.coref_chains:
                 self.writeln(temp_log_file, chain.pretty_representation)
             self.writeln(temp_log_file)
-            self.writeln(temp_log_file, 'Incorrect annotations:')
+            self.writeln(temp_log_file, "Incorrect annotations:")
             self.writeln(temp_log_file)
             for token in test_doc:
-                if hasattr(token._.coref_chains, 'temp_potential_referreds'):
-                    for potential_referred in token._.coref_chains.temp_potential_referreds:
-                        if hasattr(potential_referred, 'true_in_training'):
+                if hasattr(token._.coref_chains, "temp_potential_referreds"):
+                    for (
+                        potential_referred
+                    ) in token._.coref_chains.temp_potential_referreds:
+                        if hasattr(potential_referred, "true_in_training"):
                             for chain in token._.coref_chains:
+                                if Mention(token, False) not in chain:
+                                    continue
                                 if potential_referred in chain:
                                     correct_counter += 1
                                 else:
                                     incorrect_counter += 1
-                                    self.log_incorrect_annotation(temp_log_file, token,
+                                    self.log_incorrect_annotation(
+                                        temp_log_file,
+                                        token,
                                         token.doc[potential_referred.root_index],
-                                        token.doc[chain.mentions[0].root_index])
+                                        token.doc[chain.mentions[0].root_index],
+                                    )
         if len(test_docs) > 0:
             accuracy = round(100 * correct_counter / (correct_counter + incorrect_counter), 2)
             self.writeln(temp_log_file)
@@ -273,11 +325,9 @@ class TrainingManager:
         self.writeln(temp_log_file, 'Retraining with all documents')
         self.writeln(temp_log_file)
         docs = self.load_documents(nlp, rules_analyzer)
-        feature_table = model_generator.generate_feature_table(docs)
+        feature_table = generate_feature_table(docs)
         self.writeln(temp_log_file, 'Feature table: ', feature_table.__dict__)
-        tendencies_analyzer = TendenciesAnalyzer(rules_analyzer, vectors_nlp, feature_table)
-        keras_ensemble = self.generate_keras_ensemble(
-            model_generator, temp_log_file, docs, tendencies_analyzer)
+        model = self.train_thinc_model(document_pair_infos, tendencies_analyzer)
         this_model_dir = os.sep.join((self.models_dirname,
             ''.join((COMMON_MODELS_PACKAGE_NAMEPART, self.lang)), config_entry_name))
         os.mkdir(this_model_dir)
@@ -287,8 +337,8 @@ class TrainingManager:
         feature_table_filename = os.sep.join((this_model_dir, FEATURE_TABLE_FILENAME))
         with open(feature_table_filename, 'wb') as feature_table_file:
             pickle.dump(feature_table, feature_table_file)
-        keras_filename = ''.join((this_model_dir, os.sep, KERAS_MODEL_FILENAME))
-        keras_ensemble.save(keras_filename)
+        thinc_model_filename = "".join((this_model_dir, os.sep, THINC_MODEL_FILENAME))
+        model.to_disk(thinc_model_filename)
 
     def train_models(self):
         for config_entry_name in self.relevant_config_entry_names:
@@ -297,7 +347,7 @@ class TrainingManager:
             temp_log_filename = ''.join((self.log_dir, os.sep, 'temp', os.sep,
                 config_entry_name, '.log'))
             with open(temp_log_filename, 'w', encoding='utf-8') as temp_log_file:
-                self.train_model(config_entry_name, config_entry, temp_log_file)
+                self.train(config_entry_name, config_entry, temp_log_file)
         timestamp = datetime.now().isoformat(timespec='microseconds')
         sanitized_timestamp = ''.join([ch for ch in timestamp if ch.isalnum()])
         zip_filename = ''.join((self.log_dir, os.sep, 'training_log_',

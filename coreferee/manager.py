@@ -20,7 +20,6 @@ from sys import exc_info
 from packaging import version
 import spacy
 import pkg_resources
-from tensorflow import keras
 from spacy.language import Language
 from spacy.tokens import Doc, Token
 from thinc.api import Config
@@ -28,12 +27,13 @@ from .annotation import Annotator
 from .errors import LanguageNotSupportedError, ModelNotSupportedError, \
     VectorsModelNotInstalledError, VectorsModelHasWrongVersionError, \
     MultiprocessingParsingNotSupportedError
+from .tendencies import create_thinc_model, ENSEMBLE_SIZE
 
 COMMON_MODELS_PACKAGE_NAMEPART = 'coreferee_model_'
 
 FEATURE_TABLE_FILENAME = 'feature_table.bin'
 
-KERAS_MODEL_FILENAME = 'keras_ensemble.h5'
+THINC_MODEL_FILENAME = 'model'
 
 class CorefereeManager:
 
@@ -88,10 +88,11 @@ class CorefereeManager:
                     FEATURE_TABLE_FILENAME)
                 with open(this_feature_table_filename, "rb") as feature_table_file:
                     feature_table = pickle.load(feature_table_file)
-                absolute_keras_model_filename = pkg_resources.resource_filename(
-                    model_package_name, KERAS_MODEL_FILENAME)
-                keras_ensemble = keras.models.load_model(absolute_keras_model_filename)
-                return Annotator(nlp, vectors_nlp, feature_table, keras_ensemble)
+                absolute_thinc_model_filename = pkg_resources.resource_filename(
+                    model_package_name, THINC_MODEL_FILENAME)
+                thinc_model = create_thinc_model()
+                thinc_model.from_disk(absolute_thinc_model_filename)
+                return Annotator(nlp, vectors_nlp, feature_table, thinc_model)
         raise ModelNotSupportedError(''.join((nlp.meta['lang'], '_', nlp.meta['name'],
             ' version ', nlp.meta['version'])))
 

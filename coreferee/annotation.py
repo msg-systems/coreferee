@@ -24,8 +24,8 @@ class Annotator:
     RETRY_DEPTH = 5
 
     def __init__(self, nlp:Language, vectors_nlp:Language,
-            feature_table:FeatureTable, keras_ensemble):
-        self.keras_ensemble = keras_ensemble
+            feature_table:FeatureTable, thinc_ensemble):
+        self.thinc_ensemble = thinc_ensemble
         self.rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(nlp)
         self.tendencies_analyzer = TendenciesAnalyzer(self.rules_analyzer,
             vectors_nlp, feature_table)
@@ -267,7 +267,7 @@ class Annotator:
     def annotate(self, doc:Doc, used_in_training=False):
         if not used_in_training:
             self.rules_analyzer.initialize(doc)
-        self.tendencies_analyzer.score(doc, self.keras_ensemble)
+        self.tendencies_analyzer.score(doc, self.thinc_ensemble)
         token_indexes_without_coordination_to_mention_sets = {}
         token_indexes_with_coordination_to_mention_sets = {}
         sentence_deque = deque(

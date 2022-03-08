@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Union, Dict, Tuple, Iterator, Set, Optional, cast
 from os import linesep
-from spacy.tokens import Token
-import srsly
+from spacy.tokens import Token 
+import srsly 
 
 class ChainHolder():
     """ The object returned by *token._.coref_chains*. """
@@ -35,7 +36,7 @@ class ChainHolder():
     def print(self) -> None:
         print(linesep.join(chain.pretty_representation for chain in self.chains))
 
-    def __iter__(self) -> iter:
+    def __iter__(self) -> Iterator["Chain"]:
         return iter(self.chains.copy())
 
     def __len__(self) -> int:
@@ -49,12 +50,12 @@ class ChainHolder():
         return '; '.join(chain.pretty_representation for chain in self.chains)
 
     @staticmethod
-    def resolve(token:Token) -> list:
+    def resolve(token:Token) -> Optional[List[Token]]:
         """ If *token* is an anaphor, returns a list of tokens to which *token* points;
             otherwise returns *None*.
         """
 
-        def resolve_recursively(token:Token) -> list:
+        def resolve_recursively(token:Token) -> Set[Token]:
             tokens_to_return = set()
             for chain in token._.coref_chains.chains:
                 for mention in (mention for mention in
@@ -176,6 +177,18 @@ class Mention:
     def __getitem__(self, key) -> int:
         return self.token_indexes[key]
 
+    @staticmethod
+    def number_of_training_mentions_marked_true(token: Token) -> int:
+        if not hasattr(token._.coref_chains, "temp_potential_referreds"):
+            return 0
+        return len(
+            [
+                1
+                for mention in token._.coref_chains.temp_potential_referreds
+                if hasattr(mention, "true_in_training")
+            ]
+        )
+
 
 class FeatureTable:
     """ Captures the possible values of the various Spacy annotations that are observed
@@ -233,3 +246,4 @@ class FeatureTable:
 
     def __len__(self) -> int:
         return sum(len(getattr(self, property)) for property in self.__dict__)
+
