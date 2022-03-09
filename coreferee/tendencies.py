@@ -34,23 +34,29 @@ from .rules import RulesAnalyzerFactory, RulesAnalyzer
 
 ENSEMBLE_SIZE = 5
 
-class TendenciesAnalyzer:
 
-    def __init__(self, rules_analyzer:RulesAnalyzer, vectors_nlp:Language,
-            feature_table:FeatureTable):
+class TendenciesAnalyzer:
+    def __init__(
+        self,
+        rules_analyzer: RulesAnalyzer,
+        vectors_nlp: Language,
+        feature_table: FeatureTable,
+    ):
         self.rules_analyzer = rules_analyzer
         self.vectors_nlp = vectors_nlp
         if self.vectors_nlp.vocab[rules_analyzer.random_word].has_vector:
-            self.vector_length = len(self.vectors_nlp.vocab[rules_analyzer.random_word].vector)
+            self.vector_length = len(
+                self.vectors_nlp.vocab[rules_analyzer.random_word].vector
+            )
         else:
             self.vector_length = len(vectors_nlp(rules_analyzer.random_word)[0].vector)
         assert self.vector_length > 0
         self.feature_table = feature_table
 
-    def get_feature_map(self, token_or_mention, doc:Doc) -> list:
-        """ Returns a binary list representing the features from *self.feature_table* that
-            the token or any of the tokens within the mention has. The list is also
-            added as *token._.coref_chains.temp_feature_map* or *mention.temp_feature_map*.
+    def get_feature_map(self, token_or_mention, doc: Doc) -> list:
+        """Returns a binary list representing the features from *self.feature_table* that
+        the token or any of the tokens within the mention has. The list is also
+        added as *token._.coref_chains.temp_feature_map* or *mention.temp_feature_map*.
         """
 
         def convert_to_oneshot(reference_list, actual_list):
@@ -59,24 +65,28 @@ class TendenciesAnalyzer:
             entries in 'reference_list' that are also contained within 'actual_list' have the
             value '1' and other positions have the value '0'.
             """
-            return [1 if reference in actual_list else 0 for reference in reference_list]
+            return [
+                1 if reference in actual_list else 0 for reference in reference_list
+            ]
 
         def get_oneshot_for_token_and_siblings(prop, func):
-            """ Executes a logical AND between the values for the respective siblings. """
+            """Executes a logical AND between the values for the respective siblings."""
             oneshot = convert_to_oneshot(prop, func(token))
             for sibling in siblings:
                 sibling_oneshot = convert_to_oneshot(prop, func(sibling))
-                oneshot = [1 if (entry == 1 or sibling_oneshot[index] == 1) else 0
-                    for (index, entry) in enumerate(oneshot)]
+                oneshot = [
+                    1 if (entry == 1 or sibling_oneshot[index] == 1) else 0
+                    for (index, entry) in enumerate(oneshot)
+                ]
             return oneshot
 
         siblings = []
         if isinstance(token_or_mention, Token):
-            if hasattr(token_or_mention._.coref_chains, 'temp_feature_map'):
+            if hasattr(token_or_mention._.coref_chains, "temp_feature_map"):
                 return token_or_mention._.coref_chains.temp_feature_map
             token = token_or_mention
         else:
-            if hasattr(token_or_mention, 'temp_feature_map'):
+            if hasattr(token_or_mention, "temp_feature_map"):
                 return token_or_mention.temp_feature_map
             token = doc[token_or_mention.root_index]
             if len(token_or_mention.token_indexes) > 1:
@@ -84,59 +94,105 @@ class TendenciesAnalyzer:
 
         feature_map = convert_to_oneshot(self.feature_table.tags, [token.tag_])
 
-        feature_map.extend(get_oneshot_for_token_and_siblings(self.feature_table.morphs,
-            lambda token: token.morph))
+        feature_map.extend(
+            get_oneshot_for_token_and_siblings(
+                self.feature_table.morphs, lambda token: token.morph
+            )
+        )
 
-        feature_map.extend(convert_to_oneshot(self.feature_table.ent_types, [token.ent_type_]))
+        feature_map.extend(
+            convert_to_oneshot(self.feature_table.ent_types, [token.ent_type_])
+        )
 
-        feature_map.extend(get_oneshot_for_token_and_siblings(
-            self.feature_table.lefthand_deps_to_children,
-            lambda token: [child.dep_ for child in token.children if child.i < token.i]))
+        feature_map.extend(
+            get_oneshot_for_token_and_siblings(
+                self.feature_table.lefthand_deps_to_children,
+                lambda token: [
+                    child.dep_ for child in token.children if child.i < token.i
+                ],
+            )
+        )
 
-        feature_map.extend(get_oneshot_for_token_and_siblings(
-            self.feature_table.righthand_deps_to_children,
-            lambda token: [child.dep_ for child in token.children if child.i > token.i]))
+        feature_map.extend(
+            get_oneshot_for_token_and_siblings(
+                self.feature_table.righthand_deps_to_children,
+                lambda token: [
+                    child.dep_ for child in token.children if child.i > token.i
+                ],
+            )
+        )
 
         if token.dep_ != self.rules_analyzer.root_dep and token.i < token.head.i:
-            feature_map.extend(convert_to_oneshot(self.feature_table.lefthand_deps_to_parents,
-                [token.dep_]))
+            feature_map.extend(
+                convert_to_oneshot(
+                    self.feature_table.lefthand_deps_to_parents, [token.dep_]
+                )
+            )
         else:
-            feature_map.extend(convert_to_oneshot(self.feature_table.lefthand_deps_to_parents, []))
+            feature_map.extend(
+                convert_to_oneshot(self.feature_table.lefthand_deps_to_parents, [])
+            )
 
         if token.dep_ != self.rules_analyzer.root_dep and token.i > token.head.i:
-            feature_map.extend(convert_to_oneshot(self.feature_table.righthand_deps_to_parents,
-                [token.dep_]))
+            feature_map.extend(
+                convert_to_oneshot(
+                    self.feature_table.righthand_deps_to_parents, [token.dep_]
+                )
+            )
         else:
-            feature_map.extend(convert_to_oneshot(self.feature_table.righthand_deps_to_parents,
-                []))
+            feature_map.extend(
+                convert_to_oneshot(self.feature_table.righthand_deps_to_parents, [])
+            )
 
         if token.dep_ != self.rules_analyzer.root_dep:
-            feature_map.extend(convert_to_oneshot(self.feature_table.parent_tags,
-                [token.head.tag_]))
+            feature_map.extend(
+                convert_to_oneshot(self.feature_table.parent_tags, [token.head.tag_])
+            )
         else:
             feature_map.extend(convert_to_oneshot(self.feature_table.parent_tags, []))
 
         if token.dep_ != self.rules_analyzer.root_dep:
-            feature_map.extend(convert_to_oneshot(self.feature_table.parent_morphs,
-                token.head.morph))
+            feature_map.extend(
+                convert_to_oneshot(self.feature_table.parent_morphs, token.head.morph)
+            )
         else:
             feature_map.extend(convert_to_oneshot(self.feature_table.parent_morphs, []))
 
         if token.dep_ != self.rules_analyzer.root_dep:
-            feature_map.extend(convert_to_oneshot(
-                self.feature_table.parent_lefthand_deps_to_children,
-                [child.dep_ for child in token.head.children if child.i < token.head.i]))
+            feature_map.extend(
+                convert_to_oneshot(
+                    self.feature_table.parent_lefthand_deps_to_children,
+                    [
+                        child.dep_
+                        for child in token.head.children
+                        if child.i < token.head.i
+                    ],
+                )
+            )
         else:
-            feature_map.extend(convert_to_oneshot(
-                self.feature_table.parent_lefthand_deps_to_children, []))
+            feature_map.extend(
+                convert_to_oneshot(
+                    self.feature_table.parent_lefthand_deps_to_children, []
+                )
+            )
 
         if token.dep_ != self.rules_analyzer.root_dep:
-            feature_map.extend(convert_to_oneshot(
-                self.feature_table.parent_righthand_deps_to_children,
-                [child.dep_ for child in token.head.children if child.i > token.head.i]))
+            feature_map.extend(
+                convert_to_oneshot(
+                    self.feature_table.parent_righthand_deps_to_children,
+                    [
+                        child.dep_
+                        for child in token.head.children
+                        if child.i > token.head.i
+                    ],
+                )
+            )
         else:
-            feature_map.extend(convert_to_oneshot(
-                self.feature_table.parent_righthand_deps_to_children, []))
+            feature_map.extend(
+                convert_to_oneshot(
+                    self.feature_table.parent_righthand_deps_to_children, []
+                )
+            )
 
         if isinstance(token_or_mention, Token):
             token_or_mention._.coref_chains.temp_feature_map = feature_map
@@ -144,54 +200,80 @@ class TendenciesAnalyzer:
             token_or_mention.temp_feature_map = feature_map
         return feature_map
 
-    def get_position_map(self, token_or_mention, doc:Doc) -> list:
-        """ Returns a list of numbers representing the position, depth, etc. of the token or mention
-            within its sentence. The list is also added as *token._.coref_chains.temp_position_map*
-            or *mention.temp_position_map*.
+    def get_position_map(self, token_or_mention, doc: Doc) -> list:
+        """Returns a list of numbers representing the position, depth, etc. of the token or mention
+        within its sentence. The list is also added as *token._.coref_chains.temp_position_map*
+        or *mention.temp_position_map*.
         """
 
         if isinstance(token_or_mention, Token):
-            if hasattr(token_or_mention._.coref_chains, 'temp_position_map'):
+            if hasattr(token_or_mention._.coref_chains, "temp_position_map"):
                 return token_or_mention._.coref_chains.temp_position_map
             token = token_or_mention
         else:
-            if hasattr(token_or_mention, 'temp_position_map'):
+            if hasattr(token_or_mention, "temp_position_map"):
                 return token_or_mention.temp_position_map
             token = doc[token_or_mention.root_index]
 
         # This token is the nth word within its sentence
-        position_map = [token.i -
-            token.doc._.coref_chains.temp_sent_starts[token._.coref_chains.temp_sent_index]]
+        position_map = [
+            token.i
+            - token.doc._.coref_chains.temp_sent_starts[
+                token._.coref_chains.temp_sent_index
+            ]
+        ]
 
         # This token is at depth n from the root
         position_map.append(len(list(token.ancestors)))
 
         # This token is n verbs from the root
-        position_map.append(len([ancestor for ancestor in token.ancestors if ancestor.pos_ in
-            self.rules_analyzer.verb_pos]))
+        position_map.append(
+            len(
+                [
+                    ancestor
+                    for ancestor in token.ancestors
+                    if ancestor.pos_ in self.rules_analyzer.verb_pos
+                ]
+            )
+        )
 
         # This token is the nth token at its depth within its sentence
-        position_map.append(len(
-            [1 for token_in_sentence in token.sent if token_in_sentence.i < token.i and
-             len(list(token_in_sentence.ancestors)) == len(list(token.ancestors))]))
+        position_map.append(
+            len(
+                [
+                    1
+                    for token_in_sentence in token.sent
+                    if token_in_sentence.i < token.i
+                    and len(list(token_in_sentence.ancestors))
+                    == len(list(token.ancestors))
+                ]
+            )
+        )
 
         # This token is the nth child of its parents
         if token.dep_ != self.rules_analyzer.root_dep:
-            position_map.append(sorted([child.i for child in token.head.children]).index(token.i))
+            position_map.append(
+                sorted([child.i for child in token.head.children]).index(token.i)
+            )
         else:
             position_map.append(-1)
 
         # Number of dependent siblings, or -1 if the method was passed a mention that is within
         # a coordination phrase but only covers one token within that phrase
-        if token._.coref_chains.temp_governing_sibling is not None or \
-                (len(token._.coref_chains.temp_dependent_siblings) > 0 and not
-                (isinstance(token_or_mention, Mention) and
-                len(token_or_mention.token_indexes) > 1)):
+        if token._.coref_chains.temp_governing_sibling is not None or (
+            len(token._.coref_chains.temp_dependent_siblings) > 0
+            and not (
+                isinstance(token_or_mention, Mention)
+                and len(token_or_mention.token_indexes) > 1
+            )
+        ):
             position_map.append(-1)
         else:
             position_map.append(len(token._.coref_chains.temp_dependent_siblings))
 
-        position_map.append(1 if token._.coref_chains.temp_governing_sibling is not None else 0)
+        position_map.append(
+            1 if token._.coref_chains.temp_governing_sibling is not None else 0
+        )
 
         if isinstance(token_or_mention, Token):
             token_or_mention._.coref_chains.temp_position_map = position_map
@@ -199,48 +281,62 @@ class TendenciesAnalyzer:
             token_or_mention.temp_position_map = position_map
         return position_map
 
-    def get_compatibility_map(self, referred:Mention, referring:Token) -> list:
-        """ Returns a list of numbers representing the interaction between *referred* and
-            *referring*. It will already have been established that coreference between the two is
-            possible; the compatibility map assists the neural network in ascertaining how likely
-            it is. The list is also added as *referred.temp_compatibility_map*.
+    def get_compatibility_map(self, referred: Mention, referring: Token) -> list:
+        """Returns a list of numbers representing the interaction between *referred* and
+        *referring*. It will already have been established that coreference between the two is
+        possible; the compatibility map assists the neural network in ascertaining how likely
+        it is. The list is also added as *referred.temp_compatibility_map*.
         """
         doc = referring.doc
         referred_root = doc[referred.root_index]
 
-        if hasattr(referred, 'temp_compatibility_map'):
+        if hasattr(referred, "temp_compatibility_map"):
             return referred.temp_compatibility_map
 
         # Referential distance in words (may be negative in the case of cataphora)
         compatibility_map = [referring.i - referred_root.i]
 
         # Referential distance in sentences
-        compatibility_map.append(referring._.coref_chains.temp_sent_index -
-            referred_root._.coref_chains.temp_sent_index)
+        compatibility_map.append(
+            referring._.coref_chains.temp_sent_index
+            - referred_root._.coref_chains.temp_sent_index
+        )
 
         # Whether the referred mention, its lefthand sibling or its head is among the ancestors
         # of the referring element
-        compatibility_map.append(1 if
-            referred_root in referring.ancestors or
-                (referred_root.dep_ != self.rules_analyzer.root_dep
-                and referred_root.head in referring.ancestors) or
-            referred_root._.coref_chains.temp_governing_sibling is not None and
-                (referred_root._.coref_chains.temp_governing_sibling in referring.ancestors or
-                    (referred_root._.coref_chains.temp_governing_sibling.dep_ !=
-                    self.rules_analyzer.root_dep and
-                    referred_root._.coref_chains.temp_governing_sibling.head in
-                    referring.ancestors)
+        compatibility_map.append(
+            1
+            if referred_root in referring.ancestors
+            or (
+                referred_root.dep_ != self.rules_analyzer.root_dep
+                and referred_root.head in referring.ancestors
+            )
+            or referred_root._.coref_chains.temp_governing_sibling is not None
+            and (
+                referred_root._.coref_chains.temp_governing_sibling
+                in referring.ancestors
+                or (
+                    referred_root._.coref_chains.temp_governing_sibling.dep_
+                    != self.rules_analyzer.root_dep
+                    and referred_root._.coref_chains.temp_governing_sibling.head
+                    in referring.ancestors
                 )
-            else 0)
+            )
+            else 0
+        )
 
         # The cosine similarity of the two objects' heads' vectors
-        if referred_root.dep_ != self.rules_analyzer.root_dep and \
-                referring.dep_ != self.rules_analyzer.root_dep:
+        if (
+            referred_root.dep_ != self.rules_analyzer.root_dep
+            and referring.dep_ != self.rules_analyzer.root_dep
+        ):
             referred_head_lexeme = self.vectors_nlp.vocab[referred_root.head.lemma_]
             referring_head_lexeme = self.vectors_nlp.vocab[referring.head.lemma_]
             if referred_head_lexeme.has_vector and referring_head_lexeme.has_vector:
-                compatibility_map.append(referred_head_lexeme.similarity(referring_head_lexeme))
-            elif referred_root.has_vector and referring.has_vector: # _sm models
+                compatibility_map.append(
+                    referred_head_lexeme.similarity(referring_head_lexeme)
+                )
+            elif referred_root.has_vector and referring.has_vector:  # _sm models
                 compatibility_map.append(referred_root.similarity(referring))
             else:
                 compatibility_map.append(-1)
@@ -249,17 +345,23 @@ class TendenciesAnalyzer:
 
         # The number of common true values in the feature maps of *referred.root* and *referring*.
         referred_feature_map = self.get_feature_map(referred, referring.doc)
-        referring_feature_map = self.get_feature_map(Mention(referring, False), referring.doc)
-        compatibility_map.append([1 if (entry == 1 and referring_feature_map[index] == 1) else 0
-            for (index, entry) in enumerate(referred_feature_map)].count(1))
+        referring_feature_map = self.get_feature_map(
+            Mention(referring, False), referring.doc
+        )
+        compatibility_map.append(
+            [
+                1 if (entry == 1 and referring_feature_map[index] == 1) else 0
+                for (index, entry) in enumerate(referred_feature_map)
+            ].count(1)
+        )
 
         referred.temp_compatibility_map = compatibility_map
         return compatibility_map
 
-    def score(self, doc:Doc, thinc_ensemble) -> None:
-        """ Scores all possible anaphoric pairs in *doc*. The scores are never referenced
-            outside this method because the possible pairs on each anaphor are sorted within
-            this method with the more likely interpretations at the front of the list.
+    def score(self, doc: Doc, thinc_ensemble) -> None:
+        """Scores all possible anaphoric pairs in *doc*. The scores are never referenced
+        outside this method because the possible pairs on each anaphor are sorted within
+        this method with the more likely interpretations at the front of the list.
         """
         document_pair_info = DocumentPairInfo.from_doc(doc, self, ENSEMBLE_SIZE)
         if len(document_pair_info.candidates.dataXd) > 0:
@@ -304,7 +406,7 @@ class TendenciesAnalyzer:
                 )
 
 
-def generate_feature_table(docs:list, nlp:Language) -> FeatureTable:
+def generate_feature_table(docs: list, nlp: Language) -> FeatureTable:
 
     rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(nlp)
     tags = set()
@@ -320,16 +422,21 @@ def generate_feature_table(docs:list, nlp:Language) -> FeatureTable:
     parent_righthand_deps_to_children = set()
 
     for doc in docs:
-        for token in (token for token in doc if
-                rules_analyzer.is_independent_noun(token) or
-                rules_analyzer.is_potential_anaphor(token)):
+        for token in (
+            token
+            for token in doc
+            if rules_analyzer.is_independent_noun(token)
+            or rules_analyzer.is_potential_anaphor(token)
+        ):
             tags.add(token.tag_)
             morphs.update(token.morph)
             ent_types.add(token.ent_type_)
-            lefthand_deps_to_children.update((child.dep_ for child in token.children
-            if child.i < token.i))
-            righthand_deps_to_children.update((child.dep_ for child in token.children
-            if child.i > token.i))
+            lefthand_deps_to_children.update(
+                (child.dep_ for child in token.children if child.i < token.i)
+            )
+            righthand_deps_to_children.update(
+                (child.dep_ for child in token.children if child.i > token.i)
+            )
             if token.dep_ != rules_analyzer.root_dep:
                 if token.i < token.head.i:
                     lefthand_deps_to_parents.add(token.dep_)
@@ -337,10 +444,20 @@ def generate_feature_table(docs:list, nlp:Language) -> FeatureTable:
                     righthand_deps_to_parents.add(token.dep_)
                 parent_tags.add(token.head.tag_)
                 parent_morphs.update(token.head.morph)
-                parent_lefthand_deps_to_children.update((
-                    child.dep_ for child in token.head.children if child.i < token.head.i))
-                parent_righthand_deps_to_children.update((
-                    child.dep_ for child in token.head.children if child.i > token.head.i))
+                parent_lefthand_deps_to_children.update(
+                    (
+                        child.dep_
+                        for child in token.head.children
+                        if child.i < token.head.i
+                    )
+                )
+                parent_righthand_deps_to_children.update(
+                    (
+                        child.dep_
+                        for child in token.head.children
+                        if child.i > token.head.i
+                    )
+                )
 
     return FeatureTable(
         tags=sorted(list(tags)),
@@ -353,18 +470,21 @@ def generate_feature_table(docs:list, nlp:Language) -> FeatureTable:
         parent_tags=sorted(list(parent_tags)),
         parent_morphs=sorted(list(parent_morphs)),
         parent_lefthand_deps_to_children=sorted(list(parent_lefthand_deps_to_children)),
-        parent_righthand_deps_to_children=sorted(list(parent_righthand_deps_to_children))
+        parent_righthand_deps_to_children=sorted(
+            list(parent_righthand_deps_to_children)
+        ),
     )
+
 
 def create_thinc_model() -> Model[
     List["DocumentPairInfo"], Tuple[Floats2d, Floats2d, Floats2d, Floats2d, Floats2d]
 ]:
-    def create_vector_squeezer() -> Model[Floats2d, Floats2d]:        
-        """ Generates part of the network that accepts a full-width vector and squeezes
-            it down to 3 neurons to feed into the rest of the network. This is intended
-            to force the network to learn succinct, relevant information about the vectors
-            and also to reduce the overall importance of the vectors compared to the other
-            map inputs during training.
+    def create_vector_squeezer() -> Model[Floats2d, Floats2d]:
+        """Generates part of the network that accepts a full-width vector and squeezes
+        it down to 3 neurons to feed into the rest of the network. This is intended
+        to force the network to learn succinct, relevant information about the vectors
+        and also to reduce the overall importance of the vectors compared to the other
+        map inputs during training.
         """
         return chain(
             Relu(24),
@@ -454,6 +574,7 @@ def referrers_forward(
 
     return model.ops.xp.concatenate(vectors_to_return), backprop
 
+
 def get_referrer_heads() -> Model[List["DocumentPairInfo"], Floats2d]:
     return Model("get_referrer_heads", referrer_heads_forward)
 
@@ -480,7 +601,6 @@ def referrer_heads_forward(
     return model.ops.xp.concatenate(vectors_to_return), backprop
 
 
-
 def get_antecedents() -> Model[List["DocumentPairInfo"], List[Floats2d]]:
     return Model("get_antecedents", antecedents_forward)
 
@@ -499,7 +619,9 @@ def antecedents_forward(
             [
                 model.ops.asarray1f(
                     [
-                        document_pair_info.doc[cast(int, index[0])]._.coref_chains.temp_vector
+                        document_pair_info.doc[
+                            cast(int, index[0])
+                        ]._.coref_chains.temp_vector
                         for index in document_pair_info.antecedents[i].dataXd.tolist()
                     ]
                 ).mean(  # type: ignore
@@ -512,6 +634,7 @@ def antecedents_forward(
         vectors_to_return.append(this_document_vector)
 
     return model.ops.xp.concatenate(vectors_to_return), backprop
+
 
 def get_antecedent_heads() -> Model[List["DocumentPairInfo"], Floats2d]:
     return Model("get_antecedent_heads", antecedent_heads_forward)
@@ -528,11 +651,14 @@ def antecedent_heads_forward(
     for document_pair_info in document_pair_infos:
 
         this_document_vector = model.ops.asarray2f(
+            # We only examine the head of the first element within the coordinated phrase 
+            # because other elements will not have the true semantic head as their
+            # syntactic head
             [
-                # We only need to consider the antecedent root
-                # because all indexes have the same semantic head
-                document_pair_info.doc[antecedent]._.coref_chains.temp_head_vector
-                for antecedent in document_pair_info.antecedents.dataXd.tolist()
+                document_pair_info.doc[
+                    cast(int, document_pair_info.antecedents[i].dataXd.tolist()[0][0])
+                ]._.coref_chains.temp_head_vector
+                for i in range(len(document_pair_info.antecedents))
             ]
         )[document_pair_info.candidates.dataXd]
 
@@ -555,6 +681,7 @@ def static_inputs_forward(
         model.ops.xp.concatenate([d.static_infos for d in document_pair_infos]),
         backprop,
     )
+
 
 @dataclass
 class DocumentPairInfo:
@@ -611,9 +738,10 @@ class DocumentPairInfo:
         for token in doc:
             if not hasattr(token._.coref_chains, "temp_potential_referreds"):
                 continue
-            _set_vector(tendencies_analyzer.vectors_nlp, token)
-            _set_head_vector(tendencies_analyzer.vectors_nlp, ops, token)
-            temp_potential_referreds = cast(List[Mention], token._.coref_chains.temp_potential_referreds)
+            _set_vectors(tendencies_analyzer.vectors_nlp, ops, token)
+            temp_potential_referreds = cast(
+                List[Mention], token._.coref_chains.temp_potential_referreds
+            )
             if is_train and Mention.number_of_training_mentions_marked_true(token) == 0:
                 continue
             referrers_list.append(token.i)
@@ -634,13 +762,16 @@ class DocumentPairInfo:
                     candidates_list[-1].append(len(antecedents_list))
                     antecedents_list.append(mention.token_indexes)
                     for token_index in token_indexes:
-                       _set_vector(tendencies_analyzer.vectors_nlp, token.doc[token_index])
-                       _set_head_vector(tendencies_analyzer.vectors_nlp, ops, token.doc[token_index])
+                        _set_vectors(
+                            tendencies_analyzer.vectors_nlp, ops, token.doc[token_index]
+                        )
                 static_info = copy(tendencies_analyzer.get_feature_map(token, doc))
                 static_info.extend(tendencies_analyzer.get_position_map(token, doc))
                 static_info.extend(tendencies_analyzer.get_feature_map(mention, doc))
                 static_info.extend(tendencies_analyzer.get_position_map(mention, doc))
-                static_info.extend(tendencies_analyzer.get_compatibility_map(mention, token))
+                static_info.extend(
+                    tendencies_analyzer.get_compatibility_map(mention, token)
+                )
                 static_infos_list.append(static_info)
                 if is_train:
                     training_outputs_list.append(
@@ -659,7 +790,7 @@ class DocumentPairInfo:
                 training_outputs = ops.asarray1f(training_outputs_list)
                 training_outputs = ops.xp.split(training_outputs, cumsums.tolist())
             else:
-                training_outputs = ops.alloc2f(0, 0)
+                training_outputs = [ops.alloc2f(0, 0)]
         else:
             training_outputs = None
         return cls(
@@ -683,6 +814,7 @@ class DocumentPairInfo:
             training_outputs=training_outputs,
         )
 
+
 def _list2ragged(ops: Ops, items: List[List[int]]) -> Ragged:
     return Ragged(
         ops.xp.concatenate([ops.asarray1i(x) for x in items]),
@@ -693,16 +825,22 @@ def _list2ragged(ops: Ops, items: List[List[int]]) -> Ragged:
 def _empty_Ragged(ops: Ops, dtype: str) -> Ragged:
     return Ragged(ops.xp.zeros((0,), dtype=dtype), ops.alloc1i(0))
 
-def _set_vector(vectors_nlp: Language, token:Token) -> None:
+
+def _set_vectors(vectors_nlp: Language, ops: Ops, token: Token) -> None:
     if hasattr(token._.coref_chains, "temp_vector"):
         return
-    token._.coref_chains.temp_vector = vectors_nlp.vocab[token.lemma_].vector
-
-def _set_head_vector(vectors_nlp: Language, ops:Ops, token:Token) -> None:
-    if hasattr(token._.coref_chains, "temp_head_vector"):
-        return
-    if token == token.head:
-        token_vector = vectors_nlp.vocab[token.lemma_].vector
-        token._.coref_chains.temp_head_vector = ops.alloc1f(len(token_vector)) + 0.0
-    token._.coref_chains.temp_head_vector = vectors_nlp.vocab[token.head.lemma_].vector
-
+    if not vectors_nlp.vocab[token.lemma_].has_vector:
+        token._.coref_chains.temp_vector = token.vector
+    else:
+        token._.coref_chains.temp_vector = vectors_nlp.vocab[token.lemma_].vector
+    if token != token.head:
+        if not vectors_nlp.vocab[token.head.lemma_].has_vector:
+            token._.coref_chains.temp_head_vector = token.head.vector
+        else:
+            token._.coref_chains.temp_head_vector = vectors_nlp.vocab[
+                token.head.lemma_
+            ].vector
+    else:
+        token._.coref_chains.temp_head_vector = (
+            ops.alloc1f(len(token._.coref_chains.temp_vector)) + 0.0
+        )
