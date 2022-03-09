@@ -206,6 +206,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                             (self.has_morph(token, 'Case', 'Acc') or
                             self.has_morph(token, 'Case', 'Gen')):
                         plur = True
+                    elif self.has_morph(token, 'Number', 'Plur') and \
+                            (self.has_morph(token, 'Case', 'Acc') or
+                            self.has_morph(token, 'Case', 'Gen')):
+                        fem = True
                 if self.has_morph(token, 'Number', 'Sing') and \
                         not masc and not fem and not neut:
                     masc = True

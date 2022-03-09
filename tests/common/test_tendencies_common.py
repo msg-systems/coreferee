@@ -18,9 +18,8 @@ import numpy as np
 import spacy
 import coreferee
 from coreferee.rules import RulesAnalyzerFactory
-from coreferee.training.model import ModelGenerator
 from coreferee.test_utils import get_nlps
-from coreferee.tendencies import TendenciesAnalyzer
+from coreferee.tendencies import TendenciesAnalyzer, generate_feature_table
 from coreferee.data_model import Mention
 
 class CommonTendenciesTest(unittest.TestCase):
@@ -33,18 +32,16 @@ class CommonTendenciesTest(unittest.TestCase):
         for nlp in (nlp for nlp in nlps if nlp.meta['name'] == 'core_web_sm'):
             self.sm_nlp = nlp
         self.sm_rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(self.sm_nlp)
-        sm_model_generator = ModelGenerator(self.sm_rules_analyzer, self.sm_nlp, self.sm_nlp)
         sm_doc = self.sm_nlp('Richard said he was entering the big house')
-        self.sm_feature_table = sm_model_generator.generate_feature_table([sm_doc])
+        self.sm_feature_table = generate_feature_table([sm_doc])
         self.sm_tendencies_analyzer = TendenciesAnalyzer(self.sm_rules_analyzer, self.sm_nlp,
             self.sm_feature_table)
 
         for nlp in (nlp for nlp in nlps if nlp.meta['name'] == 'core_web_lg'):
             self.lg_nlp = nlp
         self.lg_rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(self.lg_nlp)
-        lg_model_generator = ModelGenerator(self.lg_rules_analyzer, self.lg_nlp, self.lg_nlp)
         lg_doc = self.lg_nlp('Richard said he was entering the big house')
-        self.lg_feature_table = lg_model_generator.generate_feature_table([lg_doc])
+        self.lg_feature_table = generate_feature_table([lg_doc])
         self.lg_tendencies_analyzer = TendenciesAnalyzer(self.lg_rules_analyzer, self.lg_nlp,
             self.lg_feature_table)
 
