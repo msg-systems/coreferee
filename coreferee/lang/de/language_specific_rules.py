@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Set, Tuple
 from string import punctuation
 from spacy.tokens import Token
 from ...rules import RulesAnalyzer
@@ -41,11 +42,12 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     clause_root_pos = ('VERB', 'AUX')
 
-    def get_dependent_siblings(self, token:Token) -> list:
+    def get_dependent_siblings(self, token:Token) -> List[Token]:
 
-        def add_siblings_recursively(recursed_token:Token, visited_set:set) -> None:
+        def add_siblings_recursively(recursed_token:Token, visited_set:set) -> Tuple[Set[Token], bool]:
             visited_set.add(recursed_token)
             siblings_set = set()
+            coordinator = False
             if recursed_token.lemma_ in self.or_lemmas:
                 token._.coref_chains.temp_has_or_coordination = True
             if recursed_token.dep_ in self.dependent_sibling_deps:
@@ -57,16 +59,22 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
                     (child.dep_ in self.dependent_sibling_deps or child.dep_ in
                     self.conjunction_deps)):
-                child_siblings_set = add_siblings_recursively(child, visited_set)
+                if child.dep_ == "cd":
+                    coordinator = True
+                child_siblings_set, returned_coordinator = add_siblings_recursively(
+                    child, visited_set
+                )
+                coordinator = coordinator or returned_coordinator
                 siblings_set |= child_siblings_set
-            return siblings_set
+
+            return siblings_set, coordinator
 
         if token.dep_ not in self.conjunction_deps and token.dep_ not in \
                 self.dependent_sibling_deps:
-            siblings_set = add_siblings_recursively(token, set())
-        else:
-            siblings_set = set()
-        return sorted(siblings_set)
+            siblings_set, coordinator = add_siblings_recursively(token, set())
+            if coordinator:
+                return sorted(siblings_set)
+        return []
 
     def is_independent_noun(self, token:Token) -> bool:
         if not (token.pos_ in self.noun_pos or token.tag_ == 'PIS' or \
