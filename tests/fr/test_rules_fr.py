@@ -14,9 +14,6 @@
 # limitations under the License.
 
 import unittest
-import spacy
-import pytest
-import coreferee
 from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention

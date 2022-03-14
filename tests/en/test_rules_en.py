@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import unittest
-import spacy
-import coreferee
 from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
@@ -99,6 +97,16 @@ class EnglishRulesTest(unittest.TestCase):
         self.compare_get_dependent_sibling_info(
             "Richard or Christine went home", 0, "[Christine]", None, True
         )
+
+    def test_get_dependent_sibling_info_apposition_control(self):
+        self.compare_get_dependent_sibling_info(
+            "Richard, the developer, went home", 0, "[]", None, False
+        )
+
+    def test_get_governing_sibling_info_apposition_control(self):
+        self.compare_get_dependent_sibling_info(
+            "Richard, the developer, went home", 3, "[]", None, False
+        )        
 
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_comma_and(
         self,
