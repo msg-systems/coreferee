@@ -13,14 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import xml.sax
+from typing import List, Dict, Tuple, Set, cast
+from xml.sax import make_parser
+from xml.sax.handler import ContentHandler, feature_namespaces
 import os
 import re
 from sys import maxsize
 import bisect
 from abc import ABC, abstractmethod
 from spacy.language import Language
-from spacy.tokens import Doc
+from spacy.tokens import Doc, Span
 from ..data_model import Mention
 from ..rules import RulesAnalyzer
 
@@ -29,7 +31,7 @@ class GenericLoader(ABC):
     @abstractmethod
     def load(
         self, directory_name: str, nlp: Language, rules_analyzer: RulesAnalyzer
-    ) -> list:
+    ) -> List[Doc]:
         """Loads training data from *directory_name* to produce a list of documents parsed using
         the spacy model *nlp*. Each document goes through *RulesAnalyzer.initialize()*.
         Wherever an anaphor points to a referred mention in the training data, the
@@ -37,7 +39,7 @@ class GenericLoader(ABC):
         *true_in_training=True*."""
 
 
-class ParCorHandler(xml.sax.ContentHandler):
+class ParCorHandler(ContentHandler):
     def __init__(self):
         super().__init__()
         self._current_tag = ""
@@ -82,12 +84,12 @@ class ParCorHandler(xml.sax.ContentHandler):
 class ParCorLoader(GenericLoader):
     @staticmethod
     def load_file(
-        words_filename: str,
+        words_filename: os.DirEntry[str],
         coref_level_filename: str,
         nlp: Language,
         rules_analyzer: RulesAnalyzer,
         parser,
-    ) -> None:
+    ) -> Doc:
         parcor_handler = ParCorHandler()
         parser.setContentHandler(parcor_handler)
         parser.parse(words_filename)
@@ -95,7 +97,7 @@ class ParCorLoader(GenericLoader):
         doc = nlp(" ".join(word for word in parcor_handler.words))
         rules_analyzer.initialize(doc)
         lookup = []
-        spacy_token_iterator = enumerate(token for token in doc)
+        spacy_token_iterator = enumerate(doc)
         for parcor_token in parcor_handler.words:
             this_parcor_token_lookup = []
             while len(parcor_token) > 0:
@@ -103,11 +105,11 @@ class ParCorLoader(GenericLoader):
                     spacy_token_iterator, (None, None)
                 )
                 if spacy_token_index is None or not parcor_token.startswith(
-                    spacy_token.text
+                    spacy_token.text  # type:ignore[union-attr]
                 ):
                     break
                 this_parcor_token_lookup.append(spacy_token_index)
-                parcor_token = parcor_token[len(spacy_token) :]
+                parcor_token = parcor_token[len(spacy_token) :]  # type:ignore[arg-type]
             assert (
                 len(this_parcor_token_lookup) > 0
             ), "Unmatched parcor and spacy tokens"
@@ -180,9 +182,9 @@ class ParCorLoader(GenericLoader):
 
     def load(
         self, directory_name: str, nlp: Language, rules_analyzer: RulesAnalyzer
-    ) -> list:
-        parser = xml.sax.make_parser()
-        parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+    ) -> List[Doc]:
+        parser = make_parser()
+        parser.setFeature(feature_namespaces, 0)
         docs = []
         for words_filename in (
             w for w in os.scandir(directory_name) if w.path.endswith("words.xml")
@@ -211,12 +213,12 @@ class ParCorLoader(GenericLoader):
 class PolishCoreferenceCorpusANNLoader(GenericLoader):
     @staticmethod
     def load_file(
-        doc: Doc, ann_file_lines: list, rules_analyzer: RulesAnalyzer
+        doc: Doc, ann_file_lines: List[str], rules_analyzer: RulesAnalyzer
     ) -> None:
         rules_analyzer.initialize(doc)
         token_char_start_indexes = [token.idx for token in doc]
         mention_numbers_to_spans = {}
-        mention_numbers_to_set_numbers = {}
+        mention_numbers_to_set_numbers: Dict[str, int] = {}
         for index, ann_file_line in enumerate(ann_file_lines):
             words = ann_file_line.split()
             if words[0].startswith("T"):
@@ -314,7 +316,7 @@ class PolishCoreferenceCorpusANNLoader(GenericLoader):
 
     def load(
         self, directory_name: str, nlp: Language, rules_analyzer: RulesAnalyzer
-    ) -> list:
+    ) -> List[Doc]:
         txt_file_contents = []
         ann_file_lines_list = []
         for index, txt_filename in enumerate(
@@ -342,7 +344,7 @@ class LitBankANNLoader(GenericLoader):
     ) -> None:
         rules_analyzer.initialize(doc)
         token_char_start_indexes = [token.idx for token in doc]
-        mention_labels_to_span_sets = {}
+        mention_labels_to_span_sets: Dict[str, Set[Span]] = {}
         for index, ann_file_line in enumerate(ann_file_lines):
             words = ann_file_line.split()
             if words[0].startswith("T"):  # normally always true
@@ -401,7 +403,7 @@ class LitBankANNLoader(GenericLoader):
 
     def load(
         self, directory_name: str, nlp: Language, rules_analyzer: RulesAnalyzer
-    ) -> list:
+    ) -> List[Doc]:
         txt_file_contents = []
         ann_file_lines_list = []
         for index, txt_filename in enumerate(
@@ -437,7 +439,7 @@ class DEMOCRATConllLoader(GenericLoader):
         token_start_end_indexes = {
             (token.idx, token.idx + len(token.text) - 1): token.i for token in doc
         }
-        mention_labels_to_span_sets = {}
+        mention_labels_to_span_sets: Dict[str, Set[Span]] = {}
         for index, mention_span in enumerate(mentions):
             mention_label = mentions[mention_span]
             for token_start_end_index in token_start_end_indexes:
@@ -541,17 +543,25 @@ class DEMOCRATConllLoader(GenericLoader):
                                     )
 
     def turn_spans_to_mentions(
-        self, coreference_spans: dict, j=0, txt="", verbose=False
+        self,
+        coreference_spans: Dict[Tuple[int, int], List[str]],
+        j=0,
+        txt: str = "",
+        verbose: bool = False,
     ):
         mentions = {}
         for i, coreference_span in enumerate(coreference_spans):
             start_char, end_char = coreference_span
             for reference in coreference_spans[coreference_span]:
-                mention_label = re.search(r"\d+", reference).group(0)
+                mention_label = re.search(
+                    r"\d+", reference
+                ).group(  # type:ignore[union-attr]
+                    0
+                )
                 if reference.startswith("(") and reference.endswith(")"):
                     mentions[coreference_span] = mention_label
                 elif reference.startswith("("):
-                    mentions[(start_char, str(i + len(mentions)))] = mention_label
+                    mentions[(start_char, i + len(mentions))] = mention_label
 
                 elif reference.endswith(")"):
                     opened_coreference = False
@@ -603,7 +613,7 @@ class DEMOCRATConllLoader(GenericLoader):
         rules_analyzer: RulesAnalyzer,
         verbose=False,
         return_spans=False,
-    ) -> list:
+    ):
         txt_file_contents = []
         doc_mentions_spans = []
 
@@ -613,11 +623,15 @@ class DEMOCRATConllLoader(GenericLoader):
             with open(filename, "r", encoding="UTF8") as conll_file:
                 for line in conll_file:
                     if line.startswith("#begin document"):
-                        j = re.search(r"part (\d+)", line).group(1)
+                        j = re.search(
+                            r"part (\d+)", line
+                        ).group(  # type:ignore[union-attr]
+                            1
+                        )
                         token_start, token_end = 0, -1
                         first_token = True
-                        tokens_list = []
-                        coreference_spans_dict = {}
+                        tokens_list: List[str] = []
+                        coreference_spans_dict: Dict[Tuple[int, int], List[str]] = {}
                     elif line.startswith("#end document"):
                         txt_file_contents.append("".join(tokens_list))
                         doc_mentions_spans.append(
@@ -633,10 +647,10 @@ class DEMOCRATConllLoader(GenericLoader):
                         columns = line.split(" " * 10)
                         token = columns[3]
 
-                        coreference_labels = columns[-1].strip("\n")
+                        coreference_labels_input = columns[-1].strip("\n")
                         coreference_labels = (
-                            coreference_labels.split("|")
-                            if coreference_labels != "_"
+                            coreference_labels_input.split("|")
+                            if coreference_labels_input != "_"
                             else []
                         )
                         sep = " "

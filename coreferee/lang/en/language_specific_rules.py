@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Optional
 from spacy.tokens import Token
 from ...rules import RulesAnalyzer
 from ...data_model import Mention
@@ -22,7 +22,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     random_word = "treacle"
 
-    or_lemmas = "or"
+    or_lemmas = ("or",)
 
     entity_noun_dictionary = {
         "PERSON": ["person", "individual", "man", "woman"],
@@ -43,7 +43,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     adverbial_clause_deps = ("advcl", "acl")
 
-    term_operator_pos = "DET"
+    term_operator_pos = ("DET",)
 
     clause_root_pos = ("VERB", "AUX")
 
@@ -83,7 +83,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             siblings_set, coordinator = add_siblings_recursively(token, set())
             if coordinator:
-                return sorted(siblings_set)
+                return sorted(siblings_set)  # type:ignore[type-var]
         return []
 
     def is_independent_noun(self, token: Token) -> bool:
@@ -94,7 +94,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             or (token.pos_ == "PRON" and token.tag_ == "NN")
         ):
             return False
-        return not self.is_token_in_one_of_phrases(token, self.blacklisted_phrases)
+        return not self.is_token_in_one_of_phrases(
+            token, self.blacklisted_phrases # type:ignore[attr-defined]
+        )  
 
     def is_potential_anaphor(self, token: Token) -> bool:
         """Potentially externally referring tokens in English are third-person pronouns.
@@ -178,7 +180,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 [
                     child
                     for child in token.head.subtree
-                    if child.lemma_ in self.avalent_verbs
+                    if child.lemma_ in self.avalent_verbs  # type:ignore[attr-defined]
                 ]
             )
             > 0
@@ -188,8 +190,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_anaphoric_pair(
         self, referred: Mention, referring: Token, directly: bool
-    ) -> bool:
-        def get_governing_verb(token: Token) -> Token:
+    ) -> int:
+        def get_governing_verb(token: Token) -> Optional[Token]:
             for ancestor in token.ancestors:
                 if ancestor.pos_ in ("VERB", "AUX"):
                     return ancestor
@@ -237,7 +239,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 and len(referred.token_indexes) == 1
                 and self.has_morph(referred_root, "Number", "Sing")
             ):
-                if referred_lemma not in self.person_words:
+                if referred_lemma not in self.person_words:  # type:ignore[attr-defined]
                     if (
                         referred_root.tag_ != "NNP"
                         and referred_root.ent_type_ != "PERSON"
@@ -247,8 +249,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                         # named people who choose to refer to themselves with 'they'
                         uncertain = True
                 if (
-                    referred_lemma in self.exclusively_male_words
-                    or referred_lemma in self.exclusively_female_words
+                    referred_lemma
+                    in self.exclusively_male_words  # type:ignore[attr-defined]
+                    or referred_lemma
+                    in self.exclusively_female_words  # type:ignore[attr-defined]
                 ):
                     uncertain = True
 
@@ -258,23 +262,26 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     self.has_morph(referring, "Gender", "Masc")
                     or self.has_morph(referring, "Gender", "Fem")
                 )
-                and referred_lemma not in self.exclusively_person_words
-                and referred_lemma not in self.animal_words
-                and referred_lemma not in self.male_names
-                and referred_lemma not in self.female_names
+                and referred_lemma
+                not in self.exclusively_person_words  # type:ignore[attr-defined]
+                and referred_lemma not in self.animal_words  # type:ignore[attr-defined]
+                and referred_lemma not in self.male_names  # type:ignore[attr-defined]
+                and referred_lemma not in self.female_names  # type:ignore[attr-defined]
                 and referred_root.ent_type_ != "PERSON"
             ):
                 if (
                     referred_root.tag_ != "NNP"
-                    and referred_lemma not in self.person_words
+                    and referred_lemma
+                    not in self.person_words  # type:ignore[attr-defined]
                 ):
                     return 0
                 else:
-                    uncertain = True
 
+                    uncertain = True
             # 'it' referring to person noun or entity
             if self.has_morph(referring, "Gender", "Neut") and (
-                referred_lemma in self.exclusively_person_words
+                referred_lemma
+                in self.exclusively_person_words  # type:ignore[attr-defined]
                 or referred_root.ent_type_ == "PERSON"
             ):
                 return 0
@@ -289,16 +296,18 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # 'he' referring to female noun
             if (
                 self.has_morph(referring, "Gender", "Masc")
-                and referred_lemma in self.exclusively_female_words
-                and referred_lemma not in self.animal_words
+                and referred_lemma
+                in self.exclusively_female_words  # type:ignore[attr-defined]
+                and referred_lemma not in self.animal_words  # type:ignore[attr-defined]
             ):
                 return 0
 
             # 'she' referring to male noun
             if (
                 self.has_morph(referring, "Gender", "Fem")
-                and referred_lemma in self.exclusively_male_words
-                and referred_lemma not in self.animal_words
+                and referred_lemma
+                in self.exclusively_male_words  # type:ignore[attr-defined]
+                and referred_lemma not in self.animal_words  # type:ignore[attr-defined]
             ):
                 return 0
 
@@ -307,8 +316,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 self.has_morph(referring, "Gender", "Neut")
                 and referred_root.tag_ == "NNP"
                 and (
-                    referred_lemma in self.male_names
-                    or referred_lemma in self.female_names
+                    referred_lemma in self.male_names  # type:ignore[attr-defined]
+                    or referred_lemma in self.female_names  # type:ignore[attr-defined]
                 )
             ):
                 return 0
@@ -318,7 +327,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 self.has_morph(referring, "Gender", "Masc")
                 and referred_root.tag_ == "NNP"
                 and self.has_list_member_in_propn_subtree(
-                    doc[referred.root_index], self.exclusively_female_names
+                    doc[referred.root_index],
+                    self.exclusively_female_names,  # type:ignore[attr-defined]
                 )
             ):
                 uncertain = True
@@ -328,7 +338,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 self.has_morph(referring, "Gender", "Fem")
                 and referred_root.tag_ == "NNP"
                 and self.has_list_member_in_propn_subtree(
-                    doc[referred.root_index], self.exclusively_male_names
+                    doc[referred.root_index],
+                    self.exclusively_male_names,  # type:ignore[attr-defined]
                 )
             ):
                 uncertain = True
@@ -390,7 +401,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return 0
 
     @staticmethod
-    def get_ancestor_spanning_any_preposition(token: Token) -> Token:
+    def get_ancestor_spanning_any_preposition(token: Token) -> Optional[Token]:
         if token.dep_ == "ROOT":
             return None
         head = token.head
@@ -466,7 +477,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     return False
             return False
         else:
-            referring_ancestor = self.get_ancestor_spanning_any_preposition(referring)
+            referring_ancestor = self.get_ancestor_spanning_any_preposition(
+                referring
+            )  # type:ignore[assignment]
             referred_ancestor = self.get_ancestor_spanning_any_preposition(
                 referred_root
             )

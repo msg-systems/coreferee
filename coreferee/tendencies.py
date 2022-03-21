@@ -12,19 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Callable, cast
+from typing import List, Tuple, Callable, cast, Union, Dict, Set
 from copy import copy
 from dataclasses import dataclass
 from thinc.model import Model
-from thinc.layers import (
-    Relu,
-    concatenate,
-    chain,
-    clone,
-    Linear,
-    noop,
-    tuplify,
-)
+from thinc.layers import Relu, concatenate, chain, clone
+from thinc.layers import Linear, noop, tuplify
 from thinc.backends import Ops, get_current_ops
 from thinc.types import Floats2d, Ints1d, Ragged
 from spacy.tokens import Token, Doc
@@ -53,7 +46,9 @@ class TendenciesAnalyzer:
         assert self.vector_length > 0
         self.feature_table = feature_table
 
-    def get_feature_map(self, token_or_mention, doc: Doc) -> list:
+    def get_feature_map(
+        self, token_or_mention: Union[Token, Mention], doc: Doc
+    ) -> List[Union[int, float]]:
         """Returns a binary list representing the features from *self.feature_table* that
         the token or any of the tokens within the mention has. The list is also
         added as *token._.coref_chains.temp_feature_map* or *mention.temp_feature_map*.
@@ -87,7 +82,7 @@ class TendenciesAnalyzer:
             token = token_or_mention
         else:
             if hasattr(token_or_mention, "temp_feature_map"):
-                return token_or_mention.temp_feature_map
+                return token_or_mention.temp_feature_map  # type:ignore[attr-defined]
             token = doc[token_or_mention.root_index]
             if len(token_or_mention.token_indexes) > 1:
                 siblings = [doc[i] for i in token_or_mention.token_indexes[1:]]
@@ -197,10 +192,12 @@ class TendenciesAnalyzer:
         if isinstance(token_or_mention, Token):
             token_or_mention._.coref_chains.temp_feature_map = feature_map
         else:
-            token_or_mention.temp_feature_map = feature_map
+            token_or_mention.temp_feature_map = feature_map  # type:ignore[attr-defined]
         return feature_map
 
-    def get_position_map(self, token_or_mention, doc: Doc) -> list:
+    def get_position_map(
+        self, token_or_mention: Union[Token, Mention], doc: Doc
+    ) -> List[Union[int, float]]:
         """Returns a list of numbers representing the position, depth, etc. of the token or mention
         within its sentence. The list is also added as *token._.coref_chains.temp_position_map*
         or *mention.temp_position_map*.
@@ -212,7 +209,7 @@ class TendenciesAnalyzer:
             token = token_or_mention
         else:
             if hasattr(token_or_mention, "temp_position_map"):
-                return token_or_mention.temp_position_map
+                return token_or_mention.temp_position_map  # type:ignore[attr-defined]
             token = doc[token_or_mention.root_index]
 
         # This token is the nth word within its sentence
@@ -278,10 +275,14 @@ class TendenciesAnalyzer:
         if isinstance(token_or_mention, Token):
             token_or_mention._.coref_chains.temp_position_map = position_map
         else:
-            token_or_mention.temp_position_map = position_map
+            token_or_mention.temp_position_map = (  # type:ignore[attr-defined]
+                position_map
+            )
         return position_map
 
-    def get_compatibility_map(self, referred: Mention, referring: Token) -> list:
+    def get_compatibility_map(
+        self, referred: Mention, referring: Token
+    ) -> List[Union[int, float]]:
         """Returns a list of numbers representing the interaction between *referred* and
         *referring*. It will already have been established that coreference between the two is
         possible; the compatibility map assists the neural network in ascertaining how likely
@@ -291,10 +292,12 @@ class TendenciesAnalyzer:
         referred_root = doc[referred.root_index]
 
         if hasattr(referred, "temp_compatibility_map"):
-            return referred.temp_compatibility_map
+            return referred.temp_compatibility_map  # type:ignore[attr-defined]
 
         # Referential distance in words (may be negative in the case of cataphora)
-        compatibility_map = [referring.i - referred_root.i]
+        compatibility_map = cast(
+            List[Union[int, float]], [referring.i - referred_root.i]
+        )
 
         # Referential distance in sentences
         compatibility_map.append(
@@ -355,10 +358,10 @@ class TendenciesAnalyzer:
             ].count(1)
         )
 
-        referred.temp_compatibility_map = compatibility_map
+        referred.temp_compatibility_map = compatibility_map  # type:ignore[attr-defined]
         return compatibility_map
 
-    def score(self, doc: Doc, thinc_ensemble) -> None:
+    def score(self, doc: Doc, thinc_ensemble: Model) -> None:
         """Scores all possible anaphoric pairs in *doc*. The scores are never referenced
         outside this method because the possible pairs on each anaphor are sorted within
         this method with the more likely interpretations at the front of the list.
@@ -409,17 +412,17 @@ class TendenciesAnalyzer:
 def generate_feature_table(docs: list, nlp: Language) -> FeatureTable:
 
     rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(nlp)
-    tags = set()
-    morphs = set()
-    ent_types = set()
-    lefthand_deps_to_children = set()
-    righthand_deps_to_children = set()
-    lefthand_deps_to_parents = set()
-    righthand_deps_to_parents = set()
-    parent_tags = set()
-    parent_morphs = set()
-    parent_lefthand_deps_to_children = set()
-    parent_righthand_deps_to_children = set()
+    tags: Set[str] = set()
+    morphs: Set[str] = set()
+    ent_types: Set[str] = set()
+    lefthand_deps_to_children: Set[str] = set()
+    righthand_deps_to_children: Set[str] = set()
+    lefthand_deps_to_parents: Set[str] = set()
+    righthand_deps_to_parents: Set[str] = set()
+    parent_tags: Set[str] = set()
+    parent_morphs: Set[str] = set()
+    parent_lefthand_deps_to_children: Set[str] = set()
+    parent_righthand_deps_to_children: Set[str] = set()
 
     for doc in docs:
         for token in (
@@ -473,213 +476,6 @@ def generate_feature_table(docs: list, nlp: Language) -> FeatureTable:
         parent_righthand_deps_to_children=sorted(
             list(parent_righthand_deps_to_children)
         ),
-    )
-
-
-def create_thinc_model() -> Model[
-    List["DocumentPairInfo"], Tuple[Floats2d, Floats2d, Floats2d, Floats2d, Floats2d]
-]:
-    def create_vector_squeezer() -> Model[Floats2d, Floats2d]:
-        """Generates part of the network that accepts a full-width vector and squeezes
-        it down to 3 neurons to feed into the rest of the network. This is intended
-        to force the network to learn succinct, relevant information about the vectors
-        and also to reduce the overall importance of the vectors compared to the other
-        map inputs during training.
-        """
-        return chain(
-            Relu(24),
-            Relu(3),
-        )
-
-    with Model.define_operators(
-        {"|": concatenate, ">>": chain, "**": clone, "&": tuplify}
-    ):
-
-        referrers = get_referrers()
-        antecedents = get_antecedents()
-        static_inputs = get_static_inputs()
-
-        ensemble_members = []
-        for _ in range(ENSEMBLE_SIZE):
-
-            inputs = concatenate(
-                referrers >> create_vector_squeezer(),
-                antecedents >> create_vector_squeezer(),
-                static_inputs,
-            )
-
-            model = chain(
-                inputs,
-                Relu(639),
-                Relu(20),
-                Linear(1),
-            )
-
-            ensemble_members.append(model)
-
-        ensemble = concatenate(*ensemble_members)
-        return chain(noop() & ensemble, apply_softmax_sequences())
-
-
-def apply_softmax_sequences() -> Model[
-    Tuple[List["DocumentPairInfo"], Floats2d], Floats2d
-]:
-    return Model("apply_softmax_sequences", apply_softmax_sequences_forward)
-
-
-def apply_softmax_sequences_forward(
-    model: Model, inputs: Tuple[List["DocumentPairInfo"], Floats2d], is_train: bool
-) -> Tuple[List[Floats2d], Callable]:
-    def backprop(
-        d_softmax_sequences: List[Floats2d],
-    ) -> Tuple[List["DocumentPairInfo"], Floats2d]:
-
-        d_softmax_inputs = model.ops.xp.concatenate(d_softmax_sequences)
-        backpropped_softmax_inputs = model.ops.backprop_softmax_sequences(
-            d_softmax_inputs, softmax_output, lengths
-        )
-        return dpis, backpropped_softmax_inputs
-
-    dpis, predictions = inputs
-    lengths = model.ops.xp.concatenate([dpi.candidates.lengths for dpi in dpis])
-    softmax_output = model.ops.softmax_sequences(predictions, lengths)
-    cumsums = model.ops.xp.cumsum(lengths)[:-1]
-    return model.ops.xp.split(softmax_output, cumsums.tolist()), backprop
-
-
-def get_referrers() -> Model[List["DocumentPairInfo"], List[Floats2d]]:
-    return Model("get_referrers", referrers_forward)
-
-
-def referrers_forward(
-    model: Model,
-    document_pair_infos: Model[List["DocumentPairInfo"], List[Floats2d]],
-    is_train: bool,
-) -> Tuple[Floats2d, Callable]:
-    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
-        return []
-
-    vectors_to_return = []
-
-    for document_pair_info in document_pair_infos:
-
-        this_document_vector = model.ops.asarray2f(
-            [
-                document_pair_info.doc[referrer]._.coref_chains.temp_vector
-                for referrer in document_pair_info.referrers.tolist()
-            ]
-        )[document_pair_info.referrers2candidates_pointers]
-
-        vectors_to_return.append(this_document_vector)
-
-    return model.ops.xp.concatenate(vectors_to_return), backprop
-
-
-def get_referrer_heads() -> Model[List["DocumentPairInfo"], Floats2d]:
-    return Model("get_referrer_heads", referrer_heads_forward)
-
-
-def referrer_heads_forward(
-    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
-) -> Tuple[Floats2d, Callable]:
-    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
-        return []
-
-    vectors_to_return = []
-
-    for document_pair_info in document_pair_infos:
-
-        this_document_vector = model.ops.asarray2f(
-            [
-                document_pair_info.doc[referrer]._.coref_chains.temp_head_vector
-                for referrer in document_pair_info.referrers.tolist()
-            ]
-        )[document_pair_info.referrers2candidates_pointers]
-
-        vectors_to_return.append(this_document_vector)
-
-    return model.ops.xp.concatenate(vectors_to_return), backprop
-
-
-def get_antecedents() -> Model[List["DocumentPairInfo"], List[Floats2d]]:
-    return Model("get_antecedents", antecedents_forward)
-
-
-def antecedents_forward(
-    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
-) -> Tuple[Floats2d, Callable]:
-    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
-        return []
-
-    vectors_to_return = []
-
-    for document_pair_info in document_pair_infos:
-
-        this_document_vector = model.ops.asarray2f(
-            [
-                model.ops.asarray1f(
-                    [
-                        document_pair_info.doc[
-                            cast(int, index[0])
-                        ]._.coref_chains.temp_vector
-                        for index in document_pair_info.antecedents[i].dataXd.tolist()
-                    ]
-                ).mean(  # type: ignore
-                    axis=0
-                )
-                for i in range(len(document_pair_info.antecedents))
-            ]
-        )[document_pair_info.candidates.dataXd]
-
-        vectors_to_return.append(this_document_vector)
-
-    return model.ops.xp.concatenate(vectors_to_return), backprop
-
-
-def get_antecedent_heads() -> Model[List["DocumentPairInfo"], Floats2d]:
-    return Model("get_antecedent_heads", antecedent_heads_forward)
-
-
-def antecedent_heads_forward(
-    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
-) -> Tuple[Floats2d, Callable]:
-    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
-        return []
-
-    vectors_to_return = []
-
-    for document_pair_info in document_pair_infos:
-
-        this_document_vector = model.ops.asarray2f(
-            # We only examine the head of the first element within the coordinated phrase 
-            # because other elements will not have the true semantic head as their
-            # syntactic head
-            [
-                document_pair_info.doc[
-                    cast(int, document_pair_info.antecedents[i].dataXd.tolist()[0][0])
-                ]._.coref_chains.temp_head_vector
-                for i in range(len(document_pair_info.antecedents))
-            ]
-        )[document_pair_info.candidates.dataXd]
-
-        vectors_to_return.append(this_document_vector)
-
-    return model.ops.xp.concatenate(vectors_to_return), backprop
-
-
-def get_static_inputs() -> Model[List["DocumentPairInfo"], Floats2d]:
-    return Model("get_static_inputs", static_inputs_forward)
-
-
-def static_inputs_forward(
-    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
-) -> Tuple[Floats2d, Callable]:
-    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
-        return []
-
-    return (
-        model.ops.xp.concatenate([d.static_infos for d in document_pair_infos]),
-        backprop,
     )
 
 
@@ -813,6 +609,213 @@ class DocumentPairInfo:
             static_infos=ops.asarray2f(static_infos_list),
             training_outputs=training_outputs,
         )
+
+
+def create_thinc_model() -> Model[List["DocumentPairInfo"], Tuple]:
+    def create_vector_squeezer() -> Model[Floats2d, Floats2d]:
+        """Generates part of the network that accepts a full-width vector and squeezes
+        it down to 3 neurons to feed into the rest of the network. This is intended
+        to force the network to learn succinct, relevant information about the vectors
+        and also to reduce the overall importance of the vectors compared to the other
+        map inputs during training.
+        """
+        return chain(
+            Relu(24),
+            Relu(3),
+        )
+
+    with Model.define_operators(
+        {"|": concatenate, ">>": chain, "**": clone, "&": tuplify}
+    ):
+
+        referrers = get_referrers()
+        antecedents = get_antecedents()
+        static_inputs = get_static_inputs()
+
+        ensemble_members = []
+        for _ in range(ENSEMBLE_SIZE):
+
+            inputs: Model[List["DocumentPairInfo"], Floats2d] = concatenate(
+                referrers >> create_vector_squeezer(),
+                antecedents >> create_vector_squeezer(),
+                static_inputs,
+            )
+
+            model: Model[List["DocumentPairInfo"], Floats2d] = chain(
+                inputs,
+                Relu(639),
+                Relu(20),
+                Linear(1),
+            )
+
+            ensemble_members.append(model)
+
+        ensemble: Model[List["DocumentPairInfo"], Tuple] = concatenate(
+            *ensemble_members
+        )
+        return chain(noop() & ensemble, apply_softmax_sequences())
+
+
+def apply_softmax_sequences() -> Model[
+    Tuple[List["DocumentPairInfo"], Floats2d], Floats2d
+]:
+    return Model("apply_softmax_sequences", apply_softmax_sequences_forward)
+
+
+def apply_softmax_sequences_forward(
+    model: Model, inputs: Tuple[List["DocumentPairInfo"], Floats2d], is_train: bool
+) -> Tuple[List[Floats2d], Callable]:
+    def backprop(
+        d_softmax_sequences: List[Floats2d],
+    ) -> Tuple[List["DocumentPairInfo"], Floats2d]:
+
+        d_softmax_inputs = model.ops.xp.concatenate(d_softmax_sequences)
+        backpropped_softmax_inputs = model.ops.backprop_softmax_sequences(
+            d_softmax_inputs, softmax_output, lengths
+        )
+        return dpis, backpropped_softmax_inputs
+
+    dpis, predictions = inputs
+    lengths = model.ops.xp.concatenate([dpi.candidates.lengths for dpi in dpis])
+    softmax_output = model.ops.softmax_sequences(predictions, lengths)
+    cumsums = model.ops.xp.cumsum(lengths)[:-1]
+    return model.ops.xp.split(softmax_output, cumsums.tolist()), backprop
+
+
+def get_referrers() -> Model[List["DocumentPairInfo"], List[Floats2d]]:
+    return Model("get_referrers", referrers_forward)
+
+
+def referrers_forward(
+    model: Model[List["DocumentPairInfo"], List[Floats2d]],
+    document_pair_infos: List["DocumentPairInfo"],
+    is_train: bool,
+) -> Tuple[Floats2d, Callable]:
+    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
+        return []
+
+    vectors_to_return = []
+
+    for document_pair_info in document_pair_infos:
+
+        this_document_vector = model.ops.asarray2f(
+            [
+                document_pair_info.doc[referrer]._.coref_chains.temp_vector
+                for referrer in document_pair_info.referrers.tolist()
+            ]
+        )[document_pair_info.referrers2candidates_pointers]
+
+        vectors_to_return.append(this_document_vector)
+
+    return model.ops.xp.concatenate(vectors_to_return), backprop
+
+
+def get_referrer_heads() -> Model[List["DocumentPairInfo"], Floats2d]:
+    return Model("get_referrer_heads", referrer_heads_forward)
+
+
+def referrer_heads_forward(
+    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
+) -> Tuple[Floats2d, Callable]:
+    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
+        return []
+
+    vectors_to_return = []
+
+    for document_pair_info in document_pair_infos:
+
+        this_document_vector = model.ops.asarray2f(
+            [
+                document_pair_info.doc[referrer]._.coref_chains.temp_head_vector
+                for referrer in document_pair_info.referrers.tolist()
+            ]
+        )[document_pair_info.referrers2candidates_pointers]
+
+        vectors_to_return.append(this_document_vector)
+
+    return model.ops.xp.concatenate(vectors_to_return), backprop
+
+
+def get_antecedents() -> Model[List["DocumentPairInfo"], List[Floats2d]]:
+    return Model("get_antecedents", antecedents_forward)
+
+
+def antecedents_forward(
+    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
+) -> Tuple[Floats2d, Callable]:
+    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
+        return []
+
+    vectors_to_return = []
+
+    for document_pair_info in document_pair_infos:
+
+        this_document_vector = model.ops.asarray2f(
+            [
+                model.ops.asarray1f(
+                    [
+                        document_pair_info.doc[
+                            cast(int, index[0])
+                        ]._.coref_chains.temp_vector
+                        for index in document_pair_info.antecedents[i].dataXd.tolist()
+                    ]
+                ).mean(  # type: ignore
+                    axis=0
+                )
+                for i in range(len(document_pair_info.antecedents))
+            ]
+        )[document_pair_info.candidates.dataXd]
+
+        vectors_to_return.append(this_document_vector)
+
+    return model.ops.xp.concatenate(vectors_to_return), backprop
+
+
+def get_antecedent_heads() -> Model[List["DocumentPairInfo"], Floats2d]:
+    return Model("get_antecedent_heads", antecedent_heads_forward)
+
+
+def antecedent_heads_forward(
+    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
+) -> Tuple[Floats2d, Callable]:
+    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
+        return []
+
+    vectors_to_return = []
+
+    for document_pair_info in document_pair_infos:
+
+        this_document_vector = model.ops.asarray2f(
+            # We only examine the head of the first element within the coordinated phrase
+            # because other elements will not have the true semantic head as their
+            # syntactic head
+            [
+                document_pair_info.doc[
+                    cast(int, document_pair_info.antecedents[i].dataXd.tolist()[0][0])
+                ]._.coref_chains.temp_head_vector
+                for i in range(len(document_pair_info.antecedents))
+            ]
+        )[document_pair_info.candidates.dataXd]
+
+        vectors_to_return.append(this_document_vector)
+
+    return model.ops.xp.concatenate(vectors_to_return), backprop
+
+
+def get_static_inputs() -> Model[List["DocumentPairInfo"], Floats2d]:
+    return Model("get_static_inputs", static_inputs_forward)
+
+
+def static_inputs_forward(
+    model: Model, document_pair_infos: List["DocumentPairInfo"], is_train: bool
+) -> Tuple[Floats2d, Callable]:
+    def backprop(d_vectors: Floats2d) -> List["DocumentPairInfo"]:
+        return []
+
+    return (
+        model.ops.xp.concatenate([d.static_infos for d in document_pair_infos]),
+        backprop,
+    )
 
 
 def _list2ragged(ops: Ops, items: List[List[int]]) -> Ragged:

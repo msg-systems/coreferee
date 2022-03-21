@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Set
 from string import punctuation
 from spacy.tokens import Token
 from ...rules import RulesAnalyzer
@@ -68,7 +69,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         # As well as the standard conjunction found in other languages we also capture
         # comitative phrases where coordination is expressed using the pronoun 'z' and
         # a noun in the instrumental case.
-        def add_siblings_recursively(recursed_token: Token, visited_set: set) -> None:
+        def add_siblings_recursively(
+            recursed_token: Token, visited_set: set
+        ) -> Set[Token]:
             visited_set.add(recursed_token)
             siblings_set = set()
             if recursed_token.lemma_ in self.or_lemmas:
@@ -165,18 +168,20 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             siblings_set = add_siblings_recursively(token, set())
         else:
             siblings_set = set()
-        siblings = sorted(siblings_set)
+        siblings = sorted(siblings_set)  # type: ignore[type-var]
         if len(siblings) == 0:
             return siblings
-        for working_token in token.doc[token.i: siblings[-1].i + 1]:
-            if working_token.dep_ == 'cc' or working_token.lemma_ == 'z':
+        for working_token in token.doc[token.i : siblings[-1].i + 1]:
+            if working_token.dep_ == "cc" or working_token.lemma_ == "z":
                 return siblings
         return []
 
     def is_independent_noun(self, token: Token) -> bool:
         if not token.pos_ in self.noun_pos or token.text in punctuation:
             return False
-        return not self.is_token_in_one_of_phrases(token, self.blacklisted_phrases)
+        return not self.is_token_in_one_of_phrases(
+            token, self.blacklisted_phrases # type:ignore[attr-defined]
+        )  
 
     def is_potential_anaphor(self, token: Token) -> bool:
         # third-person pronoun
@@ -255,7 +260,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
     def is_potential_anaphoric_pair(
         self, referred: Mention, referring: Token, directly: bool
-    ) -> bool:
+    ) -> int:
 
         # masc:     'rodzaj męski'
         # fem:      'rodzaj żeński'
@@ -422,8 +427,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
             self._is_subject_noun(referring_governing_sibling)
             and referring_governing_sibling.head.lemma_
-            in self.verbs_with_personal_subject
-        ) or referring.lemma_ in self.verbs_with_personal_subject:
+            in self.verbs_with_personal_subject  # type:ignore[attr-defined]
+        ) or referring.lemma_ in self.verbs_with_personal_subject:  # type:ignore[attr-defined]
             uncertain = True
             for working_token in (doc[index] for index in referred.token_indexes):
                 if (
@@ -655,9 +660,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if referring._.coref_chains.temp_governing_sibling is not None:
             referring = referring._.coref_chains.temp_governing_sibling
 
-        if (
-            self._is_subject_noun(referred_root)
-        ) or (
+        if (self._is_subject_noun(referred_root)) or (
             referred_root.pos_ in ("VERB", "AUX")
             and self.is_potential_anaphor(referred_root)
         ):
@@ -714,8 +717,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         )
 
     def _is_subject_noun(self, token: Token):
-        return (
-            token.dep_.startswith("nsubj")
-            or (token.dep_ == self.root_dep
-            and token.pos_ in ("NOUN", "PROPN"))
+        return token.dep_.startswith("nsubj") or (
+            token.dep_ == self.root_dep and token.pos_ in ("NOUN", "PROPN")
         )
