@@ -60,7 +60,7 @@ class EnglishSmokeTest(unittest.TestCase):
 
     def test_conjunction_different_pronouns(self):
         self.compare_annotations(
-            'I saw Peter and Jane and she and he was chasing a cat', '[0: [2], [8], 1: [4], [6]]',
+            'I saw Peter and Jane, and she and he were chasing a cat', '[0: [2], [9], 1: [4], [7]]',
             excluded_nlps=['core_web_sm'])
 
     def test_conjunction_involving_pronoun(self):
