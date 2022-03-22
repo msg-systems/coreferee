@@ -832,12 +832,14 @@ def _empty_Ragged(ops: Ops, dtype: str) -> Ragged:
 def _set_vectors(vectors_nlp: Language, ops: Ops, token: Token) -> None:
     if hasattr(token._.coref_chains, "temp_vector"):
         return
-    if not vectors_nlp.vocab[token.lemma_].has_vector:
+    if (not vectors_nlp.vocab[token.lemma_].has_vector) and len(token.vector) > 0:
         token._.coref_chains.temp_vector = token.vector
     else:
         token._.coref_chains.temp_vector = vectors_nlp.vocab[token.lemma_].vector
     if token != token.head:
-        if not vectors_nlp.vocab[token.head.lemma_].has_vector:
+        if (not vectors_nlp.vocab[token.head.lemma_].has_vector) and len(
+            token.head.vector
+        ) > 0:
             token._.coref_chains.temp_head_vector = token.head.vector
         else:
             token._.coref_chains.temp_head_vector = vectors_nlp.vocab[
