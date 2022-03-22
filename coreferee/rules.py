@@ -29,7 +29,7 @@ lock = Lock()
 
 class RulesAnalyzerFactory:
     @staticmethod
-    def get_rules_analyzer(nlp: Language) -> RulesAnalyzer:
+    def get_rules_analyzer(nlp: Language) -> "RulesAnalyzer":
         def read_in_data_files(directory: str, rules_analyzer: RulesAnalyzer) -> None:
             for data_filename in (
                 filename
