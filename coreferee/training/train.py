@@ -61,7 +61,7 @@ class TrainingManager:
         )
         loader_classnames = loader_classes.split(",")
         self.loaders = []
-        for loader_classname in loader_classnames:
+        for loader_classname in sorted(loader_classnames):
             class_ = getattr(
                 sys.modules["coreferee.training.loaders"], loader_classname
             )
@@ -287,7 +287,7 @@ class TrainingManager:
                     Tuple[List[Floats2d], Callable], model.begin_update(X)
                 )
                 grads, loss = loss_calc(Yh, Y)
-                losses.append(loss)
+                losses.append(loss.tolist())  # type: ignore[attr-defined]
                 backprop(grads)
                 model.finish_update(optimizer)
             print(
