@@ -357,7 +357,7 @@ class TrainingManager:
 
         rules_analyzer = RulesAnalyzerFactory().get_rules_analyzer(nlp)
         docs = self.load_documents(nlp, rules_analyzer)
-        rand = Random(0.89)
+        rand = Random(0.47)
         for _ in range(100):
             bisection = int(rand.random() * len(docs))
             docs = docs[bisection:] + docs[:bisection]

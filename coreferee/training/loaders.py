@@ -186,9 +186,11 @@ class ParCorLoader(GenericLoader):
         parser = make_parser()
         parser.setFeature(feature_namespaces, 0)
         docs = []
-        for words_filename in (
+        words_filenames = [
             w for w in os.scandir(directory_name) if w.path.endswith("words.xml")
-        ):
+        ]
+        words_filenames.sort(key=lambda entry: entry.name)
+        for words_filename in words_filenames:
             coref_data_filename = "".join(
                 (words_filename.name[:-10], "_coref_level.xml")
             )
@@ -319,9 +321,9 @@ class PolishCoreferenceCorpusANNLoader(GenericLoader):
     ) -> List[Doc]:
         txt_file_contents = []
         ann_file_lines_list = []
-        for index, txt_filename in enumerate(
-            t for t in os.scandir(directory_name) if t.path.endswith(".txt")
-        ):
+        txt_filenames = [t for t in os.scandir(directory_name) if t.path.endswith(".txt")]
+        txt_filenames.sort(key=lambda entry: entry.name)
+        for index, txt_filename in enumerate(txt_filenames):
             with open(txt_filename, "r", encoding="UTF8") as txt_file:
                 txt_file_contents.append("".join(txt_file.readlines()))
             ann_filename = "".join((txt_filename.path[:-4], ".ann"))
@@ -406,9 +408,9 @@ class LitBankANNLoader(GenericLoader):
     ) -> List[Doc]:
         txt_file_contents = []
         ann_file_lines_list = []
-        for index, txt_filename in enumerate(
-            t for t in os.scandir(directory_name) if t.path.endswith(".txt")
-        ):
+        txt_filenames = [t for t in os.scandir(directory_name) if t.path.endswith(".txt")]
+        txt_filenames.sort(key=lambda entry: entry.name)
+        for index, txt_filename in enumerate(txt_filenames):
             with open(txt_filename, "r", encoding="UTF8") as txt_file:
                 txt_file_contents.append("".join(txt_file.readlines()))
             ann_filename = "".join((txt_filename.path[:-4], ".ann"))
@@ -617,7 +619,9 @@ class DEMOCRATConllLoader(GenericLoader):
         txt_file_contents = []
         doc_mentions_spans = []
 
-        for filename in os.scandir(directory_name):
+        filenames = os.scandir(directory_name)
+        filenames.sort(key=lambda entry: entry.name)
+        for filename in filenames:
             if not filename.path.endswith("conll"):
                 continue
             with open(filename, "r", encoding="UTF8") as conll_file:
