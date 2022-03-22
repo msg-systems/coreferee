@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Dict, Tuple, Set, cast
+from typing import List, Dict, Tuple, Set
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler, feature_namespaces
 import os

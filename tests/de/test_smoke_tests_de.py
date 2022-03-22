@@ -45,7 +45,7 @@ class GermanSmokeTest(unittest.TestCase):
         self.all_nlps(func)
 
     def test_simple(self):
-        self.compare_annotations('Ich sah einen Hund und er jagte eine Katze', '[0: [3], [5]]')
+        self.compare_annotations('Ich sah einen Hund, und er jagte eine Katze', '[0: [3], [6]]')
 
     def test_simple_plural(self):
         self.compare_annotations('Ich sah Hunde, und sie jagten eine Katze', '[0: [2], [5]]')
@@ -100,7 +100,7 @@ class GermanSmokeTest(unittest.TestCase):
     def test_entity_coreference(self):
         self.compare_annotations(
             'Es war Peter, der alles wusste. Alle mochten den freundlichen Mann.',
-            '[0: [2], [12]]')
+            '[0: [2], [12]]', excluded_nlps=["core_news_sm"])
 
     def test_reflexive_simple(self):
         self.compare_annotations(

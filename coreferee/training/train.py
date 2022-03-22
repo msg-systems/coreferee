@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
+from typing import Dict, List, Tuple, cast, Callable
 import os
 import bisect
 import shutil
@@ -25,13 +25,16 @@ from tqdm import tqdm  # type:ignore[import]
 from packaging import version
 import pkg_resources
 import spacy
+from spacy.tokens import Doc
 from spacy.language import Language
 from thinc.api import Config, prefer_gpu
 from thinc.loss import SequenceCategoricalCrossentropy
+from thinc.model import Model
 from thinc.optimizers import Adam
+from thinc.types import Floats2d
 from .loaders import GenericLoader
 from ..annotation import Annotator
-from ..data_model import Mention
+from ..data_model import FeatureTable, Mention
 from ..manager import COMMON_MODELS_PACKAGE_NAMEPART
 from ..manager import FEATURE_TABLE_FILENAME, THINC_MODEL_FILENAME
 from ..rules import RulesAnalyzerFactory
@@ -189,7 +192,7 @@ class TrainingManager:
             self.writeln(setup_cfg_file, "include_package_data = True")
             self.writeln(setup_cfg_file)
             self.writeln(setup_cfg_file, "[options.package_data]")
-            self.writeln(setup_cfg_file, "* = *.bin, *.h5")
+            self.writeln(setup_cfg_file, "* = feature_table.bin, model")
         pyproject_toml_filename = os.sep.join((self.models_dirname, "pyproject.toml"))
         with open(pyproject_toml_filename, "w") as pyproject_toml_file:
             self.writeln(pyproject_toml_file, "[build-system]")
@@ -253,13 +256,23 @@ class TrainingManager:
         )
         self.writeln(temp_log_file)
 
-    def train_thinc_model(self, document_pair_infos):
+    def train_thinc_model(
+        self,
+        document_pair_infos: List[DocumentPairInfo],
+        test_docs: List[Doc],
+        nlp: Language,
+        vectors_nlp: Language,
+        feature_table: FeatureTable,
+    ) -> Model:
         print()
         print("Generating model ...")
         model = create_thinc_model()
         print()
         optimizer = Adam(0.001)
-        for epoch in range(1, 4):
+        epoch = 1
+        last_epoch_accuracy = 0.0
+        last_epoch_model = model.to_bytes()
+        while True:
             print("Epoch", epoch)
             batches = model.ops.minibatch(1, document_pair_infos, shuffle=True)
             loss_calc = SequenceCategoricalCrossentropy(normalize=True)
@@ -269,18 +282,51 @@ class TrainingManager:
                 for x in X:
                     Y.extend(x.training_outputs)
                 if epoch == 1 and batch_number == 0:
-                    model.initialize(X=X, Y=Y)
-                Yh, backprop = model.begin_update(X)
+                    model.initialize(X=X, Y=Y)  # type: ignore[arg-type]
+                Yh, backprop = cast(
+                    Tuple[List[Floats2d], Callable], model.begin_update(X)
+                )
                 grads, loss = loss_calc(Yh, Y)
-                losses.append(loss.tolist())
+                losses.append(loss)
                 backprop(grads)
                 model.finish_update(optimizer)
             print(
                 "Average absolute loss:",
-                round(sum(losses) / (len(losses) * Y[0].shape[1]), 6),
+                round(sum(losses) / len(losses), 6),
             )
             print()
-        return model
+            annotator = Annotator(nlp, vectors_nlp, feature_table, model)
+            correct_counter = incorrect_counter = 0
+            for test_doc in tqdm(test_docs):
+                for token in test_doc:
+                    token._.coref_chains.chains = []
+                annotator.annotate(test_doc, used_in_training=True)
+                for token in test_doc:
+                    if hasattr(token._.coref_chains, "temp_potential_referreds"):
+                        for (
+                            potential_referred
+                        ) in token._.coref_chains.temp_potential_referreds:
+                            if hasattr(potential_referred, "true_in_training"):
+                                for chain in token._.coref_chains:
+                                    if Mention(token, False) not in chain:
+                                        continue
+                                    if potential_referred in chain:
+                                        correct_counter += 1
+                                    else:
+                                        incorrect_counter += 1
+            accuracy = round(
+                100 * correct_counter / (correct_counter + incorrect_counter), 2
+            )
+            print("Accuracy: ", "".join((str(accuracy), "%")))
+            if accuracy < last_epoch_accuracy:
+                print("Saving model from epoch", epoch - 1)
+                model = create_thinc_model()
+                model.from_bytes(last_epoch_model)
+                return model
+            else:
+                last_epoch_accuracy = accuracy
+                last_epoch_model = model.to_bytes()
+                epoch += 1
 
     def load_documents(self, nlp, rules_analyzer):
         docs = []
@@ -355,11 +401,17 @@ class TrainingManager:
             if len(dpi.candidates.dataXd) > 0:
                 document_pair_infos.append(dpi)
 
-        model = self.train_thinc_model(document_pair_infos)
+        model = self.train_thinc_model(
+            document_pair_infos,
+            test_docs,
+            nlp,
+            vectors_nlp,
+            feature_table,
+        )
         annotator = Annotator(nlp, vectors_nlp, feature_table, model)
         self.writeln(temp_log_file)
         correct_counter = incorrect_counter = 0
-        print("Analysing test documents ...")
+        print("Analysing test documents to write info to log file...")
         for test_doc in tqdm(test_docs):
             for token in test_doc:
                 token._.coref_chains.chains = []
@@ -407,14 +459,6 @@ class TrainingManager:
                 accuracy,
                 "%)",
             )
-            print("Accuracy: ", "".join((str(accuracy), "%")))
-        self.writeln(temp_log_file)
-        self.writeln(temp_log_file, "Retraining with all documents")
-        self.writeln(temp_log_file)
-        docs = self.load_documents(nlp, rules_analyzer)
-        feature_table = generate_feature_table(docs)
-        self.writeln(temp_log_file, "Feature table: ", feature_table.__dict__)
-        model = self.train_thinc_model(document_pair_infos, tendencies_analyzer)
         this_model_dir = os.sep.join(
             (
                 self.models_dirname,
