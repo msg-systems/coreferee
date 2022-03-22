@@ -149,7 +149,7 @@ class PolishSmokeTest(unittest.TestCase):
     def test_entity_coreference(self):
         self.compare_annotations(
             'Był Piotr, który wszystko wiedział. Miłym człowiekiem był.',
-            '[0: [1], [8], [9]]')
+            '[0: [1], [8], [9]]', excluded_nlps=["core_news_md"])
 
     def test_reflexive_simple(self):
         self.compare_annotations(
@@ -178,7 +178,7 @@ class PolishSmokeTest(unittest.TestCase):
 
     def test_cataphora_simple_pronoun(self):
         self.compare_annotations(
-            'Pomimo, że on był zmęczony, Piotr poszedł do domu.',
+            'Pomimo, że on zmęczony był, Piotr poszedł do domu.',
             '[0: [3], [7]]')
 
     def test_documentation_example(self):

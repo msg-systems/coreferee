@@ -48,34 +48,34 @@ class CommonDataModelTest(unittest.TestCase):
         self.assertEqual([doc[0], doc[2]], doc._.coref_chains.resolve(doc[4]))
 
     def test_representations_token(self):
-        doc = self.sm_nlp('I saw Peter. Richard and he came in. They had arrived')
+        doc = self.sm_nlp('I saw Peter. He and Richard came in. They had arrived')
         self.assertEqual(2, len(doc._.coref_chains))
-        self.assertEqual('[0: [2], [6], 1: [4, 6], [10]]', str(doc._.coref_chains))
-        self.assertEqual('0: Peter(2), he(6); 1: [Richard(4); he(6)], They(10)',
+        self.assertEqual('[0: [2], [4], 1: [4, 6], [10]]', str(doc._.coref_chains))
+        self.assertEqual('0: Peter(2), He(4); 1: [He(4); Richard(6)], They(10)',
             doc._.coref_chains.pretty_representation)
 
-        self.assertEqual('[0: [2], [6], 1: [4, 6], [10]]', str(doc[6]._.coref_chains))
-        self.assertEqual('0: Peter(2), he(6); 1: [Richard(4); he(6)], They(10)',
-            doc[6]._.coref_chains.pretty_representation)
+        self.assertEqual('[0: [2], [4], 1: [4, 6], [10]]', str(doc[4]._.coref_chains))
+        self.assertEqual('0: Peter(2), He(4); 1: [He(4); Richard(6)], They(10)',
+            doc[4]._.coref_chains.pretty_representation)
 
-        self.assertEqual('[0: [2], [6]]', str(doc[2]._.coref_chains))
-        self.assertEqual('0: Peter(2), he(6)',
+        self.assertEqual('[0: [2], [4]]', str(doc[2]._.coref_chains))
+        self.assertEqual('0: Peter(2), He(4)',
             doc[2]._.coref_chains.pretty_representation)
 
         self.assertEqual('[1: [4, 6], [10]]', str(doc[10]._.coref_chains))
-        self.assertEqual('1: [Richard(4); he(6)], They(10)',
+        self.assertEqual('1: [He(4); Richard(6)], They(10)',
             doc[10]._.coref_chains.pretty_representation)
 
         self.assertEqual(0,
             doc._.coref_chains[0].most_specific_mention_index)
         self.assertEqual(0,
             doc._.coref_chains[1].most_specific_mention_index)
-        self.assertEqual([doc[2], doc[4]], doc._.coref_chains.resolve(doc[10]))
-        self.assertEqual(None, doc._.coref_chains.resolve(doc[4]))
-        self.assertEqual([doc[2]], doc._.coref_chains.resolve(doc[6]))
+        self.assertEqual([doc[2], doc[6]], doc._.coref_chains.resolve(doc[10]))
+        self.assertEqual(None, doc._.coref_chains.resolve(doc[6]))
+        self.assertEqual([doc[2]], doc._.coref_chains.resolve(doc[4]))
 
     def test_object_access(self):
-        doc = self.sm_nlp('I saw Peter. Richard and he came in. They had arrived')
+        doc = self.sm_nlp('I saw Peter. He and Richard came in. They had arrived')
         self.assertEqual('1: [4, 6], [10]', str(doc._.coref_chains[1]))
         self.assertEqual(2, len(doc._.coref_chains))
         self.assertEqual(2, len(doc._.coref_chains[1]))
