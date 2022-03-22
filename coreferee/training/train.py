@@ -514,5 +514,7 @@ class TrainingManager:
         )
         if os.path.isfile(".".join((zip_filename, "zip"))):
             os.remove(".".join((zip_filename, "zip")))
-        shutil.rmtree(os.sep.join((self.models_dirname, "build")))
+        build_dir = os.sep.join((self.models_dirname, "build"))
+        if os.path.isdir(build_dir):
+            shutil.rmtree(build_dir)
         shutil.make_archive(zip_filename, "zip", self.models_dirname)
