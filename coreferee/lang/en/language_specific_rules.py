@@ -35,7 +35,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         "LANGUAGE": ["language", "tongue"],
     }
 
-    quote_tuples = [("'", "'"), ('"', '"'), ("“", "”"), ("‘", "’")]
+    quote_tuples = [('"', '"'), ("“", "”"), ("‘", "’")]
 
     dependent_sibling_deps = ("conj", "appos")
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script downloads the training corpora for the four languages. 
+# This script downloads the training corpora for English, German and Polish. Instructions for French are at the bottom. 
 #
 # Usage: download_corpora.sh <target dir>
 set -e
@@ -40,3 +40,7 @@ cp litbank/coref/brat/* "${DATA_DIR}/en"
 # Clean up
 popd
 rm -Rf ${TEMP_DIR}
+
+# Instructions for French
+# - download DEMOCRAT corpus from https://www.ortolang.fr/market/corpora/democrat/
+# - convert it to CONLL using https://github.com/Pantalaymon/neuralcoref-for-french/blob/main/conversion_conll.py

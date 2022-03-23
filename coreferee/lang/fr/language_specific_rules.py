@@ -107,7 +107,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
     }
 
     quote_tuples = [
-        ("'", "'"),
         ('"', '"'),
         ("«", "»"),
         ("‹", "›"),

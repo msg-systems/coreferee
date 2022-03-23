@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Set
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler, feature_namespaces
 import os
-import re
 from sys import maxsize
 import bisect
 from abc import ABC, abstractmethod
@@ -426,265 +425,152 @@ class LitBankANNLoader(GenericLoader):
         return docs_to_return
 
 
-class DEMOCRATConllLoader(GenericLoader):
-    """
-    Loader of the conll file format of DEMOCRAT corpus.
-    Should also work for any Conll file with annotated coreference
-    after a few adaptations on the token separators
-    """
-
+class ConllLoader(GenericLoader):
     @staticmethod
     def load_file(
-        doc: Doc, mentions: dict, rules_analyzer: RulesAnalyzer, verbose: bool = False
-    ) -> None:
-        rules_analyzer.initialize(doc)
-        token_start_end_indexes = {
-            (token.idx, token.idx + len(token.text) - 1): token.i for token in doc
-        }
-        mention_labels_to_span_sets: Dict[str, Set[Span]] = {}
-        for index, mention_span in enumerate(mentions):
-            mention_label = mentions[mention_span]
-            for token_start_end_index in token_start_end_indexes:
-                token_start_char_index, token_end_char_index = token_start_end_index
-                if token_start_char_index <= mention_span[0] <= token_end_char_index:
-                    if token_start_char_index != mention_span[0] and verbose:
-                        print(
-                            "Spacy Missed a token limit at the beginning of token",
-                            token_start_char_index,
-                            mention_span,
-                        )
-                        i = token_start_end_indexes[token_start_end_index]
-                        print(doc[i], doc[i - 5 : i], doc[i : i + 5])
-
-                    mention_start_index = token_start_end_indexes[token_start_end_index]
-                if token_start_char_index <= mention_span[1] <= token_end_char_index:
-                    if token_end_char_index != mention_span[1] and verbose:
-                        print(
-                            "Spacy Missed token limit at the end of token",
-                            token_start_char_index,
-                            mention_span,
-                        )
-                        i = token_start_end_indexes[token_start_end_index]
-                        print(
-                            doc[i],
-                            doc.text[token_start_char_index : token_end_char_index + 1],
-                            doc[i - 5 : i],
-                            doc[i : i + 5],
-                        )
-                    mention_end_index = token_start_end_indexes[token_start_end_index]
-                    break
-
-            span = doc[mention_start_index:mention_end_index]
-            if mention_label in mention_labels_to_span_sets:
-                mention_labels_to_span_sets[mention_label].add(span)
-            else:
-                mention_labels_to_span_sets[mention_label] = {span}
-
-        for span_set in mention_labels_to_span_sets.values():
-            spans = list(
-                filter(
-                    lambda span: rules_analyzer.is_independent_noun(span.root)
-                    or rules_analyzer.is_potential_anaphor(span.root),
-                    span_set,
-                )
-            )
-            spans.sort(key=lambda span: span.start)
-            for index, span in enumerate(spans):
-                include_dependent_siblings = (
-                    len(span.root._.coref_chains.temp_dependent_siblings) > 0
-                    and span.root._.coref_chains.temp_dependent_siblings[-1].i
-                    < span.end
-                )
-                working_referent = Mention(span.root, include_dependent_siblings)
-                marked = False
-                if index > 0:
-                    previous_span = spans[index - 1]
-                    if hasattr(
-                        previous_span.root._.coref_chains, "temp_potential_referreds"
+        conll_filename: str, nlp: Language, rules_analyzer: RulesAnalyzer
+    ) -> List[Doc]:
+        with open(conll_filename, "r", encoding="UTF8") as conll_file:
+            split_conll_lines = [
+                l.split() for l in conll_file.readlines() if len(l.split()) > 10
+            ]
+        part_ids = sorted(list({l[1] for l in split_conll_lines}))
+        docs = []
+        for part_id in part_ids:
+            this_part_split_conll_lines = [
+                l for l in split_conll_lines if l[1] == part_id
+            ]
+            if nlp.meta["lang"] in ("fr"):
+                corrected_this_part_split_conll_lines:List[List[str]] = []
+                index = 0
+                while index < len(this_part_split_conll_lines):
+                    conll_token = this_part_split_conll_lines[index][3].lstrip("/")
+                    if conll_token.endswith("'") and index + 1 < len(this_part_split_conll_lines):
+                        this_part_split_conll_lines[index][3] += this_part_split_conll_lines[index+1][3].lstrip("/")
+                        if this_part_split_conll_lines[index+1][-1] not in("-", "_"):
+                            if this_part_split_conll_lines[index][-1] not in("-", "_"):
+                                this_part_split_conll_lines[index][-1] += '|' + this_part_split_conll_lines[index+1][-1]
+                            else:
+                                this_part_split_conll_lines[index][-1] = this_part_split_conll_lines[index+1][-1]
+                        corrected_this_part_split_conll_lines.append(this_part_split_conll_lines[index])
+                        index += 2
+                    else:
+                        corrected_this_part_split_conll_lines.append(this_part_split_conll_lines[index])
+                        index += 1
+                this_part_split_conll_lines = corrected_this_part_split_conll_lines
+            conll_tokens = [l[3].lstrip("/") for l in this_part_split_conll_lines]
+            doc = nlp(" ".join(conll_tokens))
+            rules_analyzer.initialize(doc)
+            conll_to_spacy_lookup = (
+                []
+            )  # indexes correspond to conll token indexes, entries are lists of spaCy tokens
+            spacy_token_iterator = enumerate(token for token in doc)
+            for conll_token in conll_tokens:
+                this_conll_token_lookup = []
+                while len(conll_token) > 0:
+                    spacy_token_index, spacy_token = next(
+                        spacy_token_iterator, (None, None)
+                    )
+                    if spacy_token.pos_ == "SPACE":
+                        continue
+                    if spacy_token_index is None or not conll_token.startswith(
+                        spacy_token.text
                     ):
-                        for (
-                            mention
-                        ) in previous_span.root._.coref_chains.temp_potential_referreds:
-                            if mention == working_referent:
-                                mention.true_in_training = True
-                                marked = True
-                                if verbose:
-                                    print(
-                                        "COREF BEFORE",
-                                        previous_span.root,
-                                        doc[working_referent.root_index],
-                                        doc[
-                                            previous_span.start
-                                            - 5 : working_referent.root_index
-                                            + 5
-                                        ],
-                                        sep=" | ",
-                                    )
-                                continue
-                if not marked and index < len(spans) - 1:
-                    next_span = spans[index + 1]
-                    if hasattr(
-                        next_span.root._.coref_chains, "temp_potential_referreds"
-                    ):
-                        for (
-                            mention
-                        ) in next_span.root._.coref_chains.temp_potential_referreds:
-                            if mention == working_referent:
-                                mention.true_in_training = True
-                                if verbose:
-                                    print(
-                                        "COREF AFTER",
-                                        doc[working_referent.root_index],
-                                        next_span.root,
-                                        doc[
-                                            working_referent.root_index
-                                            - 5 : next_span.end
-                                            + 5
-                                        ],
-                                        sep=" | ",
-                                    )
-
-    def turn_spans_to_mentions(
-        self,
-        coreference_spans: Dict[Tuple[int, int], List[str]],
-        j=0,
-        txt: str = "",
-        verbose: bool = False,
-    ):
-        mentions = {}
-        for i, coreference_span in enumerate(coreference_spans):
-            start_char, end_char = coreference_span
-            for reference in coreference_spans[coreference_span]:
-                mention_label = re.search(
-                    r"\d+", reference
-                ).group(  # type:ignore[union-attr]
-                    0
-                )
-                if reference.startswith("(") and reference.endswith(")"):
-                    mentions[coreference_span] = mention_label
-                elif reference.startswith("("):
-                    mentions[(start_char, i + len(mentions))] = mention_label
-
-                elif reference.endswith(")"):
-                    opened_coreference = False
-                    for browsed_mention_span, browsed_mention_label in reversed(
-                        mentions.items()
-                    ):
-                        if browsed_mention_label == mention_label and isinstance(
-                            browsed_mention_span[1], str
+                        break
+                    this_conll_token_lookup.append(spacy_token_index)
+                    conll_token = conll_token[len(spacy_token) :]
+                conll_to_spacy_lookup.append(this_conll_token_lookup)
+            working_spans = (
+                {}
+            )  # // from chain index numbers to spaCy start token indexes
+            chains = {}  # from chain index numbers to lists of spaCy spans
+            for conll_token_index, chain_markers in enumerate(
+                l[-1] for l in this_part_split_conll_lines
+            ):
+                if chain_markers in("-", "_"):
+                    continue
+                for chain_marker in chain_markers.split("|"):
+                    chain_index = "".join([d for d in chain_marker if d.isdigit()])
+                    if "(" in chain_marker:
+                        working_spans[chain_index] = conll_to_spacy_lookup[
+                            conll_token_index
+                        ][0]
+                    if (
+                        ")" in chain_marker and chain_index in working_spans
+                    ):  # sometimes errors in OntoNotes -> not the case
+                        this_span = doc[
+                            working_spans[chain_index] : conll_to_spacy_lookup[
+                                conll_token_index
+                            ][-1]
+                            + 1
+                        ]
+                        del working_spans[chain_index]
+                        if rules_analyzer.is_independent_noun(
+                            this_span.root
+                        ) or rules_analyzer.is_potential_anaphor(this_span.root):
+                            if chain_index in chains:
+                                chains[chain_index].append(this_span)
+                            else:
+                                chains[chain_index] = [this_span]
+            for chain in (c for c in chains.values() if len(c) > 1):
+                chain.sort(key=lambda span: span[0])
+                for span_index, span in enumerate(chain):
+                    include_dependent_siblings = (
+                        len(span.root._.coref_chains.temp_dependent_siblings) > 0
+                        and span.root._.coref_chains.temp_dependent_siblings[-1] in span
+                    )
+                    working_referent = Mention(span.root, include_dependent_siblings)
+                    if span_index > 0:
+                        previous_span = chain[span_index - 1]
+                        if (
+                            hasattr(
+                                previous_span.root._.coref_chains,
+                                "temp_potential_referreds",
+                            )
+                            and Mention.number_of_training_mentions_marked_true(
+                                previous_span.root
+                            )
+                            == 0
                         ):
-
-                            new_mention_span = list(browsed_mention_span)
-                            new_mention_span[1] = end_char
-                            new_mention_span = tuple(new_mention_span)
-                            if new_mention_span in mentions and verbose:
-                                print(
-                                    "DUPLICATE",
-                                    new_mention_span,
-                                    mentions[new_mention_span],
-                                    j,
-                                    txt[
-                                        new_mention_span[0]
-                                        - 10 : new_mention_span[1]
-                                        + 10
-                                    ],
-                                    sep=" | ",
-                                )
-
-                            mentions[new_mention_span] = mention_label
-                            del mentions[browsed_mention_span]
-                            opened_coreference = True
-                            break
-                    if not opened_coreference:
-                        print(
-                            txt[coreference_span[0] - 10 : coreference_span[1] + 10],
-                            mention_label,
-                            j,
-                            txt,
-                            sep=" | ",
-                        )
-                        raise LookupError(
-                            f"closed coreference with no beginning : {coreference_span}|{mention_label}|{i}"
-                        )
-        return mentions
+                            for (
+                                mention
+                            ) in (
+                                previous_span.root._.coref_chains.temp_potential_referreds
+                            ):
+                                if mention == working_referent:
+                                    mention.true_in_training = True
+                                    continue
+                    if span_index < len(chain) - 1:
+                        next_span = chain[span_index + 1]
+                        if (
+                            hasattr(
+                                next_span.root._.coref_chains,
+                                "temp_potential_referreds",
+                            )
+                            and Mention.number_of_training_mentions_marked_true(
+                                next_span.root
+                            )
+                            == 0
+                        ):
+                            for (
+                                mention
+                            ) in next_span.root._.coref_chains.temp_potential_referreds:
+                                if mention == working_referent:
+                                    mention.true_in_training = True
+                                    continue
+            docs.append(doc)
+        return docs
 
     def load(
-        self,
-        directory_name: str,
-        nlp: Language,
-        rules_analyzer: RulesAnalyzer,
-        verbose=False,
-        return_spans=False,
-    ):
-        txt_file_contents = []
-        doc_mentions_spans = []
-
-        filenames = os.scandir(directory_name)
+        self, directory_name: str, nlp: Language, rules_analyzer: RulesAnalyzer
+    ) -> List[Doc]:
+        filenames = [c for c in os.scandir(directory_name) if c.path.endswith("conll")]
         filenames.sort(key=lambda entry: entry.name)
-        for filename in filenames:
-            if not filename.path.endswith("conll"):
-                continue
-            with open(filename, "r", encoding="UTF8") as conll_file:
-                for line in conll_file:
-                    if line.startswith("#begin document"):
-                        j = re.search(
-                            r"part (\d+)", line
-                        ).group(  # type:ignore[union-attr]
-                            1
-                        )
-                        token_start, token_end = 0, -1
-                        first_token = True
-                        tokens_list: List[str] = []
-                        coreference_spans_dict: Dict[Tuple[int, int], List[str]] = {}
-                    elif line.startswith("#end document"):
-                        txt_file_contents.append("".join(tokens_list))
-                        doc_mentions_spans.append(
-                            self.turn_spans_to_mentions(
-                                coreference_spans_dict,
-                                j,
-                                "".join(tokens_list),
-                                verbose=verbose,
-                            )
-                        )
-
-                    elif line != "\n":
-                        columns = line.split(" " * 10)
-                        token = columns[3]
-
-                        coreference_labels_input = columns[-1].strip("\n")
-                        coreference_labels = (
-                            coreference_labels_input.split("|")
-                            if coreference_labels_input != "_"
-                            else []
-                        )
-                        sep = " "
-                        if (
-                            token in (".", ",", ")", "'")
-                            or first_token
-                            or tokens_list[-1].endswith("'")
-                            or re.match(r"\-\w+", token)
-                            or tokens_list[-1].endswith("-")
-                            or token.startswith("-")
-                        ):
-                            sep = ""
-
-                        token_start = token_end + len(sep) + 1
-                        token_end = token_start + len(token) - 1
-                        tokens_list.append(sep + token)
-                        coreference_spans_dict[
-                            (token_start, token_end)
-                        ] = coreference_labels
-                        first_token = False
-
-        docs = nlp.pipe(txt_file_contents)
-        docs_to_return = []
-        for index, doc in enumerate(docs):
-            if index % 10 == 0:
-                print("Loaded", index, "documents")
-            self.load_file(
-                doc, doc_mentions_spans[index], rules_analyzer, verbose=verbose
-            )
-            docs_to_return.append(doc)
-        if return_spans:
-            return docs_to_return, doc_mentions_spans
-        return docs_to_return
+        docs = []
+        if len(filenames) > 0:
+            print("Loading CONLL docs from", directory_name, "...")
+            for i, conll_filename in enumerate(filenames):
+                print("Loading", conll_filename.name)
+                docs.extend(self.load_file(conll_filename, nlp, rules_analyzer))
+            print()
+        return docs
