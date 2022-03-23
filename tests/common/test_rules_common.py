@@ -147,13 +147,13 @@ class CommonRulesTest(unittest.TestCase):
         self.all_nlps(func)
 
     def test_quote_array_simple(self):
-        self.compare_quote_array("He said 'Give it back'", 1, [0, 0, 0, 0])
-        self.compare_quote_array("He said 'Give it back'", 3, [1, 0, 0, 0])
+        self.compare_quote_array("He said ‘Give it back‘", 1, [0, 0, 0])
+        self.compare_quote_array("He said ‘Give it back‘", 3, [0, 0, 1])
 
     def test_quote_array_complex(self):
-        self.compare_quote_array("He said “Give it 'back'”", 1, [0, 0, 0, 0])
-        self.compare_quote_array("He said “Give it 'back'”", 3, [0, 0, 1, 0])
-        self.compare_quote_array("He said “Give it 'back'”", 6, [1, 0, 1, 0])
+        self.compare_quote_array("He said “Give it \"back\"”", 1, [0, 0, 0])
+        self.compare_quote_array("He said “Give it \"back\"”", 3, [0, 1, 0])
+        self.compare_quote_array("He said “Give it \"back\"”", 6, [1, 1, 0])
 
     def compare_potential_noun_pair(self, doc_text, referred_index, referring_index,
             expected_truth, *, excluded_nlps=[]):
