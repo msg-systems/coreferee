@@ -590,7 +590,7 @@ class ConllLoader(GenericLoader):
         docs = []
         if len(filenames) > 0:
             print("Loading CONLL docs from", directory_name, "...")
-            for i, conll_filename in enumerate(filenames):
+            for conll_filename in filenames:
                 print("Loading", conll_filename.name)
                 docs.extend(self.load_file(conll_filename, nlp, rules_analyzer))
             print()

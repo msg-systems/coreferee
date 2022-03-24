@@ -35,7 +35,7 @@ from thinc.types import Floats2d
 from .loaders import GenericLoader
 from ..annotation import Annotator
 from ..data_model import FeatureTable, Mention
-from ..manager import COMMON_MODELS_PACKAGE_NAMEPART
+from ..manager import COMMON_MODELS_PACKAGE_NAMEPART, get_annotator
 from ..manager import FEATURE_TABLE_FILENAME, THINC_MODEL_FILENAME
 from ..rules import RulesAnalyzerFactory
 from ..tendencies import TendenciesAnalyzer, generate_feature_table, create_thinc_model
@@ -51,6 +51,8 @@ class TrainingManager:
         loader_classes: str,
         data_dir: str,
         log_dir: str,
+        *,
+        train_not_check: bool
     ):
         self.file_system_root = pkg_resources.resource_filename(root_path, "")
         relative_config_filename = os.sep.join(("lang", lang, "config.cfg"))
@@ -72,6 +74,7 @@ class TrainingManager:
             self.set_up_models_dir()
 
         self.relevant_config_entry_names = []
+        self.train_not_check = train_not_check
         self.nlp_dict: Dict[str, Language] = {}
         for config_entry_name, config_entry in self.config.items():
             this_model_dir = "".join(
@@ -83,7 +86,7 @@ class TrainingManager:
                     config_entry_name,
                 )
             )
-            if not os.path.isdir(this_model_dir):
+            if not os.path.isdir(this_model_dir) or not train_not_check:
                 self.relevant_config_entry_names.append(config_entry_name)
                 model_name = "_".join((lang, config_entry["model"]))
                 self.load_model(
@@ -334,7 +337,7 @@ class TrainingManager:
             docs.extend(loader.load(self.data_dir, nlp, rules_analyzer))
         return docs
 
-    def train(self, config_entry_name, config_entry, temp_log_file):
+    def train_or_check(self, config_entry_name: str, config_entry, temp_log_file):
         self.writeln(temp_log_file, "Config entry name: ", config_entry_name)
         nlp_name = "_".join((self.lang, config_entry["model"]))
         nlp = self.nlp_dict[nlp_name]
@@ -384,34 +387,39 @@ class TrainingManager:
             len(test_docs),
         )
 
-        feature_table = generate_feature_table(docs, nlp)
-        self.writeln(temp_log_file, "Feature table: ", feature_table.__dict__)
+        if self.train_not_check:
+            feature_table = generate_feature_table(docs, nlp)
+            self.writeln(temp_log_file, "Feature table: ", feature_table.__dict__)
 
-        print()
-        tendencies_analyzer = TendenciesAnalyzer(
-            rules_analyzer, vectors_nlp, feature_table
-        )
-        prefer_gpu()
-        print("Creating Document Pair Infos ...")
-        document_pair_infos = []
-        for training_doc in tqdm(training_docs):
-            dpi = DocumentPairInfo.from_doc(
-                training_doc, tendencies_analyzer, ENSEMBLE_SIZE, is_train=True
+            print()
+            tendencies_analyzer = TendenciesAnalyzer(
+                rules_analyzer, vectors_nlp, feature_table
             )
-            if len(dpi.candidates.dataXd) > 0:
-                document_pair_infos.append(dpi)
+            prefer_gpu()
+            print("Creating Document Pair Infos ...")
+            document_pair_infos = []
+            for training_doc in tqdm(training_docs):
+                dpi = DocumentPairInfo.from_doc(
+                    training_doc, tendencies_analyzer, ENSEMBLE_SIZE, is_train=True
+                )
+                if len(dpi.candidates.dataXd) > 0:
+                    document_pair_infos.append(dpi)
 
-        model = self.train_thinc_model(
-            document_pair_infos,
-            test_docs,
-            nlp,
-            vectors_nlp,
-            feature_table,
-        )
-        annotator = Annotator(nlp, vectors_nlp, feature_table, model)
+            model = self.train_thinc_model(
+                document_pair_infos,
+                test_docs,
+                nlp,
+                vectors_nlp,
+                feature_table,
+            )
+            annotator = Annotator(nlp, vectors_nlp, feature_table, model)
+        else:
+            annotator = get_annotator(
+                nlp=nlp, vectors_nlp=vectors_nlp, config_entry_name=config_entry_name
+            )
         self.writeln(temp_log_file)
         correct_counter = incorrect_counter = 0
-        print("Analysing test documents to write info to log file...")
+        print("Analysing test documents...")
         for test_doc in tqdm(test_docs):
             for token in test_doc:
                 token._.coref_chains.chains = []
@@ -459,24 +467,43 @@ class TrainingManager:
                 accuracy,
                 "%)",
             )
-        this_model_dir = os.sep.join(
-            (
-                self.models_dirname,
-                "".join((COMMON_MODELS_PACKAGE_NAMEPART, self.lang)),
-                config_entry_name,
+            print(
+                "".join(
+                    (
+                        "Correct: ",
+                        str(correct_counter),
+                        "; Incorrect: ",
+                        str(incorrect_counter),
+                        " (",
+                        str(accuracy),
+                        "%)",
+                    )
+                )
             )
-        )
-        os.mkdir(this_model_dir)
-        init_py_filename = os.sep.join((this_model_dir, "__init__.py"))
-        with open(init_py_filename, "w") as init_py_file:
-            self.writeln(init_py_file)
-        feature_table_filename = os.sep.join((this_model_dir, FEATURE_TABLE_FILENAME))
-        with open(feature_table_filename, "wb") as feature_table_file:
-            pickle.dump(feature_table, feature_table_file)
-        thinc_model_filename = "".join((this_model_dir, os.sep, THINC_MODEL_FILENAME))
-        model.to_disk(thinc_model_filename)
+        if self.train_not_check:
+            this_model_dir = os.sep.join(
+                (
+                    self.models_dirname,
+                    "".join((COMMON_MODELS_PACKAGE_NAMEPART, self.lang)),
+                    config_entry_name,
+                )
+            )
+            os.mkdir(this_model_dir)
+            init_py_filename = os.sep.join((this_model_dir, "__init__.py"))
+            with open(init_py_filename, "w") as init_py_file:
+                self.writeln(init_py_file)
+            feature_table_filename = os.sep.join(
+                (this_model_dir, FEATURE_TABLE_FILENAME)
+            )
+            with open(feature_table_filename, "wb") as feature_table_file:
+                pickle.dump(feature_table, feature_table_file)
+            thinc_model_filename = "".join(
+                (this_model_dir, os.sep, THINC_MODEL_FILENAME)
+            )
+            model.to_disk(thinc_model_filename)
 
     def train_models(self):
+        assert self.train_not_check
         for config_entry_name in self.relevant_config_entry_names:
             config_entry = self.config[config_entry_name]
             print("Processing", config_entry_name, "...")
@@ -484,14 +511,14 @@ class TrainingManager:
                 (self.log_dir, os.sep, "temp", os.sep, config_entry_name, ".log")
             )
             with open(temp_log_filename, "w", encoding="utf-8") as temp_log_file:
-                self.train(config_entry_name, config_entry, temp_log_file)
+                self.train_or_check(config_entry_name, config_entry, temp_log_file)
         timestamp = datetime.now().isoformat(timespec="microseconds")
         sanitized_timestamp = "".join([ch for ch in timestamp if ch.isalnum()])
         zip_filename = "".join(
             (
                 self.log_dir,
                 os.sep,
-                "training_log_",
+                "train_log_",
                 self.lang,
                 "_",
                 sanitized_timestamp,
@@ -518,3 +545,31 @@ class TrainingManager:
         if os.path.isdir(build_dir):
             shutil.rmtree(build_dir)
         shutil.make_archive(zip_filename, "zip", self.models_dirname)
+
+    def check_models(self):
+        assert not self.train_not_check
+        for config_entry_name in self.relevant_config_entry_names:
+            config_entry = self.config[config_entry_name]
+            print("Checking", config_entry_name, "...")
+            temp_log_filename = "".join(
+                (self.log_dir, os.sep, "temp", os.sep, config_entry_name, ".log")
+            )
+            with open(temp_log_filename, "w", encoding="utf-8") as temp_log_file:
+                self.train_or_check(config_entry_name, config_entry, temp_log_file)
+        timestamp = datetime.now().isoformat(timespec="microseconds")
+        sanitized_timestamp = "".join([ch for ch in timestamp if ch.isalnum()])
+        zip_filename = "".join(
+            (
+                self.log_dir,
+                os.sep,
+                "check_log_",
+                self.lang,
+                "_",
+                sanitized_timestamp,
+                ".zip",
+            )
+        )
+        shutil.make_archive(zip_filename, "zip", os.sep.join((self.log_dir, "temp")))
+        temp_dir = os.sep.join((self.log_dir, "temp"))
+        if os.path.isdir(temp_dir):
+            shutil.rmtree(temp_dir)

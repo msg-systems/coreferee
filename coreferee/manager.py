@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
+from typing import Dict, Tuple
 import importlib
 import os
 import pickle
@@ -24,7 +24,9 @@ import pkg_resources
 from spacy.language import Language
 from spacy.tokens import Doc, Token
 from thinc.api import Config
+from thinc.model import Model
 from .annotation import Annotator
+from .data_model import FeatureTable
 from .errors import LanguageNotSupportedError, ModelNotSupportedError
 from .errors import VectorsModelNotInstalledError, VectorsModelHasWrongVersionError
 from .errors import MultiprocessingParsingNotSupportedError
@@ -103,52 +105,11 @@ class CorefereeManager:
                         )
                 else:
                     vectors_nlp = nlp
-                model_package_name = "".join(
-                    (
-                        COMMON_MODELS_PACKAGE_NAMEPART,
-                        nlp.meta["lang"],
-                        ".",
-                        config_entry_name,
-                    )
+                return get_annotator(
+                    nlp=nlp,
+                    vectors_nlp=vectors_nlp,
+                    config_entry_name=config_entry_name,
                 )
-                try:
-                    importlib.import_module(model_package_name)
-                except ModuleNotFoundError:
-                    print(
-                        "".join(
-                            (
-                                "Model could not be loaded for config entry '",
-                                config_entry_name,
-                                "' If models exist for language '",
-                                nlp.meta["lang"],
-                                "', load them with the command 'python -m coreferee install ",
-                                nlp.meta["lang"],
-                                "'.",
-                            )
-                        )
-                    )
-                    raise ModelNotSupportedError(
-                        "".join(
-                            (
-                                nlp.meta["lang"],
-                                "_",
-                                nlp.meta["name"],
-                                " version ",
-                                nlp.meta["version"],
-                            )
-                        )
-                    )
-                this_feature_table_filename = pkg_resources.resource_filename(
-                    model_package_name, FEATURE_TABLE_FILENAME
-                )
-                with open(this_feature_table_filename, "rb") as feature_table_file:
-                    feature_table = pickle.load(feature_table_file)
-                absolute_thinc_model_filename = pkg_resources.resource_filename(
-                    model_package_name, THINC_MODEL_FILENAME
-                )
-                thinc_model = create_thinc_model()
-                thinc_model.from_disk(absolute_thinc_model_filename)
-                return Annotator(nlp, vectors_nlp, feature_table, thinc_model)
         raise ModelNotSupportedError(
             "".join(
                 (
@@ -200,3 +161,54 @@ class CorefereeBroker:
             Doc.set_extension("coref_chains", default=None)
         if not Token.has_extension("coref_chains"):
             Token.set_extension("coref_chains", default=None)
+
+
+def get_annotator(
+    *, nlp: Language, vectors_nlp: Language, config_entry_name: str
+) -> Annotator:
+    model_package_name = "".join(
+        (
+            COMMON_MODELS_PACKAGE_NAMEPART,
+            nlp.meta["lang"],
+            ".",
+            config_entry_name,
+        )
+    )
+    try:
+        importlib.import_module(model_package_name)
+    except ModuleNotFoundError:
+        print(
+            "".join(
+                (
+                    "Model could not be loaded for config entry '",
+                    config_entry_name,
+                    "' If models exist for language '",
+                    nlp.meta["lang"],
+                    "', load them with the command 'python -m coreferee install ",
+                    nlp.meta["lang"],
+                    "'.",
+                )
+            )
+        )
+        raise ModelNotSupportedError(
+            "".join(
+                (
+                    nlp.meta["lang"],
+                    "_",
+                    nlp.meta["name"],
+                    " version ",
+                    nlp.meta["version"],
+                )
+            )
+        )
+    this_feature_table_filename = pkg_resources.resource_filename(
+        model_package_name, FEATURE_TABLE_FILENAME
+    )
+    with open(this_feature_table_filename, "rb") as feature_table_file:
+        feature_table = pickle.load(feature_table_file)
+    absolute_thinc_model_filename = pkg_resources.resource_filename(
+        model_package_name, THINC_MODEL_FILENAME
+    )
+    thinc_model = create_thinc_model()
+    thinc_model.from_disk(absolute_thinc_model_filename)
+    return Annotator(nlp, vectors_nlp, feature_table, thinc_model)
