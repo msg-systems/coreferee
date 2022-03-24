@@ -30,7 +30,6 @@ class FrenchSmokeTest(unittest.TestCase):
         alternative_expected_coref_chains=None):
 
         def func(nlp):
-            sent = 'La femme se leva et regarda Dominique. Elle se tourna et le regarda'
             if nlp.meta['name'] in excluded_nlps:
                 return
 
@@ -62,7 +61,7 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_independent_propositions_different_pronouns(self):
         self.compare_annotations(
-            'J\'ai vu Jacques et Julie ; elle et lui chassaient un chat', '[0: [3], [9], 1: [5], [7]]',
+            'J\'ai vu Jacques et Julie ; elle et lui, ils chassaient un chat', '[0: [3], [9], 1: [5], [7]]',
             excluded_nlps=['core_news_sm'])
             
     def test_conjunction_involving_pronoun(self):
@@ -114,7 +113,7 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_reflexive_doubled(self):
         self.compare_annotations(
-            'La panthère se chassait elle-même',
+            'La panthère se chassait elle-même.',
             '[0: [1], [2], [4]]',
             excluded_nlps='core_news_sm')
 
@@ -127,7 +126,7 @@ class FrenchSmokeTest(unittest.TestCase):
     def test_reflexive_excluded_mix_of_coordination_and_single_member_1(self):
         self.compare_annotations(
             'Jacques et Julie entrèrent. Ils le virent.',
-            '[0: [0, 2], [5]]')
+            '[0: [0, 2], [5]]', excluded_nlps=['core_news_sm'])
             
     def test_reflexive_excluded_mix_of_coordination_and_single_member_2(self):
         self.compare_annotations(
@@ -138,7 +137,7 @@ class FrenchSmokeTest(unittest.TestCase):
     def test_reflexive_anaphor_precedes_referent(self):
         self.compare_annotations(
             'On discuta de soi-même et Jacques entra.',
-            '[]')
+            '[]', excluded_nlps=['core_news_sm'])
 
     def test_cataphora_simple(self):
         self.compare_annotations(
@@ -147,8 +146,8 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_cataphora_with_coordination(self):
         self.compare_annotations(
-            'Alors qu\'ils partaient, l\'homme et la femme étaient tristes',
-            '[0: [2], [6, 9]]')
+            'Bien qu\'ils partaient, l\'homme et la femme étaient tristes',
+            '[0: [2], [6, 9]]', excluded_nlps=['core_news_sm'])
 
 
     def test_possessive_pronoun_within_threeway_coordination(self):
@@ -169,8 +168,8 @@ class FrenchSmokeTest(unittest.TestCase):
             
     def test_reflexive_noun(self):
         self.compare_annotations(
-            'Il est passioné par la rotation de la Terre sur elle-même',
-            '[0: [8], [10]]', excluded_nlps='core_news_md'
+            'Il est passioné par la rotation sur elle-même de la Terre',
+            '[0: [5], [7]]'
             )
 
     def test_relative_clause(self):
@@ -188,7 +187,7 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_titles_noun_pair_titles(self):
         self.compare_annotations(
-            "Monsieur Lauret et Madame Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
+            "M. Lauret et Madame Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
             '[0: [0], [14], 1: [3], [22]]', excluded_nlps=['core_news_sm', 'core_news_md'],
             )
 
@@ -210,7 +209,7 @@ class FrenchSmokeTest(unittest.TestCase):
             'La femme se leva et regarda Dominique. Elle se tourna et la salua',
             '[0: [1], [2], [12], 1: [6], [8], [9]]',
             excluded_nlps=['core_news_md', 'core_news_sm'],
-            alternative_expected_coref_chains='[0: [1], [2], [8], [9], 1: [6] [12]')
+            alternative_expected_coref_chains='[0: [1], [2], [8], [9], 1: [6], [12]]')
 
     def test_documentation_example_3(self):
         self.compare_annotations(

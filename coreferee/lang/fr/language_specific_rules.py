@@ -420,10 +420,11 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 sing = True
             if self.has_morph(token, "Number", "Plur"):
                 plur = True
-            if self.has_morph(token, "Gender", "Masc"):
-                masc = True
-            if self.has_morph(token, "Gender", "Fem"):
-                fem = True
+            else:
+                if self.has_morph(token, "Gender", "Masc"):
+                    masc = True
+                if self.has_morph(token, "Gender", "Fem"):
+                    fem = True
 
             if token.lemma_ in {"ici", "là", "y", "en"}:
                 masc = fem = sing = plur = True
@@ -836,6 +837,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
             referring.pos_ != "PRON"
             and not self.is_emphatic_reflexive_anaphor(referring)
+            and not (referring.pos_ == "DET" and referring.dep_ == "obj" and referring.lemma_ == "le")
             and referring.lemma_ != "personne"
         ):
             return False
@@ -1188,8 +1190,6 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 return True
         # Other cases of apposition
         if referring not in referred._.coref_chains.temp_dependent_siblings:
-            if referring in referred.subtree:
-                return True
             referred_right_in_subtree = list(referred.subtree)[-1]
             referring_left_in_subtree = list(referring.subtree)[0]
             if (
@@ -1198,10 +1198,14 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             ):
                 return True
         # Copular structures
-        if referring == referred.head and any(
-            cop
-            for cop in referring.children
-            if cop.dep_ == "cop" and cop.lemma_ == "être"
+        if (
+            referring == referred.head
+            and any(
+                cop
+                for cop in referring.children
+                if cop.dep_ == "cop" and cop.lemma_ == "être"
+            )
+            and not any(prep for prep in referring.children if prep.tag_ == "ADP")
         ):
             return True
 
