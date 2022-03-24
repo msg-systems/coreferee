@@ -420,11 +420,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 sing = True
             if self.has_morph(token, "Number", "Plur"):
                 plur = True
-            else:
-                if self.has_morph(token, "Gender", "Masc"):
-                    masc = True
-                if self.has_morph(token, "Gender", "Fem"):
-                    fem = True
+            if self.has_morph(token, "Gender", "Masc"):
+                masc = True
+            if self.has_morph(token, "Gender", "Fem"):
+                fem = True
 
             if token.lemma_ in {"ici", "là", "y", "en"}:
                 masc = fem = sing = plur = True

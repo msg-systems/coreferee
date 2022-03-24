@@ -157,7 +157,7 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_crossed_demonstrative_anaphors(self):
         self.compare_annotations(
-            'J\'admire les colibris et les pigeons. Ceux-ci sont plus gros que ceux-là',
+            'J\'admire les oiseaux et les pigeons. Ceux-ci sont plus gros que ceux-là',
             '[0: [3], [15], 1: [6], [8]]', excluded_nlps='core_news_md'
             )
         
