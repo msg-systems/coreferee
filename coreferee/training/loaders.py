@@ -320,7 +320,9 @@ class PolishCoreferenceCorpusANNLoader(GenericLoader):
     ) -> List[Doc]:
         txt_file_contents = []
         ann_file_lines_list = []
-        txt_filenames = [t for t in os.scandir(directory_name) if t.path.endswith(".txt")]
+        txt_filenames = [
+            t for t in os.scandir(directory_name) if t.path.endswith(".txt")
+        ]
         txt_filenames.sort(key=lambda entry: entry.name)
         for index, txt_filename in enumerate(txt_filenames):
             with open(txt_filename, "r", encoding="UTF8") as txt_file:
@@ -407,7 +409,9 @@ class LitBankANNLoader(GenericLoader):
     ) -> List[Doc]:
         txt_file_contents = []
         ann_file_lines_list = []
-        txt_filenames = [t for t in os.scandir(directory_name) if t.path.endswith(".txt")]
+        txt_filenames = [
+            t for t in os.scandir(directory_name) if t.path.endswith(".txt")
+        ]
         txt_filenames.sort(key=lambda entry: entry.name)
         for index, txt_filename in enumerate(txt_filenames):
             with open(txt_filename, "r", encoding="UTF8") as txt_file:
@@ -441,21 +445,38 @@ class ConllLoader(GenericLoader):
                 l for l in split_conll_lines if l[1] == part_id
             ]
             if nlp.meta["lang"] in ("fr"):
-                corrected_this_part_split_conll_lines:List[List[str]] = []
+                # Tokens ending an apostrophes have to be merged with following tokens in French,
+                # otherwise parsing errors will result
+                corrected_this_part_split_conll_lines: List[List[str]] = []
                 index = 0
                 while index < len(this_part_split_conll_lines):
                     conll_token = this_part_split_conll_lines[index][3].lstrip("/")
-                    if conll_token.endswith("'") and index + 1 < len(this_part_split_conll_lines):
-                        this_part_split_conll_lines[index][3] += this_part_split_conll_lines[index+1][3].lstrip("/")
-                        if this_part_split_conll_lines[index+1][-1] not in("-", "_"):
-                            if this_part_split_conll_lines[index][-1] not in("-", "_"):
-                                this_part_split_conll_lines[index][-1] += '|' + this_part_split_conll_lines[index+1][-1]
+                    if (
+                        index + 1 < len(this_part_split_conll_lines)
+                        and len(conll_token) > 0
+                        and len(this_part_split_conll_lines[index + 1][3]) > 0
+                        and conll_token[-1] in ("'")
+                    ):
+                        this_part_split_conll_lines[index][
+                            3
+                        ] += this_part_split_conll_lines[index + 1][3].lstrip("/")
+                        if this_part_split_conll_lines[index + 1][-1] not in ("-", "_"):
+                            if this_part_split_conll_lines[index][-1] not in ("-", "_"):
+                                this_part_split_conll_lines[index][-1] += (
+                                    "|" + this_part_split_conll_lines[index + 1][-1]
+                                )
                             else:
-                                this_part_split_conll_lines[index][-1] = this_part_split_conll_lines[index+1][-1]
-                        corrected_this_part_split_conll_lines.append(this_part_split_conll_lines[index])
+                                this_part_split_conll_lines[index][
+                                    -1
+                                ] = this_part_split_conll_lines[index + 1][-1]
+                        corrected_this_part_split_conll_lines.append(
+                            this_part_split_conll_lines[index]
+                        )
                         index += 2
                     else:
-                        corrected_this_part_split_conll_lines.append(this_part_split_conll_lines[index])
+                        corrected_this_part_split_conll_lines.append(
+                            this_part_split_conll_lines[index]
+                        )
                         index += 1
                 this_part_split_conll_lines = corrected_this_part_split_conll_lines
             conll_tokens = [l[3].lstrip("/") for l in this_part_split_conll_lines]
@@ -487,7 +508,7 @@ class ConllLoader(GenericLoader):
             for conll_token_index, chain_markers in enumerate(
                 l[-1] for l in this_part_split_conll_lines
             ):
-                if chain_markers in("-", "_"):
+                if chain_markers in ("-", "_"):
                     continue
                 for chain_marker in chain_markers.split("|"):
                     chain_index = "".join([d for d in chain_marker if d.isdigit()])
