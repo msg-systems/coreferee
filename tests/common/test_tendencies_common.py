@@ -20,6 +20,13 @@ from coreferee.test_utils import get_nlps
 from coreferee.tendencies import TendenciesAnalyzer, generate_feature_table
 from coreferee.data_model import Mention
 
+nlps = get_nlps('en')
+train_version_mismatch = False
+for nlp in nlps:
+    if not nlp.meta["matches_train_version"]:
+        train_version_mismatch = True
+train_version_mismatch_message = "Loaded model version does not match train model version"
+
 class CommonTendenciesTest(unittest.TestCase):
 
     def setUp(self):
@@ -43,6 +50,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.lg_tendencies_analyzer = TendenciesAnalyzer(self.lg_rules_analyzer, self.lg_nlp,
             self.lg_feature_table)
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_feature_map_simple_mention(self):
 
         doc = self.sm_nlp('Richard said he was entering the big house')
@@ -61,6 +69,7 @@ class CommonTendenciesTest(unittest.TestCase):
             [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
             feature_map)
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_feature_map_simple_token(self):
 
         doc = self.sm_nlp('Richard said he was entering the big house')
@@ -78,6 +87,7 @@ class CommonTendenciesTest(unittest.TestCase):
             [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
             feature_map)
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_feature_map_conjunction(self):
 
         doc = self.sm_nlp('Richard and the man said they were entering the big house')
@@ -227,6 +237,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.assertAlmostEqual(expected_compatibility_map[3], returned_compatibility_map[3], 4)
         self.assertEqual(expected_compatibility_map[4], returned_compatibility_map[4])
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_simple(self):
 
         doc = self.sm_nlp('Richard said he was entering the big house')
@@ -234,6 +245,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([2, 0, 1, 0.29702997, 3],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_coordination(self):
 
         doc = self.sm_nlp('Richard and Jane said he was entering the big house')
@@ -241,6 +253,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([4, 0, 1, 0.28721756, 3],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_different_sentences(self):
 
         doc = self.sm_nlp('Richard called. He said he was entering the big house')
@@ -248,6 +261,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([3, 1, 0, 0.47986302, 6],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_same_sentence_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, he said he was entering the big house')
@@ -255,6 +269,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([4, 0, 0, -0.02203778, 5],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_same_sentence_lefthand_sibling_governance(self):
 
         doc = self.lg_nlp('Richard said Peter and he were entering the big house')
@@ -262,6 +277,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([4, 0, 1, 0.15999001, 3],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_same_sentence_lefthand_sibling_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, Peter and he said he was entering the big house')
@@ -269,6 +285,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([5, 0, 0, 0.29553932, 6],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_lg(self):
 
         doc = self.lg_nlp('After Richard arrived, he said he was entering the big house')
@@ -276,6 +293,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([4, 0, 0, 0.3336621, 5],
             self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_lg_no_vector_1(self):
 
         doc = self.lg_nlp('After Richard arfewfewfrived, he said he was entering the big house')
@@ -284,6 +302,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([4, 0, 0, 0.59521705, 5],
             self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_lg_no_vector_2(self):
 
         doc = self.lg_nlp('After Richard arrived, he saifefefwefefd he was entering the big house')
@@ -291,6 +310,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([4, 0, 0, 0.59521705, 5],
             self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_sm_root_1(self):
 
         doc = self.sm_nlp('Richard. He said he was entering the big house')
@@ -299,6 +319,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([2, 1, 0, -1, 1],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_sm_root_2(self):
 
         doc = self.sm_nlp('Richard arrived. He.')
@@ -306,6 +327,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([3, 1, 0, -1, 1],
             self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_lg_root_1(self):
 
         doc = self.lg_nlp('Richard. He said he was entering the big house')
@@ -314,6 +336,7 @@ class CommonTendenciesTest(unittest.TestCase):
         self.compare_compatibility_map([2, 1, 0, -1, 1],
             self.lg_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_lg_root_2(self):
 
         doc = self.lg_nlp('Richard arrived. He.')

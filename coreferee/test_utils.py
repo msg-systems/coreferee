@@ -58,19 +58,17 @@ def get_nlps(language_name: str, *, add_coreferee: bool = True) -> List[Language
                 __name__, relative_config_filename
             )
             config = Config().from_disk(absolute_config_filename)
-            model_set = set()
-            for config_entry in config:
-                model_set.add("_".join((language_name, config[config_entry]["model"])))
             nlps = []
-            for model in model_set:
+            for config_entry in config:
                 # At present we presume there will never be an entry in the config file that
                 # specifies a model name that can no longer be loaded. This seems a reasonable
                 # assumption, but if it no longer applies this code will need to be changed in the
                 # future.
-                nlp = spacy.load(model)
+                nlp = spacy.load("_".join((language_name, config[config_entry]["model"])))
                 if add_coreferee:
                     nlp.add_pipe("coreferee")
                 nlps.append(nlp)
+                nlp.meta["matches_train_version"] = nlp.meta["version"] == config[config_entry]["train_version"]
             nlps = sorted(nlps, key=lambda nlp: (nlp.meta["name"], nlp.meta["version"]))
             language_to_nlps[language_name] = nlps
         return language_to_nlps[language_name]

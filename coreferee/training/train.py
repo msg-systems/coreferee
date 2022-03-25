@@ -40,7 +40,7 @@ from ..manager import FEATURE_TABLE_FILENAME, THINC_MODEL_FILENAME
 from ..rules import RulesAnalyzerFactory
 from ..tendencies import TendenciesAnalyzer, generate_feature_table, create_thinc_model
 from ..tendencies import DocumentPairInfo, ENSEMBLE_SIZE
-from ..errors import LanguageNotSupportedError
+from ..errors import LanguageNotSupportedError, ModelNotSupportedError
 
 
 class TrainingManager:
@@ -344,6 +344,8 @@ class TrainingManager:
         self.writeln(
             temp_log_file, "Spacy model: ", nlp_name, " version ", nlp.meta["version"]
         )
+        if self.train_not_check and config_entry["train_version"] != nlp.meta["version"]:
+            raise ModelNotSupportedError("Declared train_version does not match loaded spaCy version")
         if "vectors_model" in config_entry:
             vectors_nlp_name = "_".join((self.lang, config_entry["vectors_model"]))
             vectors_nlp = self.nlp_dict[vectors_nlp_name]
