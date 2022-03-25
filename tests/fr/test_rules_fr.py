@@ -106,12 +106,12 @@ class FrenchRulesTest(unittest.TestCase):
         self,
     ):
         self.compare_get_dependent_sibling_info(
-            "Carol, Richard et Ralf mangeaient un buffet",
+            "Carol, Richard et Ralf ont mangé un buffet",
             0,
             "[Richard, Ralf]",
             None,
             False,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_md", "core_news_sm"],
         )
 
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_comma_or(
@@ -123,7 +123,7 @@ class FrenchRulesTest(unittest.TestCase):
             "[Richard, Ralf]",
             None,
             True,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_md", "core_news_sm"],
         )
 
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_and(self):
@@ -331,7 +331,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_possessive_determiners(self):
         self.compare_potential_anaphor(
-            "Ma maison, ta maison, sa maison, leur maison.", [6, 9]
+            "Ma maison, ta maison, sa maison, leur maison.", [6, 9], excluded_nlps=['core_news_sm']
         )
 
     """
@@ -1081,7 +1081,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_org_pronoun(self):
         self.compare_potential_pair(
-            "Depuis des années, Sony travaille sur son image de marque. Il dit qu'il change de nom",
+            "Depuis des années, Sony travaille sur son image de marque. Il dit vraiment qu'il change de nom",
             4,
             False,
             12,
@@ -1101,7 +1101,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_org_pronoun_control_1(self):
         self.compare_potential_pair(
-            "Depuis des années, la Société Sony travaille sur son image de marque. Il dit qu'il change de nom",
+            "Depuis des années, la Société Sony travaille sur son image de marque. Il dit vraiment qu'il change de nom",
             5,
             False,
             14,
@@ -1111,7 +1111,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_org_pronoun_control_2(self):
         self.compare_potential_pair(
-            "Depuis des années, Sony travaille sur son image de marque. Il dit qu'il change de nom",
+            "Depuis des années, Sony travaille sur son image de marque. Il dit vraiment qu'il change de nom",
             4,
             False,
             12,
