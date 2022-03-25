@@ -676,7 +676,9 @@ def apply_softmax_sequences_forward(
         return dpis, backpropped_softmax_inputs
 
     dpis, predictions = inputs
-    lengths = model.ops.xp.concatenate([dpi.candidates.lengths for dpi in dpis])
+    lengths = model.ops.xp.concatenate(
+        [model.ops.asarray1i(dpi.candidates.lengths) for dpi in dpis]
+    )
     softmax_output = model.ops.softmax_sequences(predictions, lengths)
     cumsums = model.ops.xp.cumsum(lengths)[:-1]
     return model.ops.xp.split(softmax_output, cumsums.tolist()), backprop
@@ -703,7 +705,7 @@ def referrers_forward(
                 document_pair_info.doc[referrer]._.coref_chains.temp_vector
                 for referrer in document_pair_info.referrers.tolist()
             ]
-        )[document_pair_info.referrers2candidates_pointers]
+        )[model.ops.asarray1i(document_pair_info.referrers2candidates_pointers)]
 
         vectors_to_return.append(this_document_vector)
 
@@ -729,7 +731,7 @@ def referrer_heads_forward(
                 document_pair_info.doc[referrer]._.coref_chains.temp_head_vector
                 for referrer in document_pair_info.referrers.tolist()
             ]
-        )[document_pair_info.referrers2candidates_pointers]
+        )[model.ops.asarray1i(document_pair_info.referrers2candidates_pointers)]
 
         vectors_to_return.append(this_document_vector)
 
@@ -764,7 +766,7 @@ def antecedents_forward(
                 )
                 for i in range(len(document_pair_info.antecedents))
             ]
-        )[document_pair_info.candidates.dataXd]
+        )[model.ops.asarray1i(document_pair_info.candidates.dataXd)]
 
         vectors_to_return.append(this_document_vector)
 
@@ -795,7 +797,7 @@ def antecedent_heads_forward(
                 ]._.coref_chains.temp_head_vector
                 for i in range(len(document_pair_info.antecedents))
             ]
-        )[document_pair_info.candidates.dataXd]
+        )[model.ops.asarray1i(document_pair_info.candidates.dataXd)]
 
         vectors_to_return.append(this_document_vector)
 
@@ -813,7 +815,9 @@ def static_inputs_forward(
         return []
 
     return (
-        model.ops.xp.concatenate([d.static_infos for d in document_pair_infos]),
+        model.ops.xp.concatenate(
+            [model.ops.asarray2f(d.static_infos) for d in document_pair_infos]
+        ),
         backprop,
     )
 

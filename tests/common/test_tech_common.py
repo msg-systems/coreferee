@@ -19,6 +19,7 @@ from queue import Queue
 from threading import Thread
 import spacy
 from spacy.tokens import Doc
+from thinc.util import prefer_gpu, require_cpu
 from coreferee.test_utils import get_nlps
 
 NUMBER_OF_THREADS = 50
@@ -60,6 +61,45 @@ class CommonUtilsTest(unittest.TestCase):
         self.assertEqual('0: Peter(0), he(3)', doc2[3]._.coref_chains.pretty_representation)
         self.assertEqual(0, doc2._.coref_chains[0].most_specific_mention_index)
         self.assertEqual([doc2[0]], doc2._.coref_chains.resolve(doc2[3]))
+
+    def test_serialization_gpu_to_cpu(self):
+        prefer_gpu()
+        doc = self.sm_nlp('Peter told Paul he was dissatisfied.')
+        self.assertEqual('[0: [0], [3]]', str(doc._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[0]._.coref_chains))
+        self.assertEqual('[]', str(doc[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[3]._.coref_chains))
+        b = doc.to_bytes()
+        doc = None
+        require_cpu()
+        doc2 = Doc(self.sm_nlp.vocab).from_bytes(b)
+        self.assertEqual('[0: [0], [3]]', str(doc2._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[0]._.coref_chains))
+        self.assertEqual('[]', str(doc2[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[3]._.coref_chains))
+        self.assertEqual('0: Peter(0), he(3)', doc2[3]._.coref_chains.pretty_representation)
+        self.assertEqual(0, doc2._.coref_chains[0].most_specific_mention_index)
+        self.assertEqual([doc2[0]], doc2._.coref_chains.resolve(doc2[3]))
+
+    def test_serialization_cpu_to_gpu(self):
+        require_cpu()
+        doc = self.sm_nlp('Peter told Paul he was dissatisfied.')
+        self.assertEqual('[0: [0], [3]]', str(doc._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[0]._.coref_chains))
+        self.assertEqual('[]', str(doc[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[3]._.coref_chains))
+        b = doc.to_bytes()
+        doc = None
+        prefer_gpu()
+        doc2 = Doc(self.sm_nlp.vocab).from_bytes(b)
+        self.assertEqual('[0: [0], [3]]', str(doc2._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[0]._.coref_chains))
+        self.assertEqual('[]', str(doc2[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[3]._.coref_chains))
+        self.assertEqual('0: Peter(0), he(3)', doc2[3]._.coref_chains.pretty_representation)
+        self.assertEqual(0, doc2._.coref_chains[0].most_specific_mention_index)
+        self.assertEqual([doc2[0]], doc2._.coref_chains.resolve(doc2[3]))
+        require_cpu()
 
     def test_serialization_without_scoring(self):
         doc = self.sm_nlp('Peter said he was dissatisfied.')
