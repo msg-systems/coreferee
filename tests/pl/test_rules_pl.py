@@ -17,6 +17,12 @@ from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
 
+nlps = get_nlps('en')
+train_version_mismatch = False
+for nlp in nlps:
+    if not nlp.meta["matches_train_version"]:
+        train_version_mismatch = True
+train_version_mismatch_message = "Loaded model version does not match train model version"
 
 class PolishRulesTest(unittest.TestCase):
     def setUp(self):
@@ -213,6 +219,7 @@ class PolishRulesTest(unittest.TestCase):
             "Pooglądali sobie wielkie lwy, węże, i słonie", [3, 5, 8]
         )
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_substituting_indefinite_pronoun(self):
         self.compare_independent_noun("Jeden z chłopców przyszedł do domu", [2, 5])
 
@@ -1300,6 +1307,7 @@ class PolishRulesTest(unittest.TestCase):
             "Chłopiec przemieszczał substancje ze sobą.", 0, False, 4, 2, True, 2
         )
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_reflexive_with_object_antecedent_and_coordination(self):
         self.compare_potential_reflexive_pair(
             "Chłopiec przemieszczał substancje i sól ze sobą.", 2, True, 6, 2, True, 2

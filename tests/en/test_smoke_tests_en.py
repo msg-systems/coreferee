@@ -90,7 +90,7 @@ class EnglishSmokeTest(unittest.TestCase):
     def test_common_noun_coreference(self):
         self.compare_annotations(
             'I saw a big dog. The dog was chasing a cat. It was wagging its tail',
-            '[0: [4], [7], [13], [16]]')
+            '[0: [4], [7], [13], [16]]', alternative_expected_coref_chains='[0: [4], [7], 1: [9], [13], [16]]')
 
     def test_entity_coreference(self):
         self.compare_annotations(

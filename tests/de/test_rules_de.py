@@ -17,6 +17,12 @@ from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
 
+nlps = get_nlps('en')
+train_version_mismatch = False
+for nlp in nlps:
+    if not nlp.meta["matches_train_version"]:
+        train_version_mismatch = True
+train_version_mismatch_message = "Loaded model version does not match train model version"
 
 class GermanRulesTest(unittest.TestCase):
     def setUp(self):
@@ -208,6 +214,7 @@ class GermanRulesTest(unittest.TestCase):
     def test_substituting_indefinite_pronoun(self):
         self.compare_independent_noun("Einer der Jungen ist heimgekommen", [0, 2])
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_pronoun_noun(self):
         self.compare_independent_noun(
             "Diejenigen der Jungen, die heimgekommen sind, waren müde",
@@ -698,6 +705,7 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_person_neut_2(self):
         self.compare_potential_pair("Ich sah ein Kind. Sie stand", 3, False, 5, 2)
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potential_pair_person_neut_3(self):
         self.compare_potential_pair(
             "Ich sah ein Kind. Dann lächelte es und weinte", 3, False, 7, 2

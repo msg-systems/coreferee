@@ -549,7 +549,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # qqn can't be cataphoric
             return 0
         if (
-            self.has_morph(referring, "Pos", "Yes")
+            self.has_morph(referring, "Poss", "Yes")
             and referring.head == referred_root
             and referred_root.lemma_ != "personne"
         ):
@@ -836,7 +836,11 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
             referring.pos_ != "PRON"
             and not self.is_emphatic_reflexive_anaphor(referring)
-            and not (referring.pos_ == "DET" and referring.dep_ == "obj" and referring.lemma_ == "le")
+            and not (
+                referring.pos_ == "DET"
+                and referring.dep_ == "obj"
+                and referring.lemma_ == "le"
+            )
             and referring.lemma_ != "personne"
         ):
             return False
@@ -945,6 +949,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             t
             for t in referring_inclusive_ancestors
             if t not in referred_verb_ancestors
+            and t.dep_ in self.adverbial_clause_deps
             and t.pos_ in self.clause_root_pos + self.noun_pos + ("ADJ",)
         ):
             # If one of the elements of the second list has one of the elements of the first list

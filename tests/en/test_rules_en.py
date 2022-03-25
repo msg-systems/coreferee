@@ -17,6 +17,13 @@ from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
 
+nlps = get_nlps('en')
+train_version_mismatch = False
+for nlp in nlps:
+    if not nlp.meta["matches_train_version"]:
+        train_version_mismatch = True
+train_version_mismatch_message = "Loaded model version does not match train model version"
+
 
 class EnglishRulesTest(unittest.TestCase):
     def setUp(self):
@@ -430,6 +437,7 @@ class EnglishRulesTest(unittest.TestCase):
     def test_potential_pair_he_she_antecedent_person_noun(self):
         self.compare_potential_pair("I spoke to Jenny. She was there", 3, False, 5, 2)
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potential_pair_he_she_antecedent_non_person_proper_noun(self):
         self.compare_potential_pair(
             "I worked for Skateboards plc. She was there", 4, False, 6, 1
