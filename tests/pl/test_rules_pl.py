@@ -17,7 +17,7 @@ from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
 
-nlps = get_nlps('en')
+nlps = get_nlps('pl')
 train_version_mismatch = False
 for nlp in nlps:
     if not nlp.meta["matches_train_version"]:
