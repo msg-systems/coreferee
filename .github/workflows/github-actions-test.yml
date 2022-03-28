@@ -1,6 +1,5 @@
 name: Coreferee Matrix Test
-on: 
-  workflow_dispatch:
+on: workflow_dispatch
 jobs:
   test-coreferee:
     runs-on: ${{ matrix.os }}
