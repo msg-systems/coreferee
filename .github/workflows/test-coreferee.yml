@@ -23,6 +23,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install pytest
         cd $GITHUB_WORKSPACE
-        ls -l
-        echo Finished
+        pip install .
+        spacy download de_core_news_sm
+        spacy download de_core_news_md
+        spacy download de_core_news_lg
+        python -m coreferee install de
+        pytest tests/de
