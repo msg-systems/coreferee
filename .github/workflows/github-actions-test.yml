@@ -1,4 +1,4 @@
-name: GitHub Actions Test
+name: Coreferee Matrix Test
 on: [workflow_dispatch]
 jobs:
   test-coreferee:
