@@ -18,16 +18,23 @@ import os
 import pickle
 import traceback
 from sys import exc_info
+
+from numpy import absolute
 from packaging import version
 import spacy
 import pkg_resources
+from wasabi import Printer
 from spacy.language import Language
 from spacy.tokens import Doc, Token
 from thinc.api import Config
 from thinc.model import Model
 from .annotation import Annotator
 from .data_model import FeatureTable
-from .errors import LanguageNotSupportedError, ModelNotSupportedError
+from .errors import (
+    LanguageNotSupportedError,
+    ModelNotSupportedError,
+    OutdatedCorefereeModelError,
+)
 from .errors import VectorsModelNotInstalledError, VectorsModelHasWrongVersionError
 from .errors import MultiprocessingParsingNotSupportedError
 from .tendencies import create_thinc_model, ENSEMBLE_SIZE
@@ -45,6 +52,16 @@ class CorefereeManager:
         model_name = "_".join((nlp.meta["lang"], nlp.meta["name"]))
         relative_config_filename = os.sep.join(("lang", nlp.meta["lang"], "config.cfg"))
         if not pkg_resources.resource_exists(__name__, relative_config_filename):
+            msg = Printer()
+            msg.fail(
+                "".join(
+                    (
+                        "Unfortunately language '",
+                        nlp.meta["lang"],
+                        "' is not yet supported by Coreferee.",
+                    )
+                )
+            )
             raise LanguageNotSupportedError(nlp.meta["lang"])
         absolute_config_filename = pkg_resources.resource_filename(
             __name__, relative_config_filename
@@ -64,45 +81,47 @@ class CorefereeManager:
                             "_".join((nlp.meta["lang"], config_entry["vectors_model"]))
                         )
                     except OSError:
-                        raise VectorsModelNotInstalledError(
-                            "".join(
-                                (
-                                    "Model ",
-                                    model_name,
-                                    " is only supported in conjunction with model ",
-                                    nlp.meta["lang"],
-                                    "_",
-                                    config_entry["vectors_model"],
-                                    " which must be loaded using 'python -m spacy download ",
-                                    nlp.meta["lang"],
-                                    "_",
-                                    config_entry["vectors_model"],
-                                    "'.",
-                                )
+                        msg = Printer()
+                        error_msg = "".join(
+                            (
+                                "spaCy Model ",
+                                model_name,
+                                " is only supported by Coreferee in conjunction with spaCy model ",
+                                nlp.meta["lang"],
+                                "_",
+                                config_entry["vectors_model"],
+                                ", which must be loaded using the command 'python -m spacy download ",
+                                nlp.meta["lang"],
+                                "_",
+                                config_entry["vectors_model"],
+                                "'.",
                             )
                         )
+                        msg.fail(error_msg)
+                        raise VectorsModelNotInstalledError(error_msg)
                     if version.parse(vectors_nlp.meta["version"]) < version.parse(
                         config_entry["vectors_from_version"]
                     ) or version.parse(vectors_nlp.meta["version"]) > version.parse(
                         config_entry["vectors_to_version"]
                     ):
-                        raise VectorsModelHasWrongVersionError(
-                            "".join(
-                                (
-                                    "Model ",
-                                    model_name,
-                                    " is only supported in conjunction with model ",
-                                    nlp.meta["lang"],
-                                    "_",
-                                    config_entry["vectors_model"],
-                                    " between versions ",
-                                    config_entry["vectors_from_version"],
-                                    " and ",
-                                    config_entry["vectors_to_version"],
-                                    " inclusive.",
-                                )
+                        msg = Printer()
+                        error_msg = "".join(
+                            (
+                                "spaCy model ",
+                                model_name,
+                                " is only supported by Coreferee in conjunction with spaCy model ",
+                                nlp.meta["lang"],
+                                "_",
+                                config_entry["vectors_model"],
+                                " between versions ",
+                                config_entry["vectors_from_version"],
+                                " and ",
+                                config_entry["vectors_to_version"],
+                                " inclusive.",
                             )
                         )
+                        msg.fail(error_msg)
+                        raise VectorsModelHasWrongVersionError(error_msg)
                 else:
                     vectors_nlp = nlp
                 return get_annotator(
@@ -110,17 +129,22 @@ class CorefereeManager:
                     vectors_nlp=vectors_nlp,
                     config_entry_name=config_entry_name,
                 )
-        raise ModelNotSupportedError(
-            "".join(
-                (
-                    nlp.meta["lang"],
-                    "_",
-                    nlp.meta["name"],
-                    " version ",
-                    nlp.meta["version"],
-                )
+        msg = Printer()
+        error_msg = "".join(
+            (
+                "spaCy model ",
+                nlp.meta["lang"],
+                "_",
+                nlp.meta["name"],
+                " version ",
+                nlp.meta["version"],
+                " is not supported by Coreferee. Please examine /coreferee/lang/",
+                nlp.meta["lang"],
+                "/config.cfg to see the supported models/versions.",
             )
         )
+        msg.fail(error_msg)
+        raise ModelNotSupportedError(error_msg)
 
 
 @Language.factory("coreferee")
@@ -132,16 +156,18 @@ class CorefereeBroker:
 
     def __call__(self, doc: Doc) -> Doc:
         if os.getpid() != self.pid:
-            raise MultiprocessingParsingNotSupportedError(
-                "Unfortunately at present parsing cannot be shared between forked processes."
-            )
+            msg = Printer()
+            error_msg = "Unfortunately at present Coreferee parsing cannot be shared between forked processes."
+            msg.fail(error_msg)
+            raise MultiprocessingParsingNotSupportedError(error_msg)
         try:
             self.annotator.annotate(doc)
         except:
-            print("Unexpected error annotating document, skipping ....")
+            msg = Printer()
+            msg.warn("Unexpected error in Coreferee annotating document, skipping ....")
             exception_info_parts = exc_info()
-            print(exception_info_parts[0])
-            print(exception_info_parts[1])
+            msg.warn(exception_info_parts[0])
+            msg.warn(exception_info_parts[1])
             traceback.print_tb(exception_info_parts[2])
         return doc
 
@@ -177,30 +203,18 @@ def get_annotator(
     try:
         importlib.import_module(model_package_name)
     except ModuleNotFoundError:
-        print(
-            "".join(
-                (
-                    "Model could not be loaded for config entry '",
-                    config_entry_name,
-                    "' If models exist for language '",
-                    nlp.meta["lang"],
-                    "', load them with the command 'python -m coreferee install ",
-                    nlp.meta["lang"],
-                    "'.",
-                )
+        msg = Printer()
+        error_msg = "".join(
+            (
+                "Please load the Coreferee models for language '",
+                nlp.meta["lang"],
+                "' with the command 'python -m coreferee install ",
+                nlp.meta["lang"],
+                "'.",
             )
         )
-        raise ModelNotSupportedError(
-            "".join(
-                (
-                    nlp.meta["lang"],
-                    "_",
-                    nlp.meta["name"],
-                    " version ",
-                    nlp.meta["version"],
-                )
-            )
-        )
+        msg.fail(error_msg)
+        raise ModelNotSupportedError(error_msg)
     this_feature_table_filename = pkg_resources.resource_filename(
         model_package_name, FEATURE_TABLE_FILENAME
     )
@@ -209,6 +223,19 @@ def get_annotator(
     absolute_thinc_model_filename = pkg_resources.resource_filename(
         model_package_name, THINC_MODEL_FILENAME
     )
+    if not os.path.isfile(absolute_thinc_model_filename):
+        msg = Printer()
+        error_msg = "".join(
+            (
+                "The Coreferee model loaded for config entry '",
+                config_entry_name,
+                "' is outdated. Please issue the command 'python -m coreferee install ",
+                nlp.meta["lang"],
+                "' to install the latest version.",
+            )
+        )
+        msg.fail(error_msg)
+        raise OutdatedCorefereeModelError(error_msg)
     thinc_model = create_thinc_model()
     thinc_model.from_disk(absolute_thinc_model_filename)
     return Annotator(nlp, vectors_nlp, feature_table, thinc_model)
