@@ -1,0 +1,20 @@
+name: GitHub Actions Test
+on: [workflow_dispatch]
+jobs:
+  test-coreferee:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+      os: [macos-latest, windows-latest, ubuntu-latest]
+      python_version: [3.6, 3.7, 3.8, 3.9, 3.10]
+    steps:
+        - uses: actions/checkout@development
+        - name: Initialize Python
+        uses: actions/setup-python@v1
+        with:
+            python-version: {{ matrix.python_version }}
+        - name: Install dependencies
+        run: |
+            python -m pip install --upgrade pip
+            cd $GITHUB_WORKSPACE
+            ls
