@@ -34,7 +34,7 @@ jobs:
         spacy download de_core_news_sm
         spacy download de_core_news_md
         spacy download de_core_news_lg
-        spacy download de_core_dep_trf
+        spacy download de_dep_news_trf
         spacy download pl_core_news_md
         spacy download pl_core_news_lg
         spacy download fr_core_news_sm
