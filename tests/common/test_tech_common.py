@@ -116,20 +116,20 @@ class CommonUtilsTest(unittest.TestCase):
         self.assertEqual('[]', str(docs[1][1]._.coref_chains))
         self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
 
+    @unittest.skipIf(os.name != 'nt', 'only works with spawning (not forking) at present')
     def test_processing_in_pipe_2_cpu(self):
-        if os.name == 'nt': # only works with spawning (not forking) at present
-            nlp = spacy.load('en_core_web_sm')
-            nlp.add_pipe('coreferee')
-            doc_texts = (['Peter told Paul he was dissatisfied.', 'Peter said he was dissatisfied'])
-            docs = list(nlp.pipe(doc_texts, n_process=2))
-            self.assertEqual('[0: [0], [3]]', str(docs[0]._.coref_chains))
-            self.assertEqual('[0: [0], [3]]', str(docs[0][0]._.coref_chains))
-            self.assertEqual('[]', str(docs[0][2]._.coref_chains))
-            self.assertEqual('[0: [0], [3]]', str(docs[0][3]._.coref_chains))
-            self.assertEqual('[0: [0], [2]]', str(docs[1]._.coref_chains))
-            self.assertEqual('[0: [0], [2]]', str(docs[1][0]._.coref_chains))
-            self.assertEqual('[]', str(docs[1][1]._.coref_chains))
-            self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
+        nlp = spacy.load('en_core_web_sm')
+        nlp.add_pipe('coreferee')
+        doc_texts = (['Peter told Paul he was dissatisfied.', 'Peter said he was dissatisfied'])
+        docs = list(nlp.pipe(doc_texts, n_process=2))
+        self.assertEqual('[0: [0], [3]]', str(docs[0]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(docs[0][0]._.coref_chains))
+        self.assertEqual('[]', str(docs[0][2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(docs[0][3]._.coref_chains))
+        self.assertEqual('[0: [0], [2]]', str(docs[1]._.coref_chains))
+        self.assertEqual('[0: [0], [2]]', str(docs[1][0]._.coref_chains))
+        self.assertEqual('[]', str(docs[1][1]._.coref_chains))
+        self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
 
     def test_use_in_multithreading_context(self):
 
