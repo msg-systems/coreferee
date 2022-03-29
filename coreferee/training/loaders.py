@@ -1,4 +1,4 @@
-from typing import List, Dict, Set
+from typing import List, Dict, Set, cast
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler, feature_namespaces
 import os
@@ -6,7 +6,7 @@ from sys import maxsize
 import bisect
 from abc import ABC, abstractmethod
 from spacy.language import Language
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc, Span, Token
 from ..data_model import Mention
 from ..rules import RulesAnalyzer
 
@@ -68,7 +68,7 @@ class ParCorHandler(ContentHandler):
 class ParCorLoader(GenericLoader):
     @staticmethod
     def load_file(
-        words_filename: os.DirEntry[str],
+        words_filename: os.DirEntry,
         coref_level_filename: str,
         nlp: Language,
         rules_analyzer: RulesAnalyzer,
@@ -417,7 +417,7 @@ class LitBankANNLoader(GenericLoader):
 class ConllLoader(GenericLoader):
     @staticmethod
     def load_file(
-        conll_filename: str, nlp: Language, rules_analyzer: RulesAnalyzer
+        conll_filename: os.DirEntry, nlp: Language, rules_analyzer: RulesAnalyzer
     ) -> List[Doc]:
         with open(conll_filename, "r", encoding="UTF8") as conll_file:
             split_conll_lines = [
@@ -477,19 +477,22 @@ class ConllLoader(GenericLoader):
                     spacy_token_index, spacy_token = next(
                         spacy_token_iterator, (None, None)
                     )
+                    if spacy_token_index is None:
+                        break
+                    spacy_token = cast(Token, spacy_token)
+                    if not conll_token.startswith(spacy_token.text):
+                        break
                     if spacy_token.pos_ == "SPACE":
                         continue
-                    if spacy_token_index is None or not conll_token.startswith(
-                        spacy_token.text
-                    ):
-                        break
                     this_conll_token_lookup.append(spacy_token_index)
                     conll_token = conll_token[len(spacy_token) :]
                 conll_to_spacy_lookup.append(this_conll_token_lookup)
             working_spans = (
                 {}
             )  # // from chain index numbers to spaCy start token indexes
-            chains = {}  # from chain index numbers to lists of spaCy spans
+            chains: Dict[
+                str, List[Span]
+            ] = {}  # from chain index numbers to lists of spaCy spans
             for conll_token_index, chain_markers in enumerate(
                 l[-1] for l in this_part_split_conll_lines
             ):
@@ -519,7 +522,7 @@ class ConllLoader(GenericLoader):
                             else:
                                 chains[chain_index] = [this_span]
             for chain in (c for c in chains.values() if len(c) > 1):
-                chain.sort(key=lambda span: span[0])
+                chain.sort(key=lambda span: span[0])  # type: ignore[arg-type, return-value]
                 for span_index, span in enumerate(chain):
                     include_dependent_siblings = (
                         len(span.root._.coref_chains.temp_dependent_siblings) > 0

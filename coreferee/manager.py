@@ -9,7 +9,7 @@ from numpy import absolute
 from packaging import version
 import spacy
 import pkg_resources
-from wasabi import Printer
+from wasabi import Printer # type: ignore[import]
 from spacy.language import Language
 from spacy.tokens import Doc, Token
 from thinc.api import Config

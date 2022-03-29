@@ -752,7 +752,7 @@ def antecedents_forward(
                 )
                 for i in range(len(document_pair_info.antecedents))
             ]
-        )[model.ops.asarray1i(document_pair_info.candidates.dataXd)]
+        )[model.ops.asarray1i(cast(Ints1d, document_pair_info.candidates.dataXd))]
 
         vectors_to_return.append(this_document_vector)
 
@@ -783,7 +783,7 @@ def antecedent_heads_forward(
                 ]._.coref_chains.temp_head_vector
                 for i in range(len(document_pair_info.antecedents))
             ]
-        )[model.ops.asarray1i(document_pair_info.candidates.dataXd)]
+        )[model.ops.asarray1i(cast(Ints1d, document_pair_info.candidates.dataXd))]
 
         vectors_to_return.append(this_document_vector)
 
