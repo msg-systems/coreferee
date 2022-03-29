@@ -31,15 +31,6 @@ jobs:
 
     - name: Install spaCy models
       run: |
-        spacy download de_core_news_sm
-        spacy download de_core_news_md
-        spacy download de_core_news_lg
-        spacy download de_dep_news_trf
-        spacy download pl_core_news_md
-        spacy download pl_core_news_lg
-        spacy download fr_core_news_sm
-        spacy download fr_core_news_md
-        spacy download fr_core_news_lg
         spacy download en_core_web_sm
         spacy download en_core_web_md
         spacy download en_core_web_lg
@@ -49,11 +40,9 @@ jobs:
       run: |
         cd ${{ github.workspace }}
         pip install .
-        python -m coreferee install de
         python -m coreferee install en
-        python -m coreferee install fr
-        python -m coreferee install pl
 
     - name: Test Coreferee
       run: |
-        pytest tests
+        pytest tests/common
+        pytest tests/en
