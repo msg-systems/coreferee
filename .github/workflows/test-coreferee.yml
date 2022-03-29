@@ -29,7 +29,7 @@ jobs:
         pip uninstall click -y
         pip install "click<8"
 
-        cd $GITHUB_WORKSPACE
+        cd {{ github.workspace }}
         pip install .
         spacy download de_core_news_sm
         spacy download de_core_news_md
