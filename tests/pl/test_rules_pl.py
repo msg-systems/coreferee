@@ -1,14 +1,17 @@
 import unittest
 from coreferee.rules import RulesAnalyzerFactory
-from coreferee.test_utils import get_nlps
+from coreferee.test_utils import get_nlps, debug_structures
 from coreferee.data_model import Mention
 
-nlps = get_nlps('pl')
+nlps = get_nlps("pl")
 train_version_mismatch = False
 for nlp in nlps:
     if not nlp.meta["matches_train_version"]:
         train_version_mismatch = True
-train_version_mismatch_message = "Loaded model version does not match train model version"
+train_version_mismatch_message = (
+    "Loaded model version does not match train model version"
+)
+
 
 class PolishRulesTest(unittest.TestCase):
     def setUp(self):
@@ -124,6 +127,7 @@ class PolishRulesTest(unittest.TestCase):
             "[Anną, Agnieszką]",
             None,
             False,
+            excluded_nlps=["core_news_md"],
         )
 
     def test_get_dependent_sibling_info_two_member_conjunction_phrase_with_same_parent(
@@ -413,6 +417,7 @@ class PolishRulesTest(unittest.TestCase):
             if nlp.meta["name"] in excluded_nlps:
                 return
             doc = nlp(doc_text)
+            debug_structures(doc)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
             assert rules_analyzer.is_independent_noun(
@@ -639,7 +644,9 @@ class PolishRulesTest(unittest.TestCase):
         self.compare_potential_pair("Kobiety zobaczyły swojego psa.", 0, False, 2, 2)
 
     def test_nonvirile_nonreflexive_possessive(self):
-        self.compare_potential_pair("Kobiety zobaczyły ich psa.", 0, False, 2, 2)
+        self.compare_potential_pair(
+            "Kobiety zobaczyły ich psa.", 0, False, 2, 2, excluded_nlps=["core_news_md"]
+        )
 
     def test_male_name(self):
         self.compare_potential_pair(
@@ -1023,17 +1030,6 @@ class PolishRulesTest(unittest.TestCase):
             excluded_nlps=["core_news_md"],
         )
 
-    def test_potential_pair_possessive_in_genitive_phrase_double_coordination_everywhere_1(
-        self,
-    ):
-        self.compare_potential_pair(
-            "Przyszedł mąż i mąż jego kolegi i jego kolegi jego kolegi i jego kolegi",
-            1,
-            False,
-            12,
-            2,
-        )
-
     def test_potential_pair_non_personal_subject_personal_verb(self):
         self.compare_potential_pair(
             "Dom stał. Powiedział, wszystko dobrze.", 0, False, 3, 1
@@ -1154,6 +1150,7 @@ class PolishRulesTest(unittest.TestCase):
             doc = nlp(doc_text)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
+            debug_structures(doc)
             assert rules_analyzer.is_independent_noun(
                 doc[referred_index]
             ) or rules_analyzer.is_potential_anaphor(doc[referred_index])
@@ -1332,12 +1329,13 @@ class PolishRulesTest(unittest.TestCase):
 
     def test_reflexive_completely_within_noun_phrase_1(self):
         self.compare_potential_reflexive_pair(
-            "Opinia mojego przyjaciela o sobie była przesadna", 2, False, 4, 2, True, 2
+            "Opinia mojego przyjaciela o sobie była przesadna", 2, False, 4, 2, True, 2,
         )
 
     def test_reflexive_completely_within_noun_phrase_1_control(self):
         self.compare_potential_reflexive_pair(
-            "Opinia mojego przyjaciela o nim była przesadna", 2, False, 4, 0, True, 0
+            "Opinia mojego przyjaciela o nim była przesadna", 2, False, 4, 0, True, 0,
+            excluded_nlps=["core_news_md"]
         )
 
     def test_reflexive_double_coordination_without_preposition(self):
@@ -1353,14 +1351,14 @@ class PolishRulesTest(unittest.TestCase):
             "Piotr i Agnieszka rozmawiali z nim i z nią", 0, False, 5, 0, True, 0
         )
         self.compare_potential_reflexive_pair(
-            "Piotr i Agnieszka rozmawiali z nim i z nią.",
+            "Piotr i Agnieszka rozmawiali z nim i z nią",
             2,
             False,
             8,
             0,
             True,
             False,
-            excluded_nlps=["core_news_md"],
+            excluded_nlps=["core_news_md"]
         )
 
     def test_reflexive_posessive_same_noun_phrase(self):

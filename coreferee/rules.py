@@ -329,6 +329,15 @@ class RulesAnalyzer(ABC):
                 if len(potential_referreds) > 0:
                     token._.coref_chains.temp_potential_referreds = potential_referreds
 
+    def has_non_determiner_non_conjunction_children(self, token: Token) -> bool:
+        return any(
+            1
+            for c in token.children
+            if c.pos_ not in self.term_operator_pos
+            and c.dep_ not in self.conjunction_deps
+            and c.dep_ not in self.dependent_sibling_deps
+        )
+
     def is_potentially_introducing_noun(self, token: Token) -> bool:
         # We are not considering coordination
 
@@ -338,30 +347,13 @@ class RulesAnalyzer(ABC):
         # Definite noun phrases with additional children, e.g. 'the man who ...'
         if (
             self.is_potentially_definite(token)
-            and len(
-                [
-                    1
-                    for c in token.children
-                    if c.pos_ not in self.term_operator_pos
-                    and c.dep_ not in self.conjunction_deps
-                    and c.dep_ not in self.dependent_sibling_deps
-                ]
-            )
-            > 0
+            and self.has_non_determiner_non_conjunction_children(token)
         ):
             return True
 
         return (
             token._.coref_chains.temp_governing_sibling is not None
-            and len(
-                [
-                    1
-                    for c in token.children
-                    if c.dep_ not in self.conjunction_deps
-                    and c.dep_ not in self.dependent_sibling_deps
-                ]
-            )
-            == 0
+            and not self.has_non_determiner_non_conjunction_children(token)
             and self.is_potentially_introducing_noun(
                 token._.coref_chains.temp_governing_sibling
             )
@@ -371,16 +363,7 @@ class RulesAnalyzer(ABC):
 
         if (
             self.is_potentially_definite(token)
-            and len(
-                [
-                    1
-                    for c in token.children
-                    if c.pos_ not in self.term_operator_pos
-                    and c.dep_ not in self.conjunction_deps
-                    and c.dep_ not in self.dependent_sibling_deps
-                ]
-            )
-            == 0
+            and not self.has_non_determiner_non_conjunction_children(token)
         ):
             return True
 

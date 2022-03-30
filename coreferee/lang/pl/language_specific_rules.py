@@ -46,7 +46,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         return (
             token.pos_ == "DET"
             and token.tag_ == "ADJ"
-            and token.lemma_[:4] in ("swój", "swoj", "swoi")
+            and token.lemma_[:4].lower() in ("swój", "swoj", "swoi")
         )
 
     def get_dependent_siblings(self, token: Token) -> list:
@@ -59,7 +59,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ) -> Set[Token]:
             visited_set.add(recursed_token)
             siblings_set = set()
-            if recursed_token.lemma_ in self.or_lemmas:
+            if recursed_token.lemma_.lower() in self.or_lemmas:
                 token._.coref_chains.temp_has_or_coordination = True
             if (
                 token != recursed_token
@@ -94,7 +94,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 and child.pos_ in self.noun_pos
                 and self.has_morph(child, "Case", "Ins")
                 and len(
-                    [1 for c in child.children if c.dep_ == "case" and c.lemma_ == "z"]
+                    [1 for c in child.children if c.dep_ == "case" and c.lemma_.lower() == "z"]
                 )
                 > 0
                 and child not in visited_set
@@ -113,7 +113,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                         1
                         for c in child.children
                         if c.dep_ == "case"
-                        and c.lemma_ == "z"
+                        and c.lemma_.lower() == "z"
                         and c.i - 1 == recursed_token.i
                     ]
                 )
@@ -135,7 +135,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                             1
                             for c in child.children
                             if c.dep_ == "case"
-                            and c.lemma_ == "z"
+                            and c.lemma_.lower() == "z"
                             and c.i - 1 == recursed_token.i
                         ]
                     )
@@ -157,7 +157,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if len(siblings) == 0:
             return siblings
         for working_token in token.doc[token.i : siblings[-1].i + 1]:
-            if working_token.dep_ == "cc" or working_token.lemma_ == "z":
+            if working_token.dep_ == "cc" or working_token.lemma_.lower() == "z":
                 return siblings
         return []
 
@@ -165,18 +165,18 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if not token.pos_ in self.noun_pos or token.text in punctuation:
             return False
         return not self.is_token_in_one_of_phrases(
-            token, self.blacklisted_phrases # type:ignore[attr-defined]
-        )  
+            token, self.blacklisted_phrases  # type:ignore[attr-defined]
+        )
 
     def is_potential_anaphor(self, token: Token) -> bool:
         # third-person pronoun
         if token.tag_ in ("PPRON3"):
             return True
 
-        if token.lemma_ in ("siebie", "sobie", "sobą"):
+        if token.lemma_.lower() in ("siebie", "sobie", "sobą"):
             return True
 
-        if token.lemma_ == "to":
+        if token.lemma_.lower() == "to":
             return False
 
         # reflexive third-person possessive pronoun
@@ -413,7 +413,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             self._is_subject_noun(referring_governing_sibling)
             and referring_governing_sibling.head.lemma_
             in self.verbs_with_personal_subject  # type:ignore[attr-defined]
-        ) or referring.lemma_ in self.verbs_with_personal_subject:  # type:ignore[attr-defined]
+        ) or referring.lemma_.lower() in self.verbs_with_personal_subject:  # type:ignore[attr-defined]
             uncertain = True
             for working_token in (doc[index] for index in referred.token_indexes):
                 if (
@@ -573,7 +573,9 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if token.pos_ != "NOUN":
             return False
         for child in (
-            child for child in token.children if child.pos_ in self.term_operator_pos
+            child
+            for child in token.children
+            if child.pos_ in self.term_operator_pos or child.dep_ == "det"
         ):
             if child.lemma_.lower() in (
                 "ten",
@@ -607,14 +609,26 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if token.pos_ != "NOUN":
             return False
         for child in (
-            child for child in token.children if child.pos_ in self.term_operator_pos
+            child
+            for child in token.children
+            if child.pos_ in self.term_operator_pos or child.dep_.startswith("det")
         ):
             if child.lemma_.lower().startswith("jak"):
                 return False
         return True
 
+    def has_non_determiner_non_conjunction_children(self, token: Token) -> bool:
+        return any(
+            1
+            for c in token.children
+            if c.pos_ not in self.term_operator_pos
+            and c.dep_ not in self.conjunction_deps
+            and c.dep_ not in self.dependent_sibling_deps
+            and not c.dep_.startswith("det")
+        )
+
     def is_reflexive_anaphor(self, token: Token) -> int:
-        if token.lemma_ in (
+        if token.lemma_.lower() in (
             "siebie",
             "sobie",
             "sobą",
