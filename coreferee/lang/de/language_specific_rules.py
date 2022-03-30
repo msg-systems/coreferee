@@ -176,19 +176,19 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return False
 
         # avalent verbs
-        if (
-            token.dep_ != self.root_dep
-            and token.head.pos_ in ("AUX", "VERB")
-            and len(
-                [
-                    child
-                    for child in token.head.subtree
-                    if child.lemma_ in self.avalent_verbs  # type:ignore[attr-defined]
-                ]
-            )
-            > 0
-        ):
-            return False
+        if token.dep_ != self.root_dep and token.head.pos_ in ("AUX", "VERB"):
+            for avalent_verb_stem in self.avalent_verb_stems:
+                if (
+                    len(
+                        [
+                            child
+                            for child in token.head.subtree
+                            if child.lemma_.startswith(avalent_verb_stem)
+                        ]
+                    )
+                    > 0
+                ):
+                    return False
         return True
 
     def is_potential_anaphoric_pair(
@@ -439,8 +439,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
             referring_governing_sibling.dep_ == "sb"
             and referring_governing_sibling.head.lemma_
-            in self.verbs_with_personal_subject # type:ignore[attr-defined]
-        ):  
+            in self.verbs_with_personal_subject  # type:ignore[attr-defined]
+        ):
             for working_token in (doc[index] for index in referred.token_indexes):
                 if (
                     working_token.pos_ == self.propn_pos

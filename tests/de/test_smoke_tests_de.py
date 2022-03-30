@@ -85,8 +85,8 @@ class GermanSmokeTest(unittest.TestCase):
 
     def test_entity_coreference(self):
         self.compare_annotations(
-            'Es war Peter, der alles wusste. Alle mochten den freundlichen Mann.',
-            '[0: [2], [12]]', excluded_nlps=["core_news_sm"])
+            'Es war immer Peter, der meinte, alles zu wissen. Alle mochten den freundlichen Mann.',
+            '[0: [3], [16]]', excluded_nlps=["core_news_sm", "core_news_md"])
 
     def test_reflexive_simple(self):
         self.compare_annotations(

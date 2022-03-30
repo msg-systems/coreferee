@@ -205,7 +205,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_independent_noun(
             "Diejenigen der Jungen, die heimgekommen sind, waren müde",
             [0, 2],
-            excluded_nlps=["core_news_lg"],
+            excluded_nlps=["core_news_md", "core_news_sm"],
         )
 
     def test_blacklisted(self):
@@ -761,18 +761,18 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_pair("Ich sah Peter. Sie standen", 2, False, 4, 0)
 
     def test_potential_pair_female_name(self):
-        self.compare_potential_pair("Ich sah Jana. Sie stand", 2, False, 4, 2)
+        self.compare_potential_pair("Ich sah Petra. Sie stand", 2, False, 4, 2)
 
     def test_potential_pair_female_name_control_1(self):
-        self.compare_potential_pair("Ich sah Jana. Er stand", 2, False, 4, 0)
+        self.compare_potential_pair("Ich sah Petra. Er stand", 2, False, 4, 0)
 
     def test_potential_pair_female_name_control_2(self):
         self.compare_potential_pair(
-            "Ich sah Jana. Dieses stand", 2, False, 4, 0, excluded_nlps=["core_news_sm"]
+            "Ich sah Petra. Dieses stand", 2, False, 4, 0, excluded_nlps=["core_news_sm"]
         )
 
     def test_potential_pair_female_name_control_3(self):
-        self.compare_potential_pair("Ich sah Jana. Sie standen", 2, False, 4, 0)
+        self.compare_potential_pair("Ich sah Petra. Sie standen", 2, False, 4, 0)
 
     def test_potential_pair_male_female_name_1(self):
         self.compare_potential_pair("Ich sah Carol. Er stand", 2, False, 4, 2)
@@ -879,7 +879,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_potential_pair_proav_female_name(self):
         self.compare_potential_pair(
-            "Jana nahm einen Löffel und aß damit", 0, False, 6, 0
+            "Petra nahm einen Löffel und aß damit", 0, False, 6, 0
         )
 
     def test_potential_pair_proav_person(self):
@@ -918,7 +918,7 @@ class GermanRulesTest(unittest.TestCase):
             False,
             5,
             2,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_potential_pair_possessive_in_genitive_phrase_coordination_child(self):
@@ -985,7 +985,7 @@ class GermanRulesTest(unittest.TestCase):
         self.compare_potential_pair("Peter war da. Er sagte, alles OK.", 0, False, 4, 2)
 
     def test_potential_pair_neuter_subject_personal_verb_control_2(self):
-        self.compare_potential_pair("Jana war da. Sie sagte, alles OK.", 0, False, 4, 2)
+        self.compare_potential_pair("Petra war da. Sie sagte, alles OK.", 0, False, 4, 2)
 
     def test_potential_pair_neuter_subject_personal_verb_control_3(self):
         self.compare_potential_pair(
@@ -1007,7 +1007,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_potential_pair_sie_gender_not_marked(self):
         self.compare_potential_pair(
-            "Es gab Hunde. Jemand verkaufte sie.", 2, False, 6, 2
+            "Es gab Hunde. Jemand verkaufte sie.", 2, False, 6, 2, excluded_nlps=["core_news_sm"]
         )
 
     def test_potential_pair_antecedent_in_prepositional_phrase_in_question(self):
@@ -1278,7 +1278,7 @@ class GermanRulesTest(unittest.TestCase):
             0,
             True,
             False,
-            excluded_nlps=["core_news_lg"],
+            excluded_nlps=["core_news_sm"]
         )
 
     def test_reflexive_double_coordination_with_preposition(self):
