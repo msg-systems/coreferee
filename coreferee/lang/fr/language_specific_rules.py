@@ -264,7 +264,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             and token.dep_ != "expl:subj"
         ):
             return True
-        if token.pos_ == "DET" and token.dep_ != "det": # Example
+        if (
+            token.pos_ == "DET" 
+            and token.dep_ == "obj"
+            and token.i < len(token.doc) - 1
+            and token.head.i == token.i + 1
+        ):
+        # Covers cases of clitic pronouns wrongly tagged as DET
             return True
         if not (
             (
