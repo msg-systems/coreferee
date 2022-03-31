@@ -81,8 +81,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             return False
         return not self.is_token_in_one_of_phrases(
-            token, self.blacklisted_phrases # type:ignore[attr-defined]
-        )  
+            token, self.blacklisted_phrases  # type:ignore[attr-defined]
+        )
 
     def is_potential_anaphor(self, token: Token) -> bool:
         """Potentially externally referring tokens in English are third-person pronouns.
@@ -146,17 +146,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         # e.g. '*It* is in everyone's interest that attempting it should succeed'
         if token.dep_ in ("nsubj", "nsubjpass") and token.head.lemma_ == "be":
             for child in token.head.children:
-                if (
-                    len(
-                        [
-                            grandchild
-                            for grandchild in child.children
-                            if grandchild.dep_ == "relcl"
-                        ]
-                    )
-                    > 0
-                ):
-                    return False
+                for grandchild in child.children:
+                    if grandchild.dep_ in ("relcl", "ccomp") or any(
+                        1
+                        for greatgrandchild in grandchild.children
+                        if greatgrandchild.dep_ in ("relcl", "ccomp")
+                    ):
+                        return False
 
         # Avalent verbs, e.g. '*it* is snowing'
         if (

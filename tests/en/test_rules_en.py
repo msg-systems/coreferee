@@ -245,7 +245,7 @@ class EnglishRulesTest(unittest.TestCase):
 
     def test_pleonastic_it_avalent_verbs(self):
         self.compare_potential_anaphor(
-            "It rained. It was raining. It started raining. It stopped raining.", []
+            "It was raining. It rained. It started raining. It stopped raining.", []
         )
 
     def test_pleonastic_it_avalent_verbs_2(self):
@@ -485,7 +485,7 @@ class EnglishRulesTest(unittest.TestCase):
         self.compare_potential_pair("I saw Job. He was there", 2, False, 4, 1)
 
     def test_potential_pair_person_word_non_capitalized_exclusively_person_word(self):
-        self.compare_potential_pair("I saw a copt. He was there", 3, False, 5, 0)
+        self.compare_potential_pair("I saw a copt. He was there", 3, False, 5, 0, excluded_nlps=["core_web_md"])
 
     def test_potential_pair_person_word_capitalized_exclusively_person_word(self):
         self.compare_potential_pair("I saw a Copt. He was there", 3, False, 5, 2)

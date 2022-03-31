@@ -1,6 +1,6 @@
 from curses.ascii import alt
 import unittest
-from coreferee.test_utils import debug_structures, get_nlps
+from coreferee.test_utils import get_nlps
 
 
 class PolishSmokeTest(unittest.TestCase):
@@ -26,7 +26,6 @@ class PolishSmokeTest(unittest.TestCase):
                 return
 
             doc = nlp(doc_text)
-            debug_structures(doc)
             chains_representation = str(doc._.coref_chains)
             if alternative_expected_coref_chains is None:
                 self.assertEqual(

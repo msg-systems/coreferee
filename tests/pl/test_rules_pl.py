@@ -1,6 +1,6 @@
 import unittest
 from coreferee.rules import RulesAnalyzerFactory
-from coreferee.test_utils import get_nlps, debug_structures
+from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
 
 nlps = get_nlps("pl")
@@ -417,7 +417,6 @@ class PolishRulesTest(unittest.TestCase):
             if nlp.meta["name"] in excluded_nlps:
                 return
             doc = nlp(doc_text)
-            debug_structures(doc)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
             assert rules_analyzer.is_independent_noun(
@@ -1150,7 +1149,6 @@ class PolishRulesTest(unittest.TestCase):
             doc = nlp(doc_text)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
-            debug_structures(doc)
             assert rules_analyzer.is_independent_noun(
                 doc[referred_index]
             ) or rules_analyzer.is_potential_anaphor(doc[referred_index])
