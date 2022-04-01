@@ -83,10 +83,10 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_proper_noun_coreference_with_gender_difference(self):
         self.compare_annotations(
-            'Charles aime La France. Le pays a Paris pour capitale. On peut y voir la Tour Eiffel',
-            '[0: [3], [6], [14]]',
+            'Charles aime La France. Le pays a Paris pour capitale. On peut voir là la Tour Eiffel',
+            '[0: [3], [6], [15]]',
             excluded_nlps='core_news_sm',
-            alternative_expected_coref_chains='[0: [3], [6], 1: [8], [14]]')
+            alternative_expected_coref_chains='[0: [3], [6], 1: [8], [15]]')
             
     def test_common_noun_coreference(self):
         self.compare_annotations(

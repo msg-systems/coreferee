@@ -843,26 +843,6 @@ class FrenchRulesTest(unittest.TestCase):
             excluded_nlps=["core_news_sm"],
         )
 
-    def test_potential_pair_location_anaphor_y(self):
-        self.compare_potential_pair(
-            "J'habite en France. J'y habite.",
-            3,
-            False,
-            6,
-            2,
-            excluded_nlps=["core_news_sm"],
-        )
-
-    def test_potential_pair_location_anaphor_y_control(self):
-        self.compare_potential_pair(
-            "J'aime beaucoup Pierre. J'y habite.",
-            3,
-            False,
-            6,
-            0,
-            excluded_nlps=["core_news_sm"],
-        )
-
     def test_potential_pair_location_anaphor_ici_control(self):
         self.compare_potential_pair(
             "J'aime cette femme. Elle habite ici",
