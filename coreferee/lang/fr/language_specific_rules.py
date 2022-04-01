@@ -264,7 +264,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             and token.dep_ != "expl:subj"
         ):
             return True
-        if token.pos_ == "DET" and token.dep_ != "det":
+        if (
+            token.pos_ == "DET" 
+            and token.dep_ == "obj"
+            and token.i < len(token.doc) - 1
+            and token.head.i == token.i + 1
+        ):
+        # Covers cases of clitic pronouns wrongly tagged as DET
             return True
         if not (
             (
@@ -330,7 +336,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         # impersonal constructions
         if (
             token.dep_ in {"expl:comp", "expl:pass", "expl:subj"}
-            and token.lemma_ not in {"y", "en"}
+            and token.lemma_ not in {"en"}
             and not self.has_morph(token, "Reflex", "Yes")
         ):
             return False
@@ -797,8 +803,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                     det
                     for det in token.children
                     if det.pos_ == "DET"
-                    and self.has_morph(token, "Poss", "Yes")
-                    and self.has_morph(token, "Person", "3")
+                    and self.has_morph(det, "Poss", "Yes")
+                    and self.has_morph(det, "Person", "3")
                 ]
             )
             > 0
