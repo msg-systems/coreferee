@@ -219,6 +219,18 @@ class FrenchRulesTest(unittest.TestCase):
             "Les premiers ont pris un petit chat. Le petit est mignon.", [1, 6, 9]
         )
 
+    def test_noun_with_amalgam_det(self):
+        self.compare_independent_noun(
+            "Le garçon va au cinéma ce soir puis demain il va à la montagne.",
+             [1, 4, 6, 13]
+             )
+
+    def test_noun_without_det(self):
+        self.compare_independent_noun(
+            "Il a répondu de nouveau à côté. Il apprend par coeur le poème en entier.",
+             []
+             )
+
     def compare_potential_anaphor(
         self, doc_text, expected_per_indexes, *, excluded_nlps=[]
     ):
@@ -1831,6 +1843,33 @@ class FrenchRulesTest(unittest.TestCase):
             True,
         )
 
+    def test_potential_pair_copula_propn_first(self):
+        self.compare_potential_noun_pair(
+            "Georges Marais est le contrôleur des finances.",
+            0,
+            4,
+            True,
+            excluded_nlps=[]
+        )
+
+    def test_potential_pair_copula_propn_second(self):
+        self.compare_potential_noun_pair(
+            "Le contrôleur des finances est Georges Marais.",
+            1,
+            5,
+            True,
+            excluded_nlps=["core_news_sm"],
+        )
+
+    def test_potential_pair_copula_propn_control(self):
+        self.compare_potential_noun_pair(
+            "Le contrôleur des finances est au cinéma.",
+            1,
+            6,
+            False,
+            excluded_nlps=[],
+        )
+                
     def test_potential_noun_pair_same_number(self):
         self.compare_potential_noun_pair(
             "Nicolas Sarkozy venait d'arriver. Le président portait un costume.",
@@ -1928,6 +1967,16 @@ class FrenchRulesTest(unittest.TestCase):
             0,
             7,
             False,
+            excluded_nlps=["core_news_sm"],
+        )
+
+    def test_potential_noun_pair_nationality(self):
+        self.compare_potential_noun_pair(
+            "Parmi les bonnes pioches estivales du club rennais figure Lovro Majer. "
+            "Le Croate a été directement freiné par une mystérieuse blessure à la hanche ",
+            9,
+            13,
+            True,
             excluded_nlps=["core_news_sm"],
         )
 
