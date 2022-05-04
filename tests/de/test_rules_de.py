@@ -267,7 +267,7 @@ class GermanRulesTest(unittest.TestCase):
         )
 
     def test_prepositions_1(self):
-        self.compare_potential_anaphor("Sie aß es damit.", [0, 2, 3])
+        self.compare_potential_anaphor("Sie aß es damit.", [0, 2, 3], excluded_nlps=['core_news_md'])
 
     def test_prepositions_2(self):
         self.compare_potential_anaphor("Und damit aß sie es.", [1, 3, 4])
@@ -280,7 +280,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_prepositions_control_with_verb_phrase(self):
         self.compare_potential_anaphor(
-            "Sie aß es damit, dass sie ein Messer benutzte.", [0, 2, 6]
+            "Sie aß es damit, dass sie ein Messer benutzte.", [0, 2, 6], excluded_nlps=['core_news_md']
         )
 
     def test_initial_prepositions(self):
@@ -339,7 +339,7 @@ class GermanRulesTest(unittest.TestCase):
         )
 
     def test_pleonastic_darauf_aux_2(self):
-        self.compare_potential_anaphor("Es wäre darauf angekommen, es zu tun.", [0, 5])
+        self.compare_potential_anaphor("Es ist darauf angekommen, es zu tun.", [0, 5])
 
     def test_pleonastic_dessen_object_positions(self):
         self.compare_potential_anaphor(
@@ -495,7 +495,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_potential_pair_trivial_masc_control_2(self):
         self.compare_potential_pair(
-            "Ich sah einen Mann. Dann sprach es und weinte", 3, False, 7, 0
+            "Ich sah einen Mann. Dann sprach sie und weinte", 3, False, 7, 0
         )
 
     def test_potential_pair_trivial_masc_control_3(self):
@@ -694,11 +694,11 @@ class GermanRulesTest(unittest.TestCase):
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potential_pair_person_neut_3(self):
         self.compare_potential_pair(
-            "Ich sah ein Kind. Dann lächelte es und weinte", 3, False, 7, 2
+            "Ich sah ein Kind. Dann lächelte dieses und weinte", 3, False, 7, 2
         )
 
     def test_potential_pair_person_neut_control(self):
-        self.compare_potential_pair("Ich sah ein Kind. Sie standen", 3, False, 5, 0)
+        self.compare_potential_pair("Ich sah ein Kind. diese standen", 3, False, 5, 0)
 
     def test_potential_pair_male_neut_1(self):
         self.compare_potential_pair("Ich sah ein Mannsbild. Er stand", 3, False, 5, 2)
@@ -884,7 +884,7 @@ class GermanRulesTest(unittest.TestCase):
 
     def test_potential_pair_proav_person(self):
         self.compare_potential_pair(
-            "Ploztrok nahm einen Löffel und aß damit", 0, False, 6, 0
+            "Peter nahm einen Löffel und aß damit", 0, False, 6, 0
         )
 
     def test_potential_pair_proav_place(self):
@@ -909,16 +909,6 @@ class GermanRulesTest(unittest.TestCase):
     def test_potential_pair_possessive_in_genitive_phrase_simple_not_directly(self):
         self.compare_potential_pair(
             "Der Mann seines Freundes", 1, False, 2, 2, directly=False
-        )
-
-    def test_potential_pair_possessive_in_genitive_phrase_coordination_head(self):
-        self.compare_potential_pair(
-            "Der Mann und der Mann seines Freundes",
-            1,
-            False,
-            5,
-            2,
-            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_potential_pair_possessive_in_genitive_phrase_coordination_child(self):
@@ -1278,7 +1268,7 @@ class GermanRulesTest(unittest.TestCase):
             0,
             True,
             False,
-            excluded_nlps=["core_news_sm"]
+            excluded_nlps=["core_news_md", "core_news_sm"]
         )
 
     def test_reflexive_double_coordination_with_preposition(self):
