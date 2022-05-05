@@ -1,17 +1,3 @@
-# Copyright 2021 msg systems ag
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#   http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import unittest
 from coreferee.test_utils import get_nlps
 
@@ -60,7 +46,7 @@ class EnglishSmokeTest(unittest.TestCase):
 
     def test_conjunction_different_pronouns(self):
         self.compare_annotations(
-            'I saw Peter and Jane and she and he was chasing a cat', '[0: [2], [8], 1: [4], [6]]',
+            'I saw Peter and Jane, and she and he were chasing a cat', '[0: [2], [9], 1: [4], [7]]',
             excluded_nlps=['core_web_sm'])
 
     def test_conjunction_involving_pronoun(self):
@@ -90,7 +76,7 @@ class EnglishSmokeTest(unittest.TestCase):
     def test_common_noun_coreference(self):
         self.compare_annotations(
             'I saw a big dog. The dog was chasing a cat. It was wagging its tail',
-            '[0: [4], [7], [13], [16]]')
+            '[0: [4], [7], [13], [16]]', alternative_expected_coref_chains='[0: [4], [7], 1: [9], [13], [16]]')
 
     def test_entity_coreference(self):
         self.compare_annotations(

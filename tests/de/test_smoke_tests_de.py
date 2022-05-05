@@ -1,19 +1,12 @@
-# Copyright 2021 msg systems ag
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#   http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import unittest
-from coreferee.test_utils import get_nlps
+from coreferee.test_utils import get_nlps, debug_structures
+
+nlps = get_nlps("de")
+train_version_mismatch = False
+for nlp in nlps:
+    if not nlp.meta["matches_train_version"]:
+        train_version_mismatch = True
+train_version_mismatch_message = "Loaded model version does not match train model version"
 
 class GermanSmokeTest(unittest.TestCase):
 
@@ -34,6 +27,7 @@ class GermanSmokeTest(unittest.TestCase):
                 return
 
             doc = nlp(doc_text)
+            debug_structures(doc)
             chains_representation = str(doc._.coref_chains)
             if alternative_expected_coref_chains is None:
                 self.assertEqual(expected_coref_chains,
@@ -45,7 +39,7 @@ class GermanSmokeTest(unittest.TestCase):
         self.all_nlps(func)
 
     def test_simple(self):
-        self.compare_annotations('Ich sah einen Hund und er jagte eine Katze', '[0: [3], [5]]')
+        self.compare_annotations('Ich sah einen Hund, und er jagte eine Katze', '[0: [3], [6]]')
 
     def test_simple_plural(self):
         self.compare_annotations('Ich sah Hunde, und sie jagten eine Katze', '[0: [2], [5]]')
@@ -59,10 +53,10 @@ class GermanSmokeTest(unittest.TestCase):
         self.compare_annotations(
             'Ich sah einen Hund und ein Pferd, und sie jagten eine Katze', '[0: [3, 6], [9]]')
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_conjunction_different_pronouns(self):
         self.compare_annotations(
-            'Ich sah Peter und Jana, und sie und er jagten ein Katze', '[0: [2], [9], 1: [4], [7]]',
-                alternative_expected_coref_chains='[0: [2, 4], [7]]')
+            'Peter und das Mädchen haben gesprochen, und dieses und er jagten ein Katze', '[0: [0], [10], 1: [3], [8]]')
 
     def test_conjunction_involving_pronoun(self):
         self.compare_annotations(
@@ -90,7 +84,7 @@ class GermanSmokeTest(unittest.TestCase):
 
     def test_proper_noun_coreference_with_gender_difference(self):
         self.compare_annotations(
-            'Er arbeitete bei der BMW AG. Das Unternehmen gefiel ihm. Es hatte viel Erfolg auf dem deutschen Markt', '[0: [0], [10], 1: [4], [8], [12]]')
+            'Er arbeitete bei der BMW AG. Das Unternehmen gefiel ihm. Es hatte viel Erfolg auf dem deutschen Markt', '[0: [0], [10], 1: [4], [8], [12]]', excluded_nlps=["core_news_md"])
 
     def test_common_noun_coreference(self):
         self.compare_annotations(
@@ -99,8 +93,8 @@ class GermanSmokeTest(unittest.TestCase):
 
     def test_entity_coreference(self):
         self.compare_annotations(
-            'Es war Peter, der alles wusste. Alle mochten den freundlichen Mann.',
-            '[0: [2], [12]]')
+            'Peter sprach laut. Alle mochten den freundlichen Mann.',
+            '[0: [0], [8]]', excluded_nlps=['core_news_sm'])
 
     def test_reflexive_simple(self):
         self.compare_annotations(

@@ -1,50 +1,57 @@
-Coreferee
-=========
-Author: <a href="mailto:richard@explosion.ai">Richard Paul Hudson, msg systems ag</a>
+# Coreferee
 
--   [1. Introduction](#introduction)
-    -   [1.1 The basic idea](#the-basic-idea)
-    -   [1.2 Getting started](#getting-started)
-        -   [1.2.1 English](#getting-started-en)
-		-   [1.2.2 French](#getting-started-fr)
-        -   [1.2.3 German](#getting-started-de)
-        -   [1.2.4 Polish](#getting-started-pl)
-    -   [1.3 Background information](#background-information)
-    -   [1.4 Facts and figures](#facts-and-figures)
-        -   [1.4.1 Covered relevant linguistic features](#covered-relevant-linguistic-features)
-        -   [1.4.2 Model performance](#model-performance)
--   [2. Interacting with the data model](#interacting-with-the-data-model)
--   [3. How it works](#how-it-works)
-    -   [3.1 General operation and rules](#general-operation-and-rules)
-        -   [3.1.1 Anaphor pair analysis](#anaphor-pair-analysis)
-        -   [3.1.2 Noun pair detection](#noun-pair-detection)
-        -   [3.1.3 Building the chains](#building-the-chains)
-    -   [3.2 The neural ensemble](#the-neural-ensemble)
--   [4. Adding support for a new language](#adding-support-for-a-new-language)
--   [5. Adding support for a custom spaCy model](#adding-support-for-a-custom-spaCy-model)
--   [6. Version history]('#version-history')
-    -   [6.1 Version 1.0.0](#version-100)
-    -   [6.2 Version 1.0.1](#version-101)
-    -   [6.3 Version 1.1.0](#version-110)
-    -   [6.4 Version 1.1.1](#version-111)
-    -   [6.5 Version 1.1.2](#version-112)
-    -   [6.6 Version 1.1.3](#version-113)
--   [7. Open issues/requests for assistance](#open-issues)
+Author: <a href="mailto:richard@explosion.ai">Richard Paul Hudson, Explosion AI</a>
+
+- [1. Introduction](#introduction)
+  - [1.1 The basic idea](#the-basic-idea)
+  - [1.2 Getting started](#getting-started)
+    - [1.2.1 English](#getting-started-en)
+    - [1.2.2 French](#getting-started-fr)
+    - [1.2.3 German](#getting-started-de)
+    - [1.2.4 Polish](#getting-started-pl)
+  - [1.3 Background information](#background-information)
+  - [1.4 Facts and figures](#facts-and-figures)
+    - [1.4.1 Covered relevant linguistic features](#covered-relevant-linguistic-features)
+    - [1.4.2 Model performance](#model-performance)
+- [2. Interacting with the data model](#interacting-with-the-data-model)
+- [3. How it works](#how-it-works)
+  - [3.1 General operation and rules](#general-operation-and-rules)
+    - [3.1.1 Anaphor pair analysis](#anaphor-pair-analysis)
+    - [3.1.2 Noun pair detection](#noun-pair-detection)
+    - [3.1.3 Building the chains](#building-the-chains)
+  - [3.2 The neural ensemble](#the-neural-ensemble)
+- [4. Adding support for a new language](#adding-support-for-a-new-language)
+- [5. Adding support for a custom spaCy model](#adding-support-for-a-custom-spaCy-model)
+- [6. Version history]('#version-history')
+  - [6.1 Version 1.0.0](#version-100)
+  - [6.2 Version 1.0.1](#version-101)
+  - [6.3 Version 1.1.0](#version-110)
+  - [6.4 Version 1.1.1](#version-111)
+  - [6.5 Version 1.1.2](#version-112)
+  - [6.6 Version 1.1.3](#version-113)
+  - [6.7 Version 1.2.0](#version-120)
+- [7. Open issues/requests for assistance](#open-issues)
 
 <a id="introduction"></a>
+
 ### 1. Introduction
 
 <a id="the-basic-idea"></a>
+
 #### 1.1 The basic idea
 
-Coreferences are situations where two or more words within a text refer to the same entity, e.g. *__John__ went home because __he__ was tired*. Resolving coreferences is an important general task within the natural language processing field.
+Coreferences are situations where two or more words within a text refer to the same entity, e.g. _**John** went home because **he** was tired_. Resolving coreferences is an important general task within the natural language processing field.
 
-Coreferee is a Python 3 library (tested with version 3.9.5) that is used together with [spaCy](https://spacy.io/) (tested with version 3.1.2) to resolve coreferences within English, French, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
+Coreferee is a Python 3 library (tested with versions 3.6—3.10) that is used together with [spaCy](https://spacy.io/) (tested with versions 3.0.0—3.3.0) to resolve coreferences within English, French, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
+
+The library was originally developed at [msg systems](https://www.msg.group/en), but is now being maintained at [Explosion AI](https://explosion.ai).
 
 <a id="getting-started"></a>
+
 #### 1.2 Getting started
 
 <a id="getting-started-en"></a>
+
 ##### 1.2.1 English
 
 Presuming you have already installed [spaCy](https://spacy.io/) and one of the English spacy models, install Coreferee from the command line by typing:
@@ -85,6 +92,7 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 ```
 
 <a id="getting-started-fr"></a>
+
 ##### 1.2.2 French
 
 Presuming you have already installed [spaCy](https://spacy.io/) and one of the French spacy models, install Coreferee from the command line by typing:
@@ -122,6 +130,7 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 ```
 
 <a id="getting-started-de"></a>
+
 ##### 1.2.3 German
 
 Presuming you have already installed [spaCy](https://spacy.io/) and one of the German spacy models, install Coreferee from the command line by typing:
@@ -159,6 +168,7 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 ```
 
 <a id="getting-started-pl"></a>
+
 ##### 1.2.4 Polish
 
 Presuming you have already installed [spaCy](https://spacy.io/) and one of the Polish spacy models, install Coreferee from the command line by typing:
@@ -196,23 +206,24 @@ Then open a Python prompt (type `python3` or `python` at the command line):
 ```
 
 <a id="background-information"></a>
+
 #### 1.3 Background information
 
 Handling coreference resolution successfully requires training corpora that have been manually annotated with coreferences. The [state of the art in coreference resolution](https://paperswithcode.com/sota/coreference-resolution-on-conll-2012) is progressing rapidly, but is largely focussed on techniques that require training corpora that are larger than what is available for most languages and software developers. The [CONLL 2012 training corpus](https://cemantix.org/conll/2012/task-description.html), which is most widely used, has the following restrictions:
 
 - CONLL 2012 covers English, Chinese and Arabic; there is nothing of comparable size for most other languages. For example, the [corpus](#model-performance) we used to train Coreferee for German is around a tenth of the size of CONLL 2012;
 
-- CONLL 2012 is not publicly available and has a license that precludes non-members of the Linguistic Data Consortium from using models commercially that CONLL 2012 was used to train.
+- CONLL 2012 is not publicly available and has a relatively restrictive license.
 
 Earlier versions of spaCy had an extension, [Neuralcoref](https://github.com/huggingface/neuralcoref), that was excellent but that was never made publicly available for any language other than English. The aim of Coreferee, on the other hand, is to get coreference resolution working for a variety of languages: our focus is less on necessarily achieving the best possible precision and recall for English than on enabling the functionality to be reproduced for new languages as easily and as quickly as possible. Because training data is in such short supply for most languages and is very effort-intensive to produce, it is important to use what is available as effectively as possible.
 
 There are three essential strategies that human readers employ to recognise coreferences within a text:
 
-1) Hard grammatical rules that completely preclude entities within a text from coreferring, e.g. *__The house__ stood tall. __They__ went on walking.* Such rules play an especially important role in languages that have grammatical gender, which includes most continental European languages.
+1. Hard grammatical rules that completely preclude entities within a text from coreferring, e.g. _**The house** stood tall. **They** went on walking._ Such rules play an especially important role in languages that have grammatical gender, which includes most continental European languages.
 
-2) Pragmatic tendencies, e.g. a word that begins a sentence and that is a grammatical subject is more likely than a word that is in the middle of a sentence and that forms part of a prepositional phrase to be referred back to by a pronoun that follows it in the next sentence.
+2. Pragmatic tendencies, e.g. a word that begins a sentence and that is a grammatical subject is more likely than a word that is in the middle of a sentence and that forms part of a prepositional phrase to be referred back to by a pronoun that follows it in the next sentence.
 
-3) Semantic restrictions, i.e. which entities can realistically do what to which entities in the world being described. For example, in the sentence *The child saddled __her__ up*, a reader's experience of the world will make it clear that *her* must refer to a horse.
+3. Semantic restrictions, i.e. which entities can realistically do what to which entities in the world being described. For example, in the sentence _The child saddled **her** up_, a reader's experience of the world will make it clear that _her_ must refer to a horse.
 
 With unlimited training data, it would be possible to train a system to employ all three strategies effectively from first principles using word vectors. The features of Coreferee that allow effective learning with the limited training data that is available are:
 
@@ -226,18 +237,20 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
 
 - A mention within Coreferee does not consist of a span, but rather of a single token or of a list of tokens that stand in a coordination relationship to one another.
 
-- Coreferee does not capture coreferences that are unambiguously evident from the structure of a sentence. For example, the identity of *he* and *doctor* in the sentence *__He__ was a __doctor__* is not reported by Coreferee because it can easily be derived from a simple analysis of the copular structure of the phrase.
+- Coreferee does not capture coreferences that are unambiguously evident from the structure of a sentence. For example, the identity of _he_ and _doctor_ in the sentence _**He** was a **doctor**_ is not reported by Coreferee because it can easily be derived from a simple analysis of the copular structure of the phrase.
 
-- Repetitions of first- and second-person pronouns (*__I__ was tired. __I__ went home*) are not captured as they add no value either for information extraction or for intelligent search.
+- Repetitions of first- and second-person pronouns (_**I** was tired. **I** went home_) are not captured as they add no value either for information extraction or for intelligent search.
 
 - Coreferee focusses heavily on anaphors (for English: pronouns). There is only relatively limited capture of coreference between noun phrases, and it is entirely rule-based. (In turn, however, this serves the aim of working with limited training data: noun-phrase coreference is a more exacting task than anaphor resolution.)
 
 - Because search performance is much more important for Holmes than document parsing performance, Coreferee performs all analysis eagerly as each document passes through the pipe.
 
 <a id="facts-and-figures"></a>
+
 #### 1.4 Facts and figures
 
 <a id="covered-relevant-linguistic-features"></a>
+
 ##### 1.4.1 Covered relevant linguistic features
 
 <table style="text-align:center; vertical-align:middle">
@@ -250,38 +263,42 @@ Coreferee started life to assist the [Holmes](https://github.com/msg-systems/hol
 
 1. Only subject zero anaphors are covered. Object zero anaphors, e.g. <i>Wypiłeś <b>wodę</b>? Tak, <b>wypiłem.</b></i> are not in scope because they are mainly used colloquially and do not normally occur in the types of text for which [Coreferee is primarily designed](#background-information). Handling them would require creating or locating a detailed dictionary of verb valencies.
 
-2. Polish has a restricted use of anaphoric prepositions in some formal registers, e.g. *Skończyło się to __dlań__ smutno*. Because the Polish spaCy models were trained on news texts, they do not recognise such prepositions, meaning that Coreferee cannot capture them either.  
+2. Polish has a restricted use of anaphoric prepositions in some formal registers, e.g. _Skończyło się to **dlań** smutno_. Because the Polish spaCy models were trained on news texts, they do not recognise such prepositions, meaning that Coreferee cannot capture them either.
 
 <a id="model-performance"></a>
+
 ##### 1.4.2 Model performance
 
 <table style="text-align:center; vertical-align:middle">
   <tr><td rowspan="2">ISO 639-1</td><td rowspan="2">Language</td><td rowspan="2">Training corpora</td><td rowspan="2">Total words in training corpora</td><td colspan="2"><code>*_trf</code> models</td><td colspan="2"><code>*_lg</code> models</td><td colspan="2"><code>*_md</code> models</td><td colspan="2"><code>*_sm</code> models</td></tr>  
   <tr><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td><td align="center">Anaphors in 20%</td><td align="center">Accuracy (%)</td></tr>
-  <tr><td align="center">en</td><td align="center">English</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2940</b></td><td align="center"><b>83.67</b><td align="center"><b>2886</b></td><td align="center"><b>83.75</b></td></td><td align="center">2905</td><td align="center">82.89</td><td align="center">2874</td><td align="center">82.39</td></tr>
-  <tr><td align="center">de</td><td align="center">German</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>626</b></td><td align="center"><b>77.96</b></td><td align="center">630</td><td align="center">75.87</td><td align="center">611</td><td align="center">77.91</td></tr>
-  <tr><td align="center">fr</td><td align="center">French</td><td align="center"><a href="https://www.ortolang.fr/market/corpora/democrat/v1.1">DEMOCRAT</a></td><td align="center">323754</td><td align="center">-</td><td align="center">-</td><td align="center"><b>2319</b></td><td align="center"><b>73.91</b></td><td align="center">2399</td><td align="center">73.91</td><td align="center">2216</td><td align="center">72.88</td></tr>
-  <tr><td align="center">pl</td><td align="center">Polish</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1681</b></td><td align="center"><b>73.92</b></td><td align="center">1672</td><td align="center">71.98</td><td align="center">-</td><td align="center">-</td></tr>
+  <tr><td align="center">en</td><td align="center">English</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a>/<a href="https://github.com/dbamman/litbank"> LitBank</a></td><td align="center">393564</td><td align="center"><b>2500—2520</b></td><td align="center"><b>82—83</b><td align="center"><b>2480—2520</b></td><td align="center"><b>81—82</b></td></td><td align="center">2480—2510</td><td align="center">81</td><td align="center">2540—2560</td><td align="center">81—82</td></tr>
+  <tr><td align="center">de</td><td align="center">German</td><td align="center"><a href="https://opus.nlpl.eu/ParCor/">ParCor</a></td><td align="center">164300</td><td align="center">-</td><td align="center">-</td><td align="center"><b>530—570</b></td><td align="center"><b>79—80</b></td><td align="center">520—550</td><td align="center">79—80</td><td align="center">530—550</td><td align="center">76—79</td></tr>
+  <tr><td align="center">fr</td><td align="center">French</td><td align="center"><a href="https://www.ortolang.fr/market/corpora/democrat/v1.1">DEMOCRAT</a></td><td align="center">323754</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1270—1280</b></td><td align="center"><b>71—72</b></td><td align="center">1280—1300</td><td align="center">68—70</td><td align="center">1130—1140</td><td align="center">63—64</td></tr>
+  <tr><td align="center">pl</td><td align="center">Polish</td><td align="center"><a href="http://zil.ipipan.waw.pl/PolishCoreferenceCorpus">PCC</a></td><td align="center">548268</td><td align="center">-</td><td align="center">-</td><td align="center"><b>1730—1790</b></td><td align="center"><b>72—76</b></td><td align="center">1750—1790</td><td align="center">70—75</td><td align="center">-</td><td align="center">-</td></tr>
 </table>
 
 Coreferee produces a range of neural-network models for each language corresponding to the various spaCy models for that language. The [neural network inputs](#the-neural-ensemble) include word vectors. With `_sm` (small) models, both spaCy and Coreferee use context-sensitive tensors as an alternative to word vectors. `_trf` (transformer-based) models, on the other hand, do not use or offer word vectors at all. To remedy this problem, the model configuration files (`config.cfg` in the directory for each language) allow a **vectors model** to be specified for use when a main model does not have its own vectors. Coreferee then combines the linguistic information generated by the main model with vector information returned for the individual words in each document by the vectors model.
 
-Because the Coreferee models are rather large (70GB-80GB for the group of models for a given language) and because many users will only be interested in one language, the group of models for a given language is installed using `python3 -m coreferee install` as demonstrated in the introduction. All Coreferee models are more or less the same size; a larger spaCy model does not equate to a larger Coreferee model. As the figures above demonstrate, the accuracy of Coreferee corresponds closely to the size of the underlying spaCy model, and users are urged to use the larger spaCy models. It is in any case unclear whether there is a situation in which it would make sense to use Coreferee with an `_sm` model as the Coreferee model would then be considerably larger than the spaCy model! As this discrepancy is especially extreme for the Polish models, Coreferee no longer supports `pl_core_news_sm` from version 1.1.0 onwards.
+Because the Coreferee models are rather large (20GB-30GB for the group of models for a given language) and because many users will only be interested in one language, the group of models for a given language is installed using `python3 -m coreferee install` as demonstrated in the introduction. All Coreferee models are more or less the same size; a larger spaCy model does not equate to a larger Coreferee model. As the figures above demonstrate, the accuracy of Coreferee corresponds closely to the size of the underlying spaCy model, and users are urged to use the larger spaCy models. It is in any case unclear whether there is a situation in which it would make sense to use Coreferee with an `_sm` model as the Coreferee model would then be considerably larger than the spaCy model! As this discrepancy is especially extreme for the Polish models, Coreferee no longer supports `pl_core_news_sm` from version 1.1.0 onwards.
+
+The English, German and Polish models support spaCy versions from 3.0.0 to 3.3.0, while the French models support spaCy versions from 3.1.0 to 3.2.0. Because the accuracies and number of anaphors found differ slightly depending on the spaCy version used, the table above cites ranges for each model.
 
 Assessing and comparing the precision and recall of anaphor resolution algorithms is notoriously difficult. For one thing, two human annotators of the same data will not always agree (and, indeed, there are some cases where Coreferee and a training annotator disagree where Coreferee's interpretation seems the more plausible!) And the same algorithm may perform with wildly different accuracies with different test documents depending on how clearly the documents are written and how often there are competing interpretations of individual anaphors.
 
 Because Coreferee decides where there are anaphors to resolve (as opposed to what to resolve them to) in a purely rule-based fashion and because there is not necessarily a perfect correspondence between the types of anaphor these rules are aiming to capture and the types of anaphor covered by any given training corpus, a recall measure would not be meaningful. Instead, we compare the performance between spaCy models — and, during tuning, between different hyperparameter values — by counting the total **number of anaphors** that the rules find within the test documents as parsed by the spaCy model being used and that are also annotated with a coreference within the training data. The **accuracy** then expresses the percentage of these anaphors for which the coreference annotated by the corpus author is part of the chain(s) suggested by Coreferee. In situations where the training data specifies a chain C->B->A and B is a type of coreference that Coreferee is not aiming to capture, C->A is used as a valid training reference.
 
-Assessing the performance of a model requires test data that was not used for training. At the same time, however, Coreferee is explicitly designed for use in situations where training data is at a premium, and it seems a shame to waste the learning opportunity offered by specific training documents just to assess a model a single time. To enable valid testing and at the same time to maximize the use of training data, each model is trained twice. On the first run, around 80% of the data is used for training and the remaining 20% for testing. (In practice, these percentages can vary somewhat because individual documents cannot be split between the two groups.) This first model is then discarded and a second training run is carried out with the available data in its entirity. The assumption is that, because it is based on more training data, the performance of this second model can be presumed to be at least as good as the measured performance of the first model. The obvious drawback, however, is that there is no way of verifying this.
+The corpus for each language is split up into a training corpus (around 80%) and a test corpus (around 20%) using a random procedure with a constant seed, meaning that both sets contain documents from throughout each corpus and that the same documents end up in each set on all runs. Note that the corpora were not split up in this way prior to version 1.2.0, meaning that accuracy figures obtained for earlier versions are not directly comparable with accuracy figures obtained for subsequent versions.
 
 Since coreference between noun phrases is restricted to a small number of cases captured by [simple rules](#noun-pair-detection), the model assessment figures presented here refer solely to [anaphor resolution](#anaphor-pair-analysis). When anaphor resolution accuracy is being assessed for a test document, noun pairs are detected and [added to chains](#building-the-chains) according to the standard rules, but they do not feature in the accuracy figures. On some rare occasions, however, they may have an indirect effect on accuracy by affecting the semantic considerations that determine which anaphors can be added to which chains.
 
 Note that **Total words in training corpora** in the table above refers to 100% of the available data for each language, while the **Anaphors in 20%** columns specify the number of anaphors found in the roughly 20% of this data that is used for model assessment.
 
 <a id="interacting-with-the-data-model"></a>
+
 ### 2 Interacting with the data model
 
-Coreferee generates **Chain** objects where each chain is an ordered collection of **Mention** objects that have been analysed as referring to the same entity. Each mention holds references to one or more spaCy token indexes; a chain can have a maximum of one mention with more than one token (most often its leftmost mention). A given token index occurs in a maximum of two mentions; if it belongs to two mentions the mentions will belong to different chains and one of the mentions will contain multiple tokens.  All chains that refer to a given `Doc` or `Token` object are managed on a `ChainHolder` object which is accessed via `._.coref_chains`. Reproducing part of the example from the [introduction](#getting-started-en):
+Coreferee generates **Chain** objects where each chain is an ordered collection of **Mention** objects that have been analysed as referring to the same entity. Each mention holds references to one or more spaCy token indexes; a chain can have a maximum of one mention with more than one token (most often its leftmost mention). A given token index occurs in a maximum of two mentions; if it belongs to two mentions the mentions will belong to different chains and one of the mentions will contain multiple tokens. All chains that refer to a given `Doc` or `Token` object are managed on a `ChainHolder` object which is accessed via `._.coref_chains`. Reproducing part of the example from the [introduction](#getting-started-en):
 
 ```
 >>> doc = nlp("Although he was very busy with his work, Peter had had enough of it. He and his wife decided they needed a holiday. They travelled to Spain because they loved the country very much.")
@@ -358,6 +375,7 @@ A document with Coreferee annotations can be saved and loaded using the normal s
 'he(1)'
 >>>
 ```
+
 Each chain has an index number that is unique within the document. It is displayed in the representations of `Chain` and `ChainHolder` and can also be accessed directly:
 
 ```
@@ -389,17 +407,20 @@ rules_analyzer.get_propn_subtree(doc[1])
 ```
 
 <a id="how-it-works"></a>
+
 ### 3 How it works
 
 <a id="general-operation-and-rules"></a>
+
 #### 3.1 General operation and rules
 
 <a id="anaphor-pair-analysis"></a>
+
 ##### 3.1.1 Anaphor pair analysis
 
 For each language, methods are implemented that determine:
 
-- for each token, its dependent siblings, e.g. *Jane* is a dependent sibling of *Peter* in the phrase *Peter and Jane*;
+- for each token, its dependent siblings, e.g. _Jane_ is a dependent sibling of _Peter_ in the phrase _Peter and Jane_;
 - for each token, whether the token is an anaphor (broadly speaking for English: a third-person pronoun);
 - for each token, whether the token heads an independent noun phrase that an anaphor could refer to;
 - for any independent-noun/anaphor or anaphor/anaphor pair within a text, whether or not semantic and syntactic constraints would permit coreference between the members of the pair. For example, there are no circumstances in which `they` and `her` could ever corefer within a text. When an entity has dependent siblings, the method is called twice, once with and once without the siblings. Possible coreferents are considered up to five sentences away from each anaphor looking backwards through the text. The method returns `2` (coreference permitted), `1` (coreference unlikely but possible) or `0` (coreference impossible). Alongside the language-specific rules, there are a number of language-independent rules which can lead to a `1` rather than a `2` analysis.
@@ -411,6 +432,7 @@ Note that anaphora is understood in a broad sense that includes cataphora, i.e. 
 Replacing the neural ensemble scoring with a naive algorithm that always selects the closest potential referent for each anaphor with rules analysis `2` (or `1` if there is no `2`) yields an accuracy of around 60% as opposed to the 84% reported [above](#model-performance). This demonstrates the respective contribution of each processing strategy to the overall result and provides a useful benchmark for any further machine learning experiments.
 
 <a id="noun-pair-detection"></a>
+
 ##### 3.1.2 Noun pair detection
 
 For each language the following are implemented:
@@ -422,17 +444,18 @@ For each language the following are implemented:
 This information is used in a purely rule-based fashion to determine probable coreference between pairs of noun phrases: broadly, definite noun phrases that do not contain additional new information refer back to indefinite or definite noun phrases with the same head word, and named entities are referred back to by the common nouns that describe their classes. Noun pairs can be a maximum of two sentences apart as opposed to the five sentences that apply to anaphoric references.
 
 <a id="building-the-chains"></a>
+
 ##### 3.1.3 Building the chains
 
 Coreferee goes through each document in natural reading order from left to right building up chains of anaphors and independent noun phrases. For each anaphor, the highest scoring interpretation as suggested by the neural ensemble is preferred. However, because the semantic (but not the syntactic) restrictions on anaphoric reference apply between all pairs formed by members of a chain rather than merely between adjacent members, it may turn out that the highest scoring interpretation is not permissible because it would lead to a semantically inconsistent chain. The interpretation with the next highest score is then tried, and so on until no interpretations remain.
 
 In the unusual situation that all suggested interpretations of a given anaphor have been found to be semantically impossible, it is likely that one of the interpretations of the preceding anaphors in the text was incorrect: authors do not normally use anaphors that do not refer to anything. Reading the text:
 
- ```
- The woman looked down and saw Lesley. She stood up and greeted him.
- ```
+```
+The woman looked down and saw Lesley. She stood up and greeted him.
+```
 
- most readers will initially understand `she` as referring to `Lesley`. Only when one reaches the end of the sentence does it become clear that Lesley must be a man and that `she` actually refers to `the woman`. A quick test shows that Coreferee is capable of handling such ambiguity:
+most readers will initially understand `she` as referring to `Lesley`. Only when one reaches the end of the sentence does it become clear that Lesley must be a man and that `she` actually refers to `the woman`. A quick test shows that Coreferee is capable of handling such ambiguity:
 
 ```
 >>> doc = nlp('The woman looked down and saw Lesley. She stood up and greeted her.')
@@ -449,19 +472,20 @@ In the unusual situation that all suggested interpretations of a given anaphor h
 This is achieved using a **rewind**: at a point in a text where no suitable interpretation can be found for an anaphor, alternative interpretations of preceding anaphors are investigated in an attempt to find an overall interpretation that fits.
 
 <a id="the-neural-ensemble"></a>
+
 #### 3.2 The neural ensemble
 
 The likelihood scores for [anaphoric pairs](#anaphor-pair-analysis) are calculated using an ensemble of five identical multilayer perceptrons using a rectified linear activation in the input and hidden layers and a sigmoid activation in the output layer. Each of the five networks outputs a probability between 0 and 1 for a given potential anaphoric pair and the mean of the five probabilities is used as the the score for that pair.
 
 The inputs to each of the five networks consist of:
 
-1) A **feature map** for each member of the pair. As the first step in training, Coreferee goes through the entire training corpus and notes all the relevant morphological and syntactic information that relevant tokens, their syntactic head tokens and their syntactic children can have. This information is stored with the neural ensemble for each model as a **feature table**. The feature map for a given token (or list of tokens) is a oneshot representation with respect to the feature table.
+1. A **feature map** for each member of the pair. As the first step in training, Coreferee goes through the entire training corpus and notes all the relevant morphological and syntactic information that relevant tokens, their syntactic head tokens and their syntactic children can have. This information is stored with the neural ensemble for each model as a **feature table**. The feature map for a given token (or list of tokens) is a oneshot representation with respect to the feature table.
 
-2) A **position map** for each member of the pair capturing such information as its position within its sentence and its depth within the dependency tree generated for its sentence.
+2. A **position map** for each member of the pair capturing such information as its position within its sentence and its depth within the dependency tree generated for its sentence.
 
-3) **Vector squeezers** for each member of the pair and, where existent, for the syntactic head of each member of the pair. The input to a vector squeezer is the [vector or context-sensitive tensor](#model-performance) for the spaCy token in question. A vector squeezer consists of three neural layers and outputs a representation that is only three neurons wide and that is fed into the rest of the network within the same layer as the other, non-vector inputs.
+3. **Vector squeezers** for each member of the pair and, where existent, for the syntactic head of each member of the pair. The input to a vector squeezer is the [vector or context-sensitive tensor](#model-performance) for the spaCy token in question. A vector squeezer consists of three neural layers and outputs a representation that is only three neurons wide and that is fed into the rest of the network within the same layer as the other, non-vector inputs.
 
-4) A **compatibility map** capturing the relationship between the members of the pair. Alongside the distance separating them in words and in sentences, this includes the number of common features in their feature maps and the cosine similarity between their syntactic heads.
+4. A **compatibility map** capturing the relationship between the members of the pair. Alongside the distance separating them in words and in sentences, this includes the number of common features in their feature maps and the cosine similarity between their syntactic heads.
 
 Using a vector squeezer has been consistently found to offer slightly better results either than feeding the full-width vectors into the network directly or than omitting them entirely. Possible intuitions that might explain this behaviour are: the reduced width forces the network to learn and attend to a constrained number of specific semantic features relevant to coreference resolution; and the reduced width limits the attention of the network on the raw vectors in a situation where the training data is insufficient to make effective use of them.
 
@@ -474,6 +498,7 @@ The structure shared by each of the five networks in the ensemble is shown in th
 Cross-linguistically, four training epochs were found to offer the best results; adding more training epochs caused the accuracy to start to tail off again owing to overfitting. Training for all relevant spaCy models for a given language takes between one and two hours on a high-end laptop.
 
 <a id="adding-support-for-a-new-language"></a>
+
 ### 4. Adding support for a new language
 
 One of the main design goals of Coreferee was to make it easy to add support for further languages. The prerequisites are:
@@ -485,45 +510,52 @@ You should **not** need to get involved in the details of the neural ensemble; C
 
 The steps involved are:
 
-1) Create a directory under `coreferee/lang/` with the same structure as the existing language-specific directories; it is probably easiest to copy one of them.
+1. Create a directory under `coreferee/lang/` with the same structure as the existing language-specific directories; it is probably easiest to copy one of them.
 
-2) The file `config.cfg` lists the spaCy models for which you wish to generate Coreferee models. You will need to specify a [separate vectors model](#model-performance) for any of the spaCy models that lack vectors or context-dependent tensors of their own — see the English `config.cfg` for an example. Each config entry specifies a minimum (`from_version`) and maximum (`to_version`) spaCy model version number that the generated Coreferee model will support. During development, both numbers will normally refer to a single version number. Later, when an updated spaCy model version is brought out, testing will be required to see whether the existing Coreferee model still supports the new spaCy model version. If so, the maximum version number can be increased; if not, a new config entry will be necessary to accommodate the new Coreferee model that will then be required.
+2. The file `config.cfg` lists the spaCy models for which you wish to generate Coreferee models. You will need to specify a [separate vectors model](#model-performance) for any of the spaCy models that lack vectors or context-dependent tensors of their own — see the English `config.cfg` for an example. Each config entry specifies a minimum (`from_version`) and maximum (`to_version`) spaCy model version number that the generated Coreferee model will support. During development, both numbers will normally refer to a single version number. Later, when an updated spaCy model version is brought out, testing will be required to see whether the existing Coreferee model still supports the new spaCy model version. If so, the maximum version number can be increased; if not, a new config entry will be necessary to accommodate the new Coreferee model that will then be required.
 
-3) The file `rules.py` in the main code directory contains an abstract class `RulesAnalyzer` that must be implemented by a class `LanguageSpecificRulesAnalyzer` within a file called  `language_specific_rules.py` in each language-specific directory. The abstract class `RulesAnalyzer` contains docstrings that specify for each abstract property and method the contract to which implementing classes should adhere. Looking at the existing language-specific rules is also likely to be helpful. The method `is_potential_anaphor()` is normally the most work to create: here it is probably worth looking at the existing English method for languages with natural gender or at the existing German method for languages with grammatical gender. (Polish has an unusually complex gender system, so the Polish example is unlikely to be helpful even as a basis for working with other Slavonic languages.)
+3. The file `rules.py` in the main code directory contains an abstract class `RulesAnalyzer` that must be implemented by a class `LanguageSpecificRulesAnalyzer` within a file called `language_specific_rules.py` in each language-specific directory. The abstract class `RulesAnalyzer` contains docstrings that specify for each abstract property and method the contract to which implementing classes should adhere. Looking at the existing language-specific rules is also likely to be helpful. The method `is_potential_anaphor()` is normally the most work to create: here it is probably worth looking at the existing English method for languages with natural gender or at the existing German method for languages with grammatical gender. (Polish has an unusually complex gender system, so the Polish example is unlikely to be helpful even as a basis for working with other Slavonic languages.)
 
-4) There are some situations where word lists can be helpful. If a list is placed in a file `<name>.dat` within the `data` directory under a language-specific directory, the contents will be automatically made available within the `LanguageSpecificRulesAnalyzer` for the language in question as a variable `self.<name>` that contains a list where each entry corresponds to a line from the file; comments with `#` are supported. If you use a word list, please ensure it can be published under the Apache 2 license and give appropriate attribution within the language-specific directory in the `LICENSE` and, where appropriate, in a `COPYING` file.
+4. There are some situations where word lists can be helpful. If a list is placed in a file `<name>.dat` within the `data` directory under a language-specific directory, the contents will be automatically made available within the `LanguageSpecificRulesAnalyzer` for the language in question as a variable `self.<name>` that contains a list where each entry corresponds to a line from the file; comments with `#` are supported. If you use a word list, please ensure it can be published under the MIT license and give appropriate attribution within the language-specific directory in the `LICENSE` and, where appropriate, in a `COPYING` file.
 
-5) Male and female names are managed on a cross-linguistic basis because there is no reason why one would not want e.g. a German female name to be recognised within an English text. Names are automatically made available to all `RulesAnalyzer` implementations as properties `self.male_names`, `self.female_names`, `self.exclusively_male_names` and `self.exclusively_female_names`. If you can locate a suitable names list for the language you are working on that is available under a suitable license, add the attribution to the `LICENSE` file under `common/` and merge your names into the two files. Please tidy up the result so that the files are free of duplicates and in alphabetical order.
+5. Male and female names are managed on a cross-linguistic basis because there is no reason why one would not want e.g. a German female name to be recognised within an English text. Names are automatically made available to all `RulesAnalyzer` implementations as properties `self.male_names`, `self.female_names`, `self.exclusively_male_names` and `self.exclusively_female_names`. If you can locate a suitable names list for the language you are working on that is available under a suitable license, add the attribution to the `LICENSE` file under `common/` and merge your names into the two files. Please tidy up the result so that the files are free of duplicates and in alphabetical order.
 
-6) Create a language-specific directory under `tests/` with a file `test_rules_<ISO 639-1>.py` to test the rules you have written in 3-5). Although one of the corresponding files for one of the existing languages is likely to be the best starting point, you should also be sure to test any extra features specific to the language you are working on. The test tooling is designed to run each test against all spaCy models specified in `config.cfg`. At this stage in development, you will need to add temporarily a parameter `add_coreferee=False` to the call to `get_nlps()` in the `setUp()` method. Otherwise, all tests will fail because the test tooling will attempt to add the as yet non-existent Coreferee model to the pipe.
+6. Create a language-specific directory under `tests/` with a file `test_rules_<ISO 639-1>.py` to test the rules you have written in 3-5). Although one of the corresponding files for one of the existing languages is likely to be the best starting point, you should also be sure to test any extra features specific to the language you are working on. The test tooling is designed to run each test against all spaCy models specified in `config.cfg`. At this stage in development, you will need to add temporarily a parameter `add_coreferee=False` to the call to `get_nlps()` in the `setUp()` method. Otherwise, all tests will fail because the test tooling will attempt to add the as yet non-existent Coreferee model to the pipe.
 
-7) Some tests may fail with one of the smaller spaCy models because it produces incorrect syntactic representations rather than because of any issue with your rule code. For such cases, a parameter `excluded_nlps` can be specified within a test method to prevent it from being executed with specific spaCy models.
+7. Some tests may fail with one of the smaller spaCy models because it produces incorrect syntactic representations rather than because of any issue with your rule code. For such cases, a parameter `excluded_nlps` can be specified within a test method to prevent it from being executed with specific spaCy models.
 
-8) Locate a training corpus or corpora. Again, you should make sure that the resulting models can be published under the Apache 2 license. Add new loader class(es) for the corpus or corpora to the existing loader classes in the `train/loaders.py` file. Loader classes must implement the `GenericLoader` abstract class that is located at the top of this file. The job of a loader is to read a specific training corpus format and to create and annotate spaCy documents with coreferences marked within corpora of that format. All the data for a single training run should be placed in a single directory; if there are multiple types of training data loaded by different loaders, each loader will need to be able to recognise the data it is required to read by examining the names of the files within the directory. It is worth spending some time checking with `print()` statements that the loaders annotate as expected, otherwise the training step that follows has little chance of success!
+8. Locate a training corpus or corpora. Again, you should make sure that the resulting models can be published under the MIT license. Add new loader class(es) for the corpus or corpora to the existing loader classes in the `train/loaders.py` file. Loader classes must implement the `GenericLoader` abstract class that is located at the top of this file. The job of a loader is to read a specific training corpus format and to create and annotate spaCy documents with coreferences marked within corpora of that format. All the data for a single training run should be placed in a single directory; if there are multiple types of training data loaded by different loaders, each loader will need to be able to recognise the data it is required to read by examining the names of the files within the directory. It is worth spending some time checking with `print()` statements that the loaders annotate as expected, otherwise the training step that follows has little chance of success!
 
-9) You are now ready to begin training. The training command must be issued from the `coreferee/` root directory. Coreferee will place a zip file into `<log-dir>`. Alongside the accuracy for each model, the files in the zip file show the coreference chains produced for each test document as well as a list of incorrect annotations where the Coreferee interpretation differed from the one specified by the training corpus author — information that is invaluable for debugging and rules improvement. As an example, the training command for English is:
+9. You are now ready to begin training. The training command must be issued from the `coreferee/` root directory. Coreferee will place a zip file into `<log-dir>`. Alongside the accuracy for each model, the files in the zip file show the coreference chains produced for each test document as well as a list of incorrect annotations where the Coreferee interpretation differed from the one specified by the training corpus author — information that is invaluable for debugging and rules improvement. As an example, the training command for English is:
 
 ```
 python3 -m coreferee train --lang en --loader ParCorLoader,LitBankANNLoader --data <training-data-dir> --log <log-dir>
 ```
 
-10) Once you are happy with your models, install them. The command must be issued from the `coreferee/` root directory, otherwise Coreferee will attempt to download the models from GitHub where they are not yet present:
+10. Measure the performance of your model against older versions of spaCy and corresponding spaCy models: create a virtual environment for each version of spaCy, and from it measure the performance against the standard test corpus using the `coreferee check` command, of which an example is:
+
+```
+python3 -m coreferee check --lang en --loader ParCorLoader,LitBankANNLoader --data <training-data-dir> --log <log-dir>
+```
+
+11. Once you are happy with your models, install them. The command must be issued from the `coreferee/` root directory, otherwise Coreferee will attempt to download the models from GitHub where they are not yet present:
 
 ```
 python3 -m coreferee install <ISO 639-1>
 ```
 
-11) Before you attempt any regression tests that involve running Coreferee as part of the spaCy pipe, you must remove the `add_coreferee=False` parameter you added above. A setup where the parameter is present in one test file but absent in the other test file will not work because the spaCy models are loaded once per test run.
+12. Before you attempt any regression tests that involve running Coreferee as part of the spaCy pipe, you must remove the `add_coreferee=False` parameter you added above. A setup where the parameter is present in one test file but absent in the other test file will not work because the spaCy models are loaded once per test run.
 
-12) Again using one of the existing languages as an starting point, create a `test_smoke_tests_<ISO 639-1>.py` file in your test directory. The smoke tests are designed to make sure that the basic features of Coreferee are working properly for the language in question and should also cover any features that have posed a particular challenge while developing the rules.
+13. Again using one of the existing languages as an starting point, create a `test_smoke_tests_<ISO 639-1>.py` file in your test directory. The smoke tests are designed to make sure that the basic features of Coreferee are working properly for the language in question and should also cover any features that have posed a particular challenge while developing the rules.
 
-13) Run `pylint` on your `language_specific_rules.py`. Obviously there is no need to achieve a perfect score, but issues that can be easily remedied like overlong lines should be addressed.
+14. Format your `language_specific_rules.py` using `black`.
 
-14) Go through the documentation (`README.md` and `SHORTREADME.md`) adding information about the new language wherever the supported languages are listed in some way.
+15. Go through the documentation (`README.md` and `SHORTREADME.md`) adding information about the new language wherever the supported languages are listed in some way.
 
-15) Issue a pull request. We ask that you supply us with the zip file placed into `<log-dir>` in point 9. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard@explosion.ai">send it out of band</a> rather than attaching it to the pull request.
+16. Issue a pull request. We ask that you supply us with the zip file placed into `<log-dir>` in point 9. Because this will contain a considerable amount of raw information from the training corpora, it will normally be preferable from a licensing viewpoint to <a href="mailto:richard@explosion.ai">send it out of band</a> rather than attaching it to the pull request.
 
 <a id="adding-support-for-a-custom-spaCy-model"></a>
+
 ### 5. Adding support for a custom spaCy model
 
 If you are using a custom spaCy model, you should generate a corresponding custom Coreferee model. Use points 2), 8), 9) and 10) from the [preceding section](#adding-support-for-a-new-language) as a guide. If you do not have your own training data, you can use the [same training data](#model-performance) that was used to generate the standard Coreferee models.
@@ -533,27 +565,32 @@ The language-specific rules expect specific entity tags as 'magic values'. This 
 For many entity tags, the impact will be minimal if you cannot adhere to this, but what is crucial is that you use the `PERSON` and `PER` tags to refer to people in English and German respectively. If this is not possible, change the language-specific-rule code and reinstall Coreferee locally (`python -m pip install .` from the root directory).
 
 <a id="version-history"></a>
+
 #### 6 Version history
 
 <a id="version-100"></a>
+
 ##### 6.1 Version 1.0.0
 
 The initial open-source version.
 
 <a id="version-101"></a>
+
 ##### 6.2 Version 1.0.1
 
--  Fixing of a bug where already installed models were reinstalled from `site-packages` rather than the new model being pulled from GitHub.
+- Fixing of a bug where already installed models were reinstalled from `site-packages` rather than the new model being pulled from GitHub.
 
 <a id="version-110"></a>
+
 ##### 6.3 Version 1.1.0
 
--  Upgrade to Python 3.9 and spaCy 3.1
--  Fixing of minor issues in all three rule-sets
--  Regeneration of all models
--  Improvement of the Polish examples in [section 1.4.1](#covered-relevant-linguistic-features) to make them more pragmatically correct - many thanks to Małgorzata Styś for her valuable advice on this.
+- Upgrade to Python 3.9 and spaCy 3.1
+- Fixing of minor issues in all three rule-sets
+- Regeneration of all models
+- Improvement of the Polish examples in [section 1.4.1](#covered-relevant-linguistic-features) to make them more pragmatically correct - many thanks to Małgorzata Styś for her valuable advice on this.
 
 <a id="version-111"></a>
+
 ##### 6.4 Version 1.1.1
 
 - Changed the dependencies to allow Coreferee to run on the Apple M1 chipset
@@ -561,23 +598,32 @@ The initial open-source version.
 - Improved some of the tests
 
 <a id="version-112"></a>
+
 ##### 6.5 Version 1.1.2
 
 - Added support for French, which was kindly supplied by [Pantalaymon](https://github.com/Pantalaymon)
 
 <a id="version-113"></a>
+
 ##### 6.6 Version 1.1.3
 
 - Updated French rules to new version, again supplied by [Pantalaymon](https://github.com/Pantalaymon)
 - Fixed an endless-loop problem in `language_independent_is_anaphoric_pair()`
 
+<a id="version-120"></a>
+
+##### 6.7 Version 1.2.0
+
+- Removed dependencies to TensorFlow and Keras, switching to Thinc as the neural network platform. Switching to Thinc has led to serialized models that are around 30% of the size of the old models, and has also allowed the old limitation to be removed where `nlp.pipe()` could not be called with `n_process > 1` with forked processes.
+- Added matrix tests to support a variety of Python and spaCy versions, including spaCy 3.2 and spaCy 3.3.
+- Implemented a more representative stable-random split into train and test corpora
+
 <a id="open-issues"></a>
+
 ### 7. Open issues / requests for assistance
 
-1) At present Coreferee uses Keras with TensorFlow, which leads to the limitation that `nlp.pipe()` cannot be called with `n_process > 1` with forked processes. It would be greatly preferable if Coreferee could be converted to use Thinc instead: this would get rid of this limitation and generally fit much better into the spaCy ecosystem.
+1. Because optimising parsing speed was not a priority in the [project within which Coreferee came into being](#background-information), Coreferee is written purely in Python; it would be helpful if somebody could convert it to Cython.
 
-2) Because optimising parsing speed was not a priority in the [project within which Coreferee came into being](#background-information), Coreferee is written purely in Python; it would be helpful if somebody could convert it to Cython.
+2. There are almost certainly changes to the inputs and structure of the neural ensemble that would lead to improvements in accuracy, both cross-linguistically and for specific languages. The only caveat to bear in mind when trying out changes is that it should be possible for someone who does not understand neural networks to write rules for a new language. This means that Coreferee should detect necessary differences in the neural network behaviour between languages automatically rather than requiring the trainer to configure them.
 
-3) There are almost certainly changes to the inputs and structure of the neural ensemble that would lead to improvements in accuracy, both cross-linguistically and for specific languages. The only caveat to bear in mind when trying out changes is that it should be possible for someone who does not understand neural networks to write rules for a new language. This means that Coreferee should detect necessary differences in the neural network behaviour between languages automatically rather than requiring the trainer to configure them.
-
-4) It would be useful if somebody could find a way of benchmarking Coreferee against other coreference resolution solutions, especially for English. One problem this would probably present is that using a benchmark necessitates a normative scope where a system aims to find exactly those types of coreference marked within the benchmark corpus, whereas the scope of Coreferee was determined by project requirements.
+3. It would be useful if somebody could find a way of benchmarking Coreferee against other coreference resolution solutions, especially for English. One problem this would probably present is that using a benchmark necessitates a normative scope where a system aims to find exactly those types of coreference marked within the benchmark corpus, whereas the scope of Coreferee was determined by project requirements.

@@ -8,12 +8,27 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         python_version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        spacy_version: ['3.3.0']
+        click_version: ['8.0.1']
+        include:
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+            spacy_version: '3.2.0'
+            click_version: '8.0.1'
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+            spacy_version: '3.1.0'
+            click_version: '7.1.2'
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+            spacy_version: '3.0.0'
+            click_version: '7.1.2'
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository code
       uses: actions/checkout@v3
       with:
-          ref: development
+          ref: master
 
     - name: Initialize Python
       uses: actions/setup-python@v3
@@ -23,16 +38,26 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install spacy pytest
+        pip install spacy==${{ matrix.spacy_version }} pytest
         
         # see https://github.com/explosion/spaCy/issues/10564
         pip uninstall click -y
-        pip install "click<8"
+        pip install "click==${{ matrix.click_version }}"
 
+    - name: Install spaCy models
+      run: |
+        python -m spacy download en_core_web_sm
+        python -m spacy download en_core_web_md
+        python -m spacy download en_core_web_lg
+        python -m spacy download en_core_web_trf
+        
+    - name: Install Coreferee
+      run: |
         cd ${{ github.workspace }}
         pip install .
-        spacy download de_core_news_sm
-        spacy download de_core_news_md
-        spacy download de_core_news_lg
-        python -m coreferee install de
-        pytest tests/de
+        python -m coreferee install en
+
+    - name: Test Coreferee
+      run: |
+        pytest tests/common
+        pytest tests/en

@@ -1,17 +1,3 @@
-# Copyright 2021 msg systems ag
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#   http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import unittest
 import spacy
 import coreferee
@@ -66,10 +52,13 @@ class CommonRulesTest(unittest.TestCase):
             [0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     def compare_get_dependent_sibling_info(self, doc_text, index, expected_dependent_siblings,
-        expected_governing_sibling, expected_has_or_coordination):
+        expected_governing_sibling, expected_has_or_coordination, *, excluded_nlps=[]):
 
         def func(nlp):
 
+
+            if nlp.meta['name'] in excluded_nlps:
+                return            
             doc = nlp(doc_text)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
@@ -122,7 +111,7 @@ class CommonRulesTest(unittest.TestCase):
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_and_and_or(self):
         self.compare_get_dependent_sibling_info(
             'There was a meeting with Carol or Ralf and Richard', 5,
-            '[Ralf, Richard]', None, True)
+            '[Ralf, Richard]', None, True, excluded_nlps=['core_web_sm'])
 
     def test_get_dependent_sibling_info_conjunction_itself(self):
         self.compare_get_dependent_sibling_info(
@@ -147,13 +136,13 @@ class CommonRulesTest(unittest.TestCase):
         self.all_nlps(func)
 
     def test_quote_array_simple(self):
-        self.compare_quote_array("He said 'Give it back'", 1, [0, 0, 0, 0])
-        self.compare_quote_array("He said 'Give it back'", 3, [1, 0, 0, 0])
+        self.compare_quote_array("He said ‘Give it back‘", 1, [0, 0, 0])
+        self.compare_quote_array("He said ‘Give it back‘", 3, [0, 0, 1])
 
     def test_quote_array_complex(self):
-        self.compare_quote_array("He said “Give it 'back'”", 1, [0, 0, 0, 0])
-        self.compare_quote_array("He said “Give it 'back'”", 3, [0, 0, 1, 0])
-        self.compare_quote_array("He said “Give it 'back'”", 6, [1, 0, 1, 0])
+        self.compare_quote_array("He said “Give it \"back\"”", 1, [0, 0, 0])
+        self.compare_quote_array("He said “Give it \"back\"”", 3, [0, 1, 0])
+        self.compare_quote_array("He said “Give it \"back\"”", 6, [1, 1, 0])
 
     def compare_potential_noun_pair(self, doc_text, referred_index, referring_index,
             expected_truth, *, excluded_nlps=[]):

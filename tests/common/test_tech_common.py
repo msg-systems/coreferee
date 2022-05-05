@@ -1,17 +1,3 @@
-# Copyright 2021 msg systems ag
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#   http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import unittest
 import os
 from multiprocessing import Process, Manager, Queue as m_Queue
@@ -19,6 +5,7 @@ from queue import Queue
 from threading import Thread
 import spacy
 from spacy.tokens import Doc
+from thinc.util import prefer_gpu, require_cpu
 from coreferee.test_utils import get_nlps
 
 NUMBER_OF_THREADS = 50
@@ -61,6 +48,45 @@ class CommonUtilsTest(unittest.TestCase):
         self.assertEqual(0, doc2._.coref_chains[0].most_specific_mention_index)
         self.assertEqual([doc2[0]], doc2._.coref_chains.resolve(doc2[3]))
 
+    def test_serialization_gpu_to_cpu(self):
+        prefer_gpu()
+        doc = self.sm_nlp('Peter told Paul he was dissatisfied.')
+        self.assertEqual('[0: [0], [3]]', str(doc._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[0]._.coref_chains))
+        self.assertEqual('[]', str(doc[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[3]._.coref_chains))
+        b = doc.to_bytes()
+        doc = None
+        require_cpu()
+        doc2 = Doc(self.sm_nlp.vocab).from_bytes(b)
+        self.assertEqual('[0: [0], [3]]', str(doc2._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[0]._.coref_chains))
+        self.assertEqual('[]', str(doc2[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[3]._.coref_chains))
+        self.assertEqual('0: Peter(0), he(3)', doc2[3]._.coref_chains.pretty_representation)
+        self.assertEqual(0, doc2._.coref_chains[0].most_specific_mention_index)
+        self.assertEqual([doc2[0]], doc2._.coref_chains.resolve(doc2[3]))
+
+    def test_serialization_cpu_to_gpu(self):
+        require_cpu()
+        doc = self.sm_nlp('Peter told Paul he was dissatisfied.')
+        self.assertEqual('[0: [0], [3]]', str(doc._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[0]._.coref_chains))
+        self.assertEqual('[]', str(doc[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc[3]._.coref_chains))
+        b = doc.to_bytes()
+        doc = None
+        prefer_gpu()
+        doc2 = Doc(self.sm_nlp.vocab).from_bytes(b)
+        self.assertEqual('[0: [0], [3]]', str(doc2._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[0]._.coref_chains))
+        self.assertEqual('[]', str(doc2[2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(doc2[3]._.coref_chains))
+        self.assertEqual('0: Peter(0), he(3)', doc2[3]._.coref_chains.pretty_representation)
+        self.assertEqual(0, doc2._.coref_chains[0].most_specific_mention_index)
+        self.assertEqual([doc2[0]], doc2._.coref_chains.resolve(doc2[3]))
+        require_cpu()
+
     def test_serialization_without_scoring(self):
         doc = self.sm_nlp('Peter said he was dissatisfied.')
         self.assertEqual('[0: [0], [2]]', str(doc._.coref_chains))
@@ -91,19 +117,18 @@ class CommonUtilsTest(unittest.TestCase):
         self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
 
     def test_processing_in_pipe_2_cpu(self):
-        if os.name == 'nt': # only works with spawning (not forking) at present
-            nlp = spacy.load('en_core_web_sm')
-            nlp.add_pipe('coreferee')
-            doc_texts = (['Peter told Paul he was dissatisfied.', 'Peter said he was dissatisfied'])
-            docs = list(nlp.pipe(doc_texts, n_process=2))
-            self.assertEqual('[0: [0], [3]]', str(docs[0]._.coref_chains))
-            self.assertEqual('[0: [0], [3]]', str(docs[0][0]._.coref_chains))
-            self.assertEqual('[]', str(docs[0][2]._.coref_chains))
-            self.assertEqual('[0: [0], [3]]', str(docs[0][3]._.coref_chains))
-            self.assertEqual('[0: [0], [2]]', str(docs[1]._.coref_chains))
-            self.assertEqual('[0: [0], [2]]', str(docs[1][0]._.coref_chains))
-            self.assertEqual('[]', str(docs[1][1]._.coref_chains))
-            self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
+        nlp = spacy.load('en_core_web_sm')
+        nlp.add_pipe('coreferee')
+        doc_texts = (['Peter told Paul he was dissatisfied.', 'Peter said he was dissatisfied'])
+        docs = list(nlp.pipe(doc_texts, n_process=2))
+        self.assertEqual('[0: [0], [3]]', str(docs[0]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(docs[0][0]._.coref_chains))
+        self.assertEqual('[]', str(docs[0][2]._.coref_chains))
+        self.assertEqual('[0: [0], [3]]', str(docs[0][3]._.coref_chains))
+        self.assertEqual('[0: [0], [2]]', str(docs[1]._.coref_chains))
+        self.assertEqual('[0: [0], [2]]', str(docs[1][0]._.coref_chains))
+        self.assertEqual('[]', str(docs[1][1]._.coref_chains))
+        self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
 
     def test_use_in_multithreading_context(self):
 
