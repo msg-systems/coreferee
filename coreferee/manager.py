@@ -22,7 +22,6 @@ from .errors import (
     OutdatedCorefereeModelError,
 )
 from .errors import VectorsModelNotInstalledError, VectorsModelHasWrongVersionError
-from .errors import MultiprocessingParsingNotSupportedError
 from .tendencies import create_thinc_model, ENSEMBLE_SIZE
 
 COMMON_MODELS_PACKAGE_NAMEPART = "coreferee_model_"
@@ -141,11 +140,6 @@ class CorefereeBroker:
         self.annotator = CorefereeManager().get_annotator(nlp)
 
     def __call__(self, doc: Doc) -> Doc:
-        if os.getpid() != self.pid:
-            msg = Printer()
-            error_msg = "Unfortunately at present Coreferee parsing cannot be shared between forked processes."
-            msg.fail(error_msg)
-            raise MultiprocessingParsingNotSupportedError(error_msg)
         try:
             self.annotator.annotate(doc)
         except:
