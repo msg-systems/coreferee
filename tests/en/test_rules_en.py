@@ -993,6 +993,7 @@ class EnglishRulesTest(unittest.TestCase):
             "Although he came in, someone saw Richard", 1, ["someone(5)", "Richard(7)"]
         )
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potential_referreds_cataphora_conjunction(self):
         self.compare_potential_referreds(
             "Although they came in, someone saw Peter and Jane",
