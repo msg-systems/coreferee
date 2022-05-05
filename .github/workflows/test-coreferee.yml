@@ -38,7 +38,7 @@ jobs:
         
         # see https://github.com/explosion/spaCy/issues/10564
         pip uninstall click -y
-        pip install "click<8"
+        pip install "click==8.0.1"
 
     - name: Install spaCy models
       run: |
