@@ -11,10 +11,9 @@ jobs:
         spacy_version: ['3.3.0']
         include:
           - os: 'ubuntu-latest'
-            python-version: '3.10'
             spacy_version: '3.2.0'
-          - os: 'ubuntu-latest'
             python-version: '3.10'
+          - os: 'ubuntu-latest'
             spacy_version: '3.1.0'
           - os: 'ubuntu-latest'
             python-version: '3.10'
@@ -42,10 +41,10 @@ jobs:
 
     - name: Install spaCy models
       run: |
-        spacy download en_core_web_sm
-        spacy download en_core_web_md
-        spacy download en_core_web_lg
-        spacy download en_core_web_trf
+        python -m spacy download en_core_web_sm
+        python -m spacy download en_core_web_md
+        python -m spacy download en_core_web_lg
+        python -m spacy download en_core_web_trf
         
     - name: Install Coreferee
       run: |
