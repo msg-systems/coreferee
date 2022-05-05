@@ -1059,7 +1059,7 @@ class PolishRulesTest(unittest.TestCase):
         self,
     ):
         self.compare_potential_pair(
-            "Dom i dom stoją. One powiedziały, wszystko dobrze", 0, True, 5, 2, 
+            "Dom i dom stoją. One powiedziały, wszystko dobrze", 0, True, 5, 1, 
             excluded_nlps=['core_news_md', 'core_news_sm']
         )
 
@@ -1068,7 +1068,7 @@ class PolishRulesTest(unittest.TestCase):
         self,
     ):
         self.compare_potential_pair(
-            "Dom z domem stoją. One powiedziały, wszystko dobrze", 0, True, 5, 2, 
+            "Dom z domem stoją. One powiedziały, wszystko dobrze", 0, True, 5, 1, 
             excluded_nlps=['core_news_md', 'core_news_sm']
         )
 
@@ -1468,12 +1468,12 @@ class PolishRulesTest(unittest.TestCase):
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potentially_introducing_with_ten_control(self):
         self.compare_potentially_introducing(
-            "On mieszka również z tym facetem", 5, False, excluded_nlps=['core_news_md', 'core_news_sm']
+            "On mieszka z tym kolegą", 4, False, excluded_nlps=['core_news_md', 'core_news_sm']
         )
 
     def test_potentially_introducing_with_ten_and_relative_clause(self):
         self.compare_potentially_introducing(
-            "On mieszka również z tym facetem, którego znasz", 5, True,
+            "On mieszka z tym kolegą, którego znasz", 4, True,
             excluded_nlps=["core_news_sm"]
         )
 

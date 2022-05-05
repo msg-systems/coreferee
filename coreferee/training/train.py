@@ -73,23 +73,25 @@ class TrainingManager:
                 )
             )
             if not os.path.isdir(this_model_dir) or not train_not_check:
-                self.relevant_config_entry_names.append(config_entry_name)
                 model_name = "_".join((lang, config_entry["model"]))
-                self.load_model(
+                if not self.load_model(
                     model_name,
                     config_entry_name,
                     config_entry["from_version"],
                     config_entry["to_version"],
-                )
+                ):
+                    print("Skipping config entry", config_entry_name, "as specified version range does not match.")
+                    continue
                 if "vectors_model" in config_entry:
                     vectors_model_name = "_".join((lang, config_entry["vectors_model"]))
                     self.load_model(
                         vectors_model_name,
                         config_entry_name,
-                        config_entry["vectors_from_version"],
-                        config_entry["vectors_to_version"],
+                        config_entry["from_version"],
+                        config_entry["to_version"],
                         is_vector_model=True,
                     )
+                self.relevant_config_entry_names.append(config_entry_name)
             else:
                 print("Skipping config entry", config_entry_name, "as model exists")
 
@@ -119,7 +121,7 @@ class TrainingManager:
         to_version,
         *,
         is_vector_model=False
-    ):
+    ) -> bool:
         if name not in self.nlp_dict:
             print("Loading model", name, "...")
             try:
@@ -147,24 +149,9 @@ class TrainingManager:
         if version.parse(nlp.meta["version"]) < version.parse(
             from_version
         ) or version.parse(nlp.meta["version"]) > version.parse(to_version):
-            if is_vector_model:
-                print(
-                    "Config entry",
-                    config_entry_name,
-                    "specifies a version range for vectors model",
-                    name,
-                    "that does not include the loaded version.",
-                )
-            else:
-                print(
-                    "Config entry",
-                    config_entry_name,
-                    "specifies a version range for model",
-                    name,
-                    "that does not include the loaded version.",
-                )
-            sys.exit(1)
+            return False
         self.nlp_dict[name] = nlp
+        return True
 
     def set_up_models_dir(self):
         os.mkdir(self.models_dirname)

@@ -204,7 +204,7 @@ class GermanRulesTest(unittest.TestCase):
     def test_pronoun_noun(self):
         self.compare_independent_noun(
             "Diejenigen der Jungen, die heimgekommen sind, waren müde",
-            [0, 2],
+            [2],
             excluded_nlps=["core_news_md", "core_news_sm"],
         )
 
@@ -694,7 +694,7 @@ class GermanRulesTest(unittest.TestCase):
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potential_pair_person_neut_3(self):
         self.compare_potential_pair(
-            "Ich sah ein Kind. Dann lächelte dieses und weinte", 3, False, 7, 2
+            "Ich sah ein Kind. Dann lächelte es und weinte", 3, False, 7, 2
         )
 
     def test_potential_pair_person_neut_control(self):

@@ -1,8 +1,13 @@
 import unittest
+from coreferee.errors import ModelNotSupportedError
 from coreferee.rules import RulesAnalyzerFactory
 from coreferee.test_utils import get_nlps
 from coreferee.data_model import Mention
 
+try:
+    nlps = get_nlps("fr")
+except ModelNotSupportedError:
+    raise unittest.SkipTest("Model version not supported.")
 
 class FrenchRulesTest(unittest.TestCase):
     def setUp(self):

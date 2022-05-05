@@ -56,7 +56,7 @@ class GermanSmokeTest(unittest.TestCase):
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_conjunction_different_pronouns(self):
         self.compare_annotations(
-            'Peter und das Mädchen haben gesprochen, und es und er jagten ein Katze', '[0: [0], [10], 1: [3], [8]]')
+            'Peter und das Mädchen haben gesprochen, und dieses und er jagten ein Katze', '[0: [0], [10], 1: [3], [8]]')
 
     def test_conjunction_involving_pronoun(self):
         self.compare_annotations(
