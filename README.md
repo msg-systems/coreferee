@@ -44,7 +44,7 @@ Coreferences are situations where two or more words within a text refer to the s
 
 Coreferee is a Python 3 library (tested with versions 3.6—3.10) that is used together with [spaCy](https://spacy.io/) (tested with versions 3.0.0—3.3.0) to resolve coreferences within English, French, German and Polish texts. It is designed so that it is easy to add support for new languages. It uses a mixture of neural networks and programmed rules.
 
-The library was originally developed at [msg systems](https://www.msg.group/en), but is now being maintained at [Explosion AI](https://explosion.ai).
+The library was originally developed at [msg systems](https://www.msg.group/en), but is now being maintained at [Explosion AI](https://explosion.ai). **Please direct any new issues or discussions to [the Explosion repository](https://github.com/explosion/coreferee).**
 
 <a id="getting-started"></a>
 
