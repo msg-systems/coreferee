@@ -30,9 +30,13 @@ class EnglishRulesTest(unittest.TestCase):
         expected_dependent_siblings,
         expected_governing_sibling,
         expected_has_or_coordination,
+        *,
+        excluded_nlps=[]
     ):
         def func(nlp):
 
+            if nlp.meta["name"] in excluded_nlps:
+                return
             doc = nlp(doc_text)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
@@ -142,6 +146,7 @@ class EnglishRulesTest(unittest.TestCase):
             "[Ralf, Richard]",
             None,
             True,
+            excluded_nlps=['core_web_sm']
         )
 
     def test_get_dependent_sibling_info_conjunction_itself(self):
@@ -599,7 +604,7 @@ class EnglishRulesTest(unittest.TestCase):
             2,
             True,
             True,
-            excluded_nlps=["core_web_sm"],
+            excluded_nlps=["core_web_sm", "core_web_md"],
         )
 
     def test_reflexive_in_right_situation_within_subordinate_clause_control(self):
@@ -611,7 +616,7 @@ class EnglishRulesTest(unittest.TestCase):
             1,
             False,
             True,
-            excluded_nlps=["core_web_sm"],
+            excluded_nlps=["core_web_sm", "core_web_md"],
         )
 
     def test_reflexive_with_conjuction(self):
@@ -676,18 +681,6 @@ class EnglishRulesTest(unittest.TestCase):
     def test_reflexive_with_to(self):
         self.compare_potential_reflexive_pair(
             "They wanted the boy to know himself", 3, False, 6, 2, True, 1
-        )
-
-    def test_reflexive_with_to_antecedent_within_noun_phrase(self):
-        self.compare_potential_reflexive_pair(
-            "They discussed the possibility of an individual to see themselves",
-            6,
-            False,
-            9,
-            2,
-            True,
-            True,
-            excluded_nlps=["core_web_sm", "core_web_md", "core_web_lg"],
         )
 
     def test_non_reflexive_in_wrong_situation_subordinate_clause(self):
@@ -1000,6 +993,7 @@ class EnglishRulesTest(unittest.TestCase):
             "Although he came in, someone saw Richard", 1, ["someone(5)", "Richard(7)"]
         )
 
+    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_potential_referreds_cataphora_conjunction(self):
         self.compare_potential_referreds(
             "Although they came in, someone saw Peter and Jane",

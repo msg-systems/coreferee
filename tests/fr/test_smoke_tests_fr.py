@@ -1,18 +1,23 @@
 import unittest
+from coreferee.errors import ModelNotSupportedError
 from coreferee.test_utils import get_nlps
 
-nlps = get_nlps('fr')
+try:
+    nlps = get_nlps("fr")
+except ModelNotSupportedError:
+    raise unittest.SkipTest("Model version not supported.")
+
 train_version_mismatch = False
+train_version_mismatch_message = "Loaded model version does not match train model version"
 for nlp in nlps:
     if not nlp.meta["matches_train_version"]:
         train_version_mismatch = True
-train_version_mismatch_message = "Loaded model version does not match train model version"
+
 
 class FrenchSmokeTest(unittest.TestCase):
 
     def setUp(self):
-
-        self.nlps = get_nlps('fr')
+        self.nlps = get_nlps("fr")
 
     def all_nlps(self, func):
         for nlp in self.nlps:

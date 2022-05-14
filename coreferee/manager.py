@@ -22,7 +22,6 @@ from .errors import (
     OutdatedCorefereeModelError,
 )
 from .errors import VectorsModelNotInstalledError, VectorsModelHasWrongVersionError
-from .errors import MultiprocessingParsingNotSupportedError
 from .tendencies import create_thinc_model, ENSEMBLE_SIZE
 
 COMMON_MODELS_PACKAGE_NAMEPART = "coreferee_model_"
@@ -86,9 +85,9 @@ class CorefereeManager:
                         msg.fail(error_msg)
                         raise VectorsModelNotInstalledError(error_msg)
                     if version.parse(vectors_nlp.meta["version"]) < version.parse(
-                        config_entry["vectors_from_version"]
+                        config_entry["from_version"]
                     ) or version.parse(vectors_nlp.meta["version"]) > version.parse(
-                        config_entry["vectors_to_version"]
+                        config_entry["to_version"]
                     ):
                         msg = Printer()
                         error_msg = "".join(
@@ -100,9 +99,9 @@ class CorefereeManager:
                                 "_",
                                 config_entry["vectors_model"],
                                 " between versions ",
-                                config_entry["vectors_from_version"],
+                                config_entry["from_version"],
                                 " and ",
-                                config_entry["vectors_to_version"],
+                                config_entry["to_version"],
                                 " inclusive.",
                             )
                         )
@@ -141,11 +140,6 @@ class CorefereeBroker:
         self.annotator = CorefereeManager().get_annotator(nlp)
 
     def __call__(self, doc: Doc) -> Doc:
-        if os.getpid() != self.pid:
-            msg = Printer()
-            error_msg = "Unfortunately at present Coreferee parsing cannot be shared between forked processes."
-            msg.fail(error_msg)
-            raise MultiprocessingParsingNotSupportedError(error_msg)
         try:
             self.annotator.annotate(doc)
         except:

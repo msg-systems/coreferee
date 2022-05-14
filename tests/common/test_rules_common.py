@@ -52,10 +52,13 @@ class CommonRulesTest(unittest.TestCase):
             [0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     def compare_get_dependent_sibling_info(self, doc_text, index, expected_dependent_siblings,
-        expected_governing_sibling, expected_has_or_coordination):
+        expected_governing_sibling, expected_has_or_coordination, *, excluded_nlps=[]):
 
         def func(nlp):
 
+
+            if nlp.meta['name'] in excluded_nlps:
+                return            
             doc = nlp(doc_text)
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
@@ -108,7 +111,7 @@ class CommonRulesTest(unittest.TestCase):
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_and_and_or(self):
         self.compare_get_dependent_sibling_info(
             'There was a meeting with Carol or Ralf and Richard', 5,
-            '[Ralf, Richard]', None, True)
+            '[Ralf, Richard]', None, True, excluded_nlps=['core_web_sm'])
 
     def test_get_dependent_sibling_info_conjunction_itself(self):
         self.compare_get_dependent_sibling_info(

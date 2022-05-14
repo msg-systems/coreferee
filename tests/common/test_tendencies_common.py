@@ -45,15 +45,27 @@ class CommonTendenciesTest(unittest.TestCase):
         feature_map = self.sm_tendencies_analyzer.get_feature_map(mention, doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
         self.assertEqual(mention.temp_feature_map, feature_map)
-        self.assertEqual(
-            [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        else:
+            self.fail("Unsupported version.")
 
         feature_map = self.sm_tendencies_analyzer.get_feature_map(Mention(doc[2], False), doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
-        self.assertEqual(
-            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':
+            self.assertEqual(
+                [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                feature_map)
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_feature_map_simple_token(self):
@@ -63,15 +75,27 @@ class CommonTendenciesTest(unittest.TestCase):
         feature_map = self.sm_tendencies_analyzer.get_feature_map(doc[0], doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
         self.assertEqual(doc[0]._.coref_chains.temp_feature_map, feature_map)
-        self.assertEqual(
-            [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        else:
+            self.fail("Unsupported version.")
 
         feature_map = self.sm_tendencies_analyzer.get_feature_map(doc[2], doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
-        self.assertEqual(
-            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':
+            self.assertEqual(
+                [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                feature_map)
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_feature_map_conjunction(self):
@@ -80,21 +104,39 @@ class CommonTendenciesTest(unittest.TestCase):
         self.sm_rules_analyzer.initialize(doc)
         feature_map = self.sm_tendencies_analyzer.get_feature_map(Mention(doc[0], False), doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
-        self.assertEqual(
-            [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':            
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        else:
+            self.fail("Unsupported version")
+
 
         feature_map = self.sm_tendencies_analyzer.get_feature_map(Mention(doc[0], True), doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
-        self.assertEqual(
-            [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':            
+            self.assertEqual(
+                [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+                feature_map)
 
         feature_map = self.sm_tendencies_analyzer.get_feature_map(Mention(doc[5], False), doc)
         self.assertEqual(len(self.sm_feature_table), len(feature_map))
-        self.assertEqual(
-            [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-            feature_map)
+        if nlp.meta['version'] == '3.2.0':            
+            self.assertEqual(
+                [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                feature_map)
+        elif nlp.meta['version'] == '3.3.0':            
+            self.assertEqual(
+                [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                feature_map)
 
     def test_get_position_map_first_sentence_token(self):
 
@@ -228,48 +270,87 @@ class CommonTendenciesTest(unittest.TestCase):
 
         doc = self.sm_nlp('Richard said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.compare_compatibility_map([2, 0, 1, 0.29702997, 3],
-            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
+        if nlp.meta['version'] == '3.2.0':            
+            self.compare_compatibility_map([2, 0, 1, 0.29702997, 3],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
+        elif nlp.meta['version'] == '3.3.0':            
+            self.compare_compatibility_map([2, 0, 1, 0.34484535, 3],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[2]))
+        else:
+            self.fail("Unsupported version")
+
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_coordination(self):
 
         doc = self.sm_nlp('Richard and Jane said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.compare_compatibility_map([4, 0, 1, 0.28721756, 3],
-            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4]))
+        if nlp.meta['version'] == '3.2.0':            
+            self.compare_compatibility_map([4, 0, 1, 0.28721756, 3],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4]))
+        elif nlp.meta['version'] == '3.3.0':            
+            self.compare_compatibility_map([4, 0, 1, 0.37224450, 3],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], True), doc[4]))
+        else:
+            self.fail("Unsupported version")
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_different_sentences(self):
 
         doc = self.sm_nlp('Richard called. He said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.compare_compatibility_map([3, 1, 0, 0.47986302, 6],
-            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
+        if nlp.meta['version'] == '3.2.0':            
+            self.compare_compatibility_map([3, 1, 0, 0.47986302, 6],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
+        elif nlp.meta['version'] == '3.3.0':            
+            self.compare_compatibility_map([3, 1, 0, 0.42599782, 6],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[3]))
+        else:
+            self.fail("Unsupported version")
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_same_sentence_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, he said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.compare_compatibility_map([4, 0, 0, -0.02203778, 5],
-            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
+        
+        if nlp.meta['version'] == '3.2.0':            
+            self.compare_compatibility_map([4, 0, 0, -0.02203778, 5],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
+        elif nlp.meta['version'] == '3.3.0':            
+            self.compare_compatibility_map([4, 0, 0, -0.00317071, 5],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
+        else:
+            self.fail("Unsupported version")
+
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_same_sentence_lefthand_sibling_governance(self):
 
         doc = self.lg_nlp('Richard said Peter and he were entering the big house')
         self.lg_rules_analyzer.initialize(doc)
-        self.compare_compatibility_map([4, 0, 1, 0.15999001, 3],
-            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
+        if self.lg_nlp.meta['version'] == '3.2.0':            
+            self.compare_compatibility_map([4, 0, 1, 0.15999001, 3],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
+        elif self.lg_nlp.meta['version'] == '3.3.0':            
+            self.compare_compatibility_map([4, 1, 0, 0.15999001, 4],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[0], False), doc[4]))
+        else:
+            self.fail("Unsupported version.")
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_compatibility_map_same_sentence_lefthand_sibling_no_governance(self):
 
         doc = self.sm_nlp('After Richard arrived, Peter and he said he was entering the big house')
         self.sm_rules_analyzer.initialize(doc)
-        self.compare_compatibility_map([5, 0, 0, 0.29553932, 6],
-            self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6]))
+        if self.sm_nlp.meta['version'] == '3.2.0':            
+            self.compare_compatibility_map([5, 0, 0, 0.29553932, 6],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6]))
+        elif self.sm_nlp.meta['version'] == '3.3.0':            
+            self.compare_compatibility_map([5, 0, 0, 0.40949851, 6],
+                self.sm_tendencies_analyzer.get_compatibility_map(Mention(doc[1], False), doc[6]))
+        else:
+            self.fail("Unsupported version.")
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_get_cosine_similarity_lg(self):

@@ -1,4 +1,3 @@
-from curses.ascii import alt
 import unittest
 from coreferee.test_utils import get_nlps
 
@@ -50,7 +49,7 @@ class PolishSmokeTest(unittest.TestCase):
 
     def test_simple_pronoun_plural(self):
         self.compare_annotations(
-            "Widziałem psy i one polowały na kota", "[0: [1], [3]]"
+            "Widziałem psy, i one polowały na kota", "[0: [1], [4]]"
         )
 
     def test_simple_verb_conjunction_same_word(self):

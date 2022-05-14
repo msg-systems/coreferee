@@ -116,7 +116,6 @@ class CommonUtilsTest(unittest.TestCase):
         self.assertEqual('[]', str(docs[1][1]._.coref_chains))
         self.assertEqual('[0: [0], [2]]', str(docs[1][2]._.coref_chains))
 
-    @unittest.skipIf(os.name != 'nt', 'only works with spawning (not forking) at present')
     def test_processing_in_pipe_2_cpu(self):
         nlp = spacy.load('en_core_web_sm')
         nlp.add_pipe('coreferee')

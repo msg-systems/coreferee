@@ -23,9 +23,5 @@ class VectorsModelHasWrongVersionError(CorefereeError):
     pass
 
 
-class MultiprocessingParsingNotSupportedError(CorefereeError):
-    pass
-
-
 class OutdatedCorefereeModelError(CorefereeError):
     pass
