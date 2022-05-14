@@ -228,7 +228,14 @@ class FrenchRulesTest(unittest.TestCase):
     def test_noun_without_det(self):
         self.compare_independent_noun(
             "Il a répondu de nouveau à côté. Il apprend par coeur le poème en entier.",
-             []
+             [13]
+             )
+
+    def test_noun_without_det_control(self):
+        self.compare_independent_noun(
+            "Poèmes. Ils déchainent les passions.",
+             [0, 5],
+             excluded_nlps=["core_news_sm"]
              )
 
     def compare_potential_anaphor(
@@ -1863,13 +1870,22 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_copula_propn_control(self):
         self.compare_potential_noun_pair(
-            "Le contrôleur des finances est au cinéma.",
+            "Le garçon est au cinéma.",
             1,
-            6,
+            4,
             False,
             excluded_nlps=[],
         )
-                
+
+    def test_potential_pair_copula_propn_control_2(self):
+        self.compare_potential_noun_pair(
+            "Le garçon est le cinéma.",
+            1,
+            4,
+            True,
+            excluded_nlps=[],
+        )               
+
     def test_potential_noun_pair_same_number(self):
         self.compare_potential_noun_pair(
             "Nicolas Sarkozy venait d'arriver. Le président portait un costume.",
@@ -2035,10 +2051,23 @@ class FrenchRulesTest(unittest.TestCase):
         )
 
     def test_potential_noun_pair_propn_appos_head(self):
-        test_text = "Vendredi dernier, 106 patients attendaient sur des civières, alors que la capacité d'accueil est de 32, selon Caroline , infirmière depuis quelques années à l'hôpital de Saint-Eustache, dans les Laurentides. La jeune femme souhaite elle aussi témoigner sous le couvert de l'anonymat, par peur de représailles de son employeur."
+        test_text = (
+            "Vendredi dernier, 106 patients attendaient sur des civières" +
+            ", alors que la capacité d'accueil est de 32, selon Caroline ," +
+            " infirmière depuis quelques années à l'hôpital de Saint-Eustache, dans les Laurentides." +
+            "La jeune femme souhaite elle aussi témoigner sous le couvert de l'anonymat, par peur de représailles de son employeur."
+        )
         self.compare_potential_noun_pair(
             test_text,
             21,
             39,
             True,
         )
+    def test_potential_noun_pair_noun_sentence(self):
+        self.compare_potential_noun_pair(
+            "Poèmes. Les poèmes déchainent les passions.",
+             0, 
+             3,
+             True,
+             )
+             
