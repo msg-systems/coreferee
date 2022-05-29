@@ -1,5 +1,6 @@
-# Copyright (C) 2021 Valentin-Gabriel Soumah, 2021 msg systems ag, 
+# Copyright (C) 2021 msg systems ag,
 # 2021-2022 ExplosionAI GmbH
+# 2021-2022 Valentin-Gabriel Soumah
 
 from typing import List, Set, Tuple, Optional, cast
 from spacy.tokens import Token
@@ -205,16 +206,33 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             )
         ):
             # Une des filles, certains des garçons...
-            pass
-        elif self.is_quelqun_head(token):
-            pass
-        elif (
+            return True
+        if self.is_quelqun_head(token):
+            return True
+        # now that we have dealt with all exceptions/mistagging we specify regular cases
+        if (
             token.pos_ not in self.noun_pos + ("ADJ", "PRON")
             or token.dep_ in ("fixed", "flat:name", "flat:foreign", "amod")
             or (token.pos_ in ("ADJ", "PRON") and not self.has_det(token))
         ):
+            # Only nouns without det or adjective nouns
             return False
-        elif (
+        if (
+            token.pos_ != "PROPN" and not self.has_det(token)
+            and token.dep_ not in ("ROOT", "appos")
+            and not(
+                any(
+                    child.dep_ == "amod" and self.has_det(child) 
+                    for child in token.children
+                    )
+            )
+        ):
+            return False
+        if  self.is_token_in_one_of_phrases(
+            token, self.blacklisted_phrases  # type:ignore[attr-defined]
+        ):
+            return False
+        if (
             token.lemma_ == "dernier"
             and any(
                 self.has_morph(child, "PronType", "Dem") for child in token.children
@@ -235,14 +253,11 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             and token.lemma_ in self.blacklisted_nouns  # type:ignore[attr-defined]
         ):
             return False
-        return not self.is_token_in_one_of_phrases(
-            token, self.blacklisted_phrases  # type:ignore[attr-defined]
-        )
+        return True
 
     def is_potential_anaphor(self, token: Token) -> bool:
         if not self.french_word.match(token.text):
             return False
-        # Ce dernier, cette dernière...
         if (
             token.lemma_ == "dernier"
             and any(
@@ -250,6 +265,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             )
             and token.dep_ not in ("amod", "appos")
         ):
+            # Ce dernier, cette dernière..
             return True
         if self.is_emphatic_reflexive_anaphor(token):
             return True
@@ -265,12 +281,17 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             return True
         if (
-            token.pos_ == "DET" 
+            token.pos_ == "DET"
             and token.dep_ == "obj"
             and token.i < len(token.doc) - 1
             and token.head.i == token.i + 1
         ):
-        # Covers cases of clitic pronouns wrongly tagged as DET
+            # Covers cases of clitic pronouns wrongly tagged as DET
+            return True
+        if (
+            token.dep_ == "case" and token.lemma_ in ["en", "y"]
+            and token.head.pos_ == "VERB"
+        ):
             return True
         if not (
             (
@@ -283,6 +304,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             or (token.pos_ == "ADV" and token.lemma_ in {"ici", "là"})
             or (token.pos_ == "DET" and self.has_morph(token, "Poss", "Yes"))
         ):
+            # anaphors are either third person pronouns or pro adv or possessive
             return False
         if (
             token.pos_ == "DET"
@@ -393,7 +415,10 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         return False
 
     def has_det(self, token: Token) -> bool:
-        return any(det for det in token.children if det.dep_ == "det")
+        for child in token.children:
+            if child.dep_ =="det" or self.has_morph(child, "PronType", "Art"):
+                return True
+        return False
 
     def get_gender_number_info(
         self, token: Token, directly=False, det_infos=False
@@ -607,11 +632,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 return 0
 
         if not ((referred_masc and referring_masc) or (referred_fem and referring_fem)):
+            # gender compatibility
             return 0
 
         if not (
             (referred_plur and referring_plur) or (referred_sing and referring_sing)
         ):
+            # number compatibility
             return 0
 
         #'ici , là... cannot refer to person. only loc and  possibly orgs
@@ -745,6 +772,17 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 # * Les hommes étaient sûrs qu'ils se trompaient. "se" can't directly refer to "hommes"
                 return 0
 
+            if (referred_root == referring.head.head
+                and referring.head.pos_ == "VERB"
+                and self.has_morph(referring.head, "VerbForm", "Fin")
+                and self.is_reflexive_anaphor(referring) == 0
+                and referring.head.dep_ in ["acl:relcl"]
+                and referring.dep_ in ["obj", "nsubj", "nsubj:pass"]
+            ):
+                # L'homme qu'il voyait . "il" can't refer to "hommes"
+                # Covers other cases of pairs inside same predication
+                return 0
+
         if self.refers_to_person(referring) and not self.refers_to_person(
             referred_root
         ):
@@ -765,10 +803,11 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             and referring_governing_sibling.head.lemma_
             in self.verbs_with_personal_subject  # type:ignore[attr-defined]
         ):
+            # if referring is a person, referred should be as well
             for working_token in (doc[index] for index in referred.token_indexes):
                 if self.refers_to_person(working_token):
                     return 2
-            if referred_root.pos == "NOUN":
+            if referred_root.pos_ == "NOUN":
                 uncertain = True
 
         return 1 if uncertain else 2
