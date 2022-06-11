@@ -423,28 +423,34 @@ class ConllLoader(GenericLoader):
             split_conll_lines = [
                 l.split() for l in conll_file.readlines() if len(l.split()) > 10
             ]
-        part_ids = sorted(list({l[1] for l in split_conll_lines}))
+        part_ids = sorted({tuple(l[:2]) for l in split_conll_lines}, key=lambda k: (k[0], k[1]))
         docs = []
         for part_id in part_ids:
+            print(part_id)
             this_part_split_conll_lines = [
-                l for l in split_conll_lines if l[1] == part_id
+                l for l in split_conll_lines if tuple(l[:2]) == part_id
             ]
-            if nlp.meta["lang"] in ("fr"):
-                # Tokens ending an apostrophes have to be merged with following tokens in French,
+            if nlp.meta["lang"] in ("fr",):
+                # Tokens ending with apostrophes have to be merged with following tokens in French,
                 # otherwise parsing errors will result
                 corrected_this_part_split_conll_lines: List[List[str]] = []
                 index = 0
                 while index < len(this_part_split_conll_lines):
-                    conll_token = this_part_split_conll_lines[index][3].lstrip("/")
+                    conll_token = this_part_split_conll_lines[index][3]
+                    if conll_token != "/":
+                        conll_token = conll_token.lstrip("/")
                     if (
                         index + 1 < len(this_part_split_conll_lines)
                         and len(conll_token) > 0
                         and len(this_part_split_conll_lines[index + 1][3]) > 0
-                        and conll_token[-1] in ("'")
+                        and conll_token[-1] in ("'",)
                     ):
+                        next_split_conll_line = this_part_split_conll_lines[index + 1][3]
+                        if next_split_conll_line != "/":
+                            next_split_conll_line = next_split_conll_line.lstrip("/")
                         this_part_split_conll_lines[index][
                             3
-                        ] += this_part_split_conll_lines[index + 1][3].lstrip("/")
+                        ] += next_split_conll_line
                         if this_part_split_conll_lines[index + 1][-1] not in ("-", "_"):
                             if this_part_split_conll_lines[index][-1] not in ("-", "_"):
                                 this_part_split_conll_lines[index][-1] += (
@@ -501,19 +507,44 @@ class ConllLoader(GenericLoader):
                 for chain_marker in chain_markers.split("|"):
                     chain_index = "".join([d for d in chain_marker if d.isdigit()])
                     if "(" in chain_marker:
-                        working_spans[chain_index] = conll_to_spacy_lookup[
-                            conll_token_index
-                        ][0]
+                        spacy_token_index_list = conll_to_spacy_lookup[
+                                conll_token_index
+                        ]
+                        if not spacy_token_index_list:
+                            for u in conll_to_spacy_lookup:
+                                print([(doc[v], v) for v in u])
+                        spacy_token_index = spacy_token_index_list[0]
+
+                        if chain_index in working_spans:
+                            working_spans[chain_index].append(spacy_token_index)
+                        else:
+                            working_spans[chain_index] = [spacy_token_index]
                     if (
-                        ")" in chain_marker and chain_index in working_spans
+                        ')' in chain_marker and  '(' not in chain_marker and 
+                        (chain_index not in working_spans or not working_spans[chain_index])
+                        ):
+                        print("Warning : faulty coreference annotation in Conll. Unopened mention", chain_index)
+                    if (
+                        ")" in chain_marker and chain_index in working_spans and working_spans[chain_index]
                     ):  # sometimes errors in OntoNotes -> not the case
+                        last_ = working_spans[chain_index][-1]
+                        v = conll_to_spacy_lookup[
+                                conll_token_index]
+                        w = conll_to_spacy_lookup[
+                                conll_token_index
+                            ][-1]
+                        #print(v, conll_token_index,w, working_spans)
+                        #print(conll_to_spacy_lookup)
+
                         this_span = doc[
-                            working_spans[chain_index] : conll_to_spacy_lookup[
+                            working_spans[chain_index].pop(-1) : conll_to_spacy_lookup[
                                 conll_token_index
                             ][-1]
                             + 1
                         ]
-                        del working_spans[chain_index]
+                        #print("this span", this_span)
+                        if not working_spans[chain_index]:
+                            del working_spans[chain_index]
                         if rules_analyzer.is_independent_noun(
                             this_span.root
                         ) or rules_analyzer.is_potential_anaphor(this_span.root):
@@ -521,6 +552,9 @@ class ConllLoader(GenericLoader):
                                 chains[chain_index].append(this_span)
                             else:
                                 chains[chain_index] = [this_span]
+                    
+            if working_spans:
+                print("Warning : faulty coreference annotation in Conll. Unclosed mentions :", working_spans)
             for chain in (c for c in chains.values() if len(c) > 1):
                 chain.sort(key=lambda span: span[0])  # type: ignore[arg-type, return-value]
                 for span_index, span in enumerate(chain):
@@ -583,3 +617,4 @@ class ConllLoader(GenericLoader):
                 docs.extend(self.load_file(conll_filename, nlp, rules_analyzer))
             print()
         return docs
+# python -m coreferee train --lang fr --loader ConllLoader --data ..\..\..\corpus\dem1921\train_dev\ --log logs

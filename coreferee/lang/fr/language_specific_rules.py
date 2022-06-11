@@ -1,6 +1,5 @@
-# Copyright (C) 2021 msg systems ag,
+# Copyright (C) 2021 Valentin-Gabriel Soumah, 2021 msg systems ag,
 # 2021-2022 ExplosionAI GmbH
-# 2021-2022 Valentin-Gabriel Soumah
 
 from typing import List, Set, Tuple, Optional, cast
 from spacy.tokens import Token
