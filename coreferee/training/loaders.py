@@ -470,7 +470,7 @@ class ConllLoader(GenericLoader):
                         )
                         index += 1
                 this_part_split_conll_lines = corrected_this_part_split_conll_lines
-            conll_tokens = [l[3].lstrip("/") for l in this_part_split_conll_lines]
+            conll_tokens = [l[3].lstrip("/") if l[3] != "/" else l[3] for l in this_part_split_conll_lines]
             doc = nlp(" ".join(conll_tokens))
             rules_analyzer.initialize(doc)
             conll_to_spacy_lookup = (
@@ -510,9 +510,6 @@ class ConllLoader(GenericLoader):
                         spacy_token_index_list = conll_to_spacy_lookup[
                                 conll_token_index
                         ]
-                        if not spacy_token_index_list:
-                            for u in conll_to_spacy_lookup:
-                                print([(doc[v], v) for v in u])
                         spacy_token_index = spacy_token_index_list[0]
 
                         if chain_index in working_spans:
@@ -527,15 +524,6 @@ class ConllLoader(GenericLoader):
                     if (
                         ")" in chain_marker and chain_index in working_spans and working_spans[chain_index]
                     ):  # sometimes errors in OntoNotes -> not the case
-                        last_ = working_spans[chain_index][-1]
-                        v = conll_to_spacy_lookup[
-                                conll_token_index]
-                        w = conll_to_spacy_lookup[
-                                conll_token_index
-                            ][-1]
-                        #print(v, conll_token_index,w, working_spans)
-                        #print(conll_to_spacy_lookup)
-
                         this_span = doc[
                             working_spans[chain_index].pop(-1) : conll_to_spacy_lookup[
                                 conll_token_index
