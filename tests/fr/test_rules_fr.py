@@ -238,6 +238,19 @@ class FrenchRulesTest(unittest.TestCase):
              [0, 5],
              excluded_nlps=["core_news_sm"]
              )
+    def test_noun_titles(self):
+        self.compare_independent_noun(
+            "Monsieur et Madame sont arrivés. Maitre Jugnot accompagne Mademoiselle Perrat et Docteur Noreau",
+             [0, 2, 6, 9, 12],
+             excluded_nlps=["core_news_sm"]
+             )      
+
+    def test_noun_titles_abbrv(self):
+        self.compare_independent_noun(
+            "M. et Mme sont arrivés. Me Jugnot accompagne Mlle Perrat et dr Noreau",
+             [0, 2, 6, 9, 12],
+             excluded_nlps=["core_news_sm"]
+             )      
 
     def compare_potential_anaphor(
         self, doc_text, expected_per_indexes, *, excluded_nlps=[]
@@ -727,12 +740,12 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_apposition_2(self):
         self.compare_potential_pair(
-            "Alexandre, roi de Macédoine devient empereur. Il meurt à 33 ans.",
+            "Napoléon, empereur des Français est couronné en 1804. Il meurt en 1821",
             2,
             True,
-            8,
+            10,
             2,
-            excluded_nlps=["core_news_md", "core_news_sm"],
+            excluded_nlps=["core_news_sm"],
         )
 
     def test_potential_pair_male_name(self):
@@ -1859,6 +1872,7 @@ class FrenchRulesTest(unittest.TestCase):
             0,
             16,
             True,
+            excluded_nlps=["core_news_sm"]
         )
 
     def test_potential_pair_copula_propn_first(self):
