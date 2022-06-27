@@ -115,6 +115,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         "madame",
         "mesdames",
         "mlle",
+        "melle",
         "mlles",
         "mademoiselle",
         "mesdemoiselles",
@@ -128,7 +129,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         "professeur",
         "pr",
         "professeurs",
-        "prs" "maitre",
+        "prs",
+        "maitre",
         "maître",
         "me",
         "ministre",
@@ -186,7 +188,14 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
     def is_independent_noun(self, token: Token) -> bool:
         if not self.french_word.match(token.text):
             return False
+        if (
+            token.lemma_.lower() in self.person_titles and
+            token.pos_ in self.noun_pos
+        ):
+            # dr Jugnot ...
+            return True
         if token.pos_ == "PROPN" and re.match("[^A-ZÂÊÎÔÛÄËÏÖÜÀÆÇÉÈŒÙ]", token.lemma_):
+            # mistagged propns
             return False
         if (
             token.lemma_ in {"un", "certains", "certain"}
@@ -208,6 +217,14 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return True
         if self.is_quelqun_head(token):
             return True
+        if (
+            token.head.lemma_.lower() in self.person_titles and
+            token.dep_ == "nmod" and
+            token.pos_ == "PROPN"
+        ):
+            # Docteur Jugnot ...
+            return False
+
         # now that we have dealt with all exceptions/mistagging we specify regular cases
         if (
             token.pos_ not in self.noun_pos + ("ADJ", "PRON")
@@ -289,7 +306,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             return True
         if (
             token.dep_ == "case" and token.lemma_ in ["en", "y"]
-            and token.head.pos_ == "VERB"
+            and (token.head.pos_ == "VERB" or token.head.head.pos_ == 'PRON')
         ):
             return True
         if not (
@@ -354,7 +371,17 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         ):
             return False
 
+        if (
+            token.dep_ in ("nsubj", "nsubj:pass")
+            and token.head.lemma_ in ("falloir", "valoir")
+            ):
+            return False
         # impersonal constructions
+        if token.dep_ == "expl:subj" and any(
+            c for c in token.head.children
+            if c.dep_ in ("cop", 'aux:tense')
+        ):
+            return True
         if (
             token.dep_ in {"expl:comp", "expl:pass", "expl:subj"}
             and token.lemma_ not in {"en"}
@@ -888,7 +915,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if referring._.coref_chains.temp_governing_sibling is not None:
             referring = referring._.coref_chains.temp_governing_sibling
 
-        if referred_root.dep_ in ("nsubj", "nsubj:pass") and not any(
+        if referred_root.dep_ in ("nsubj", "nsubj:pass", "expl:subj") and not any(
             selon
             for selon in referring.children
             if selon.lemma_ == "selon" and selon.dep_ == "case"
@@ -915,7 +942,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
                 subjects = [
                     t
                     for t in referring_ancestor.children
-                    if t.dep_ in ("nsubj", "nsubj:pass")
+                    if t.dep_ in ("nsubj", "nsubj:pass", "expl:subj")
                 ]
                 if any(subjects) and referred_root not in subjects:
                     return False
@@ -956,7 +983,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         # is conjunction between verbs
         for ancestor in referred_root.ancestors:
             if ancestor.pos_ in self.clause_root_pos or any(
-                child for child in ancestor.children if child.dep_ == "cop"
+                child for child in ancestor.children if child.dep_ in ["cop","aux:tense"]
             ):
                 referred_verb_ancestors.append(ancestor)
             if ancestor.dep_ in self.dependent_sibling_deps:
@@ -964,8 +991,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
 
         # Loop through the ancestors of the referring pronoun that are verbs,  that are not
         # within the first list and that have an adverbial clause dependency label
-        referring_inclusive_ancestors = [referring]
-        referring_inclusive_ancestors.extend(referring.ancestors)
+        referring_inclusive_ancestors = [referring] + list(referring.ancestors)
         if (
             len(
                 [
@@ -977,13 +1003,13 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             == 0
         ):
             return False
-        for referring_verb_ancestor in (
-            t
-            for t in referring_inclusive_ancestors
-            if t not in referred_verb_ancestors
-            and t.dep_ in self.adverbial_clause_deps
-            and t.pos_ in self.clause_root_pos + self.noun_pos + ("ADJ",)
-        ):
+        for referring_verb_ancestor in referring_inclusive_ancestors:
+            if (
+                referring_verb_ancestor in referred_verb_ancestors or
+                referring_verb_ancestor.dep_ not in self.adverbial_clause_deps or
+                referring_verb_ancestor.pos_ not in self.clause_root_pos + self.noun_pos + ("ADJ",)
+            ):
+                continue
             # If one of the elements of the second list has one of the elements of the first list
             # within its ancestors, we have subordination and cataphora is permissible
             if (
@@ -1225,7 +1251,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             ):
                 return True
         # Other cases of apposition
-        if referring not in referred._.coref_chains.temp_dependent_siblings:
+        if referring not in referred._.coref_chains.temp_dependent_siblings and 0:
             referred_right_in_subtree = list(referred.subtree)[-1]
             referring_left_in_subtree = list(referring.subtree)[0]
             if (
@@ -1264,7 +1290,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         already returned *True* for both *referred* and *referring* and that
         *referred* precedes *referring* within the document.
         """
-        if len(referred.text) == 1 and len(referring.text) == 1:
+        if len(referred.text) == 1 or len(referring.text) == 1:
             return False  # get rid of copyright signs etc.
 
         if (referred.pos_ not in self.noun_pos and not self.has_det(referred)) or (
