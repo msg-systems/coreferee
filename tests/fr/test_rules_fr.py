@@ -91,7 +91,7 @@ class FrenchRulesTest(unittest.TestCase):
         self,
     ):
         self.compare_get_dependent_sibling_info(
-            "Carol, Richard et Ralf ont mangé un buffet",
+            "Carole, Richard et Ralf ont mangé un buffet",
             0,
             "[Richard, Ralf]",
             None,
@@ -103,7 +103,7 @@ class FrenchRulesTest(unittest.TestCase):
         self,
     ):
         self.compare_get_dependent_sibling_info(
-            "Carol, Richard ou Ralf mangeaient un buffet",
+            "Carole, Richard ou Ralf mangeaient un buffet",
             0,
             "[Richard, Ralf]",
             None,
@@ -113,7 +113,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_and(self):
         self.compare_get_dependent_sibling_info(
-            "Il y avait une réunion avec Carol et Ralf et Richard",
+            "Il y avait une réunion avec Carole et Ralf et Richard",
             6,
             "[Ralf, Richard]",
             None,
@@ -122,7 +122,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_get_dependent_sibling_info_three_member_conjunction_phrase_with_or(self):
         self.compare_get_dependent_sibling_info(
-            "Une réunion avec Carol ou Ralf ou Richard avait lieu",
+            "Une réunion avec Carole ou Ralf ou Richard avait lieu",
             3,
             "[Ralf, Richard]",
             None,
@@ -133,7 +133,7 @@ class FrenchRulesTest(unittest.TestCase):
         self,
     ):
         self.compare_get_dependent_sibling_info(
-            "Il y avait une réunion avec Carol ou Ralf et Richard",
+            "Il y avait une réunion avec Carole ou Ralf et Richard",
             6,
             "[Ralf, Richard]",
             None,
@@ -142,12 +142,12 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_get_dependent_sibling_info_conjunction_itself(self):
         self.compare_get_dependent_sibling_info(
-            "Il y avait une réunion avec Carol et Ralf et Richard", 7, "[]", None, False
+            "Il y avait une réunion avec Carole et Ralf et Richard", 7, "[]", None, False
         )
 
     def test_get_dependent_sibling_info_dependent_sibling(self):
         self.compare_get_dependent_sibling_info(
-            "Il y avait une réunion avec Carol et Ralf et Richard", 8, "[]", 6, False
+            "Il y avait une réunion avec Carole et Ralf et Richard", 8, "[]", 6, False
         )
 
     def compare_independent_noun(
@@ -247,7 +247,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_noun_titles_abbrv(self):
         self.compare_independent_noun(
-            "M. et Mme sont arrivés. Me Jugnot accompagne Mlle Perrat et dr Noreau",
+            "M. et Mme sont arrivés. Me Jugnot accompagne Mlle Perrat et Dr Noreau",
              [0, 2, 6, 9, 12],
              excluded_nlps=["core_news_sm"]
              )      
@@ -274,7 +274,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_first_and_second_person_pronouns(self):
         self.compare_potential_anaphor(
-            "Je sais que tu le connais",
+            "Je sais que tu le connaîs",
             [4],
             excluded_nlps=["core_news_md", "core_news_sm"],
         )
@@ -309,8 +309,8 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_explicit_anaphor(self):
         self.compare_potential_anaphor(
-            "Ce dernier vient de rejoindre Camille. Cette dernière est en retard",
-            [1, 8],
+            "Ce dernier a rejoint Camille. Cette dernière est en retard",
+            [1, 7],
             excluded_nlps=["core_news_sm"],
         )
 
@@ -325,12 +325,12 @@ class FrenchRulesTest(unittest.TestCase):
         self.compare_potential_anaphor(
             "Il pleuvait. Il faisait très beau. Il a fait froid. Il fit chaud. Il avait fait frais.",
             [],
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_pleonastic_il_2(self):
         self.compare_potential_anaphor(
-            "Il faut bien manger. Il vaut mieux y aller. Il y a deux fleurs. ",
+            "Il faut bien manger. Il vaut mieux y aller. Il y a deux fleurs.",
             [8],
             excluded_nlps=["core_news_md"],
         )
@@ -344,7 +344,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_pleonastic_il_4(self):
         self.compare_potential_anaphor(
-            "Il est vrai que ce jeu est dur. Il en existe trois sortes. Il manque deux pièces.",
+            "Il est vrai que ce jeu est dur. Il en existe trois sortes. Il en manque.",
             [10],
             excluded_nlps=["core_news_sm", "core_news_md"],
         )
@@ -832,7 +832,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_dislocation_right_anaphor(self):
         self.compare_potential_pair(
-            "La valise, elle est bleue",
+            "La valise, elle est petite",
             1,
             False,
             3,
@@ -1279,7 +1279,8 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_non_reflexive_in_wrong_situation_same_sentence(self):
         self.compare_potential_reflexive_pair(
-            "L'homme le voyait.", 1, False, 2, 0, True, 0
+            "L'homme le voyait.", 1, False, 2, 0, True, 0,
+            excluded_nlps=["core_news_sm"]
         )
 
     def test_non_reflexive_in_wrong_situation_same_sentence_control(self):
@@ -1497,38 +1498,38 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_reflexive_relative_clause_subject(self):
         self.compare_potential_reflexive_pair(
-            "L'homme qui le voyait, est rentré.", 1, False, 3, 0, True, 0,
+            "L'homme qui le voyait, est grand.", 1, False, 3, 0, True, 0,
             excluded_nlps=["core_news_sm"]
         )
 
     def test_reflexive_relative_clause_object_1(self):
         self.compare_potential_reflexive_pair(
-            "L'homme qu'il voyait, est rentré.", 1, False, 3, 0, True, 0,
+            "L'homme qu'il voyait, est grand.", 1, False, 3, 0, True, 0,
             excluded_nlps=["core_news_md", "core_news_sm"]
         )
 
     def test_reflexive_relative_clause_subject_with_conjunction(self):
         self.compare_potential_reflexive_pair(
-            "L'homme et la femme qui les voyaient, sont rentrés",
+            "L'homme et la femme qui les voyaient, sont grands",
             1,
             True,
             6,
             0,
             True,
             0,
-            excluded_nlps=["core_news_sm", "core_news_md", "dep_news_trf"],
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_reflexive_relative_clause_object_with_conjunction(self):
         self.compare_potential_reflexive_pair(
-            "L'homme et la femme qu'ils voyaient, sont rentrés",
+            "L'homme et la femme qu'ils voyaient, sont grands",
             1,
             True,
             6,
             0,
             True,
             0,
-            excluded_nlps=["core_news_sm", "core_news_md", "dep_news_trf"],
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def compare_potential_cataphoric_pair(
@@ -1585,7 +1586,7 @@ class FrenchRulesTest(unittest.TestCase):
             True,
             2,
             True,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_cataphora_with_conjunction_control(self):
@@ -1667,7 +1668,7 @@ class FrenchRulesTest(unittest.TestCase):
             False,
             2,
             False,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_cataphora_referred_is_pronoun(self):
@@ -1687,7 +1688,8 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_cataphora_not_advcl(self):
         self.compare_potential_cataphoric_pair(
-            "Il était libre ; il rentra à la maison", 4, False, 0, False
+            "Il était libre ; il rentra à la maison", 4, False, 0, False,
+            excluded_nlps=["core_news_sm"]
         )
 
     def compare_potential_referreds(
@@ -1758,8 +1760,8 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_referreds_last_token(self):
         self.compare_potential_referreds(
-            "Lucas entra et un homme le vit",
-            5,
+            "Lucas est entré et un homme l'a regardé",
+            6,
             ["Lucas(0)"],
             excluded_nlps=["core_news_sm", "core_news_md"],
         )
@@ -2021,22 +2023,22 @@ class FrenchRulesTest(unittest.TestCase):
             excluded_nlps=["core_news_sm"],
         )
     '''
-    def test_potential_noun_pair_mixed_title_mixed__noun(self):
+    def test_potential_noun_pair_mixed_title_mixed_noun(self):
         self.compare_potential_noun_pair(
             "Docteur Jonas est là. Le médecin est habillé en blanc",
             0,
             6,
             True,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_sm","core_news_md"],
         )
 
-    def test_potential_noun_pair_masc_title_mixed__noun(self):
+    def test_potential_noun_pair_masc_title_mixed_noun(self):
         self.compare_potential_noun_pair(
             "Docteur Jonas est là. Le médecin est habillé en blanc",
             0,
             6,
             True,
-            excluded_nlps=["core_news_sm"],
+            excluded_nlps=["core_news_sm","core_news_md"],
         )
 
     def test_potential_noun_pair_mixed_title_fem_noun(self):

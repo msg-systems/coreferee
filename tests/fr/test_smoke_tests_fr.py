@@ -111,7 +111,7 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_reflexive_coordination(self):
         self.compare_annotations(
-            'La panthère et le léopard se chassaient',
+            'Le léopard et la panthère se chassaient',
             '[0: [1, 4], [5]]',
             excluded_nlps=['core_news_md','core_news_sm'])
 
@@ -123,7 +123,8 @@ class FrenchSmokeTest(unittest.TestCase):
     def test_reflexive_excluded_mix_of_coordination_and_single_member_2(self):
         self.compare_annotations(
             'Jacques et Julie entrèrent. Ils les virent.',
-            '[0: [0, 2], [5]]')
+            '[0: [0, 2], [5]]',
+            excluded_nlps=["core_news_sm"])
 
 
     def test_reflexive_anaphor_precedes_referent(self):
@@ -133,18 +134,18 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_cataphora_simple(self):
         self.compare_annotations(
-            'Bien qu\'il était enervé, Jacques rentra dans le métro',
-            '[0: [2], [6]]')
+            'Même s\'il était nerveux, Jacques rentra dans le métro',
+            '[0: [2], [6]]', excluded_nlps=["core_news_sm"])
 
     def test_cataphora_with_coordination(self):
         self.compare_annotations(
-            'Bien qu\'ils partaient, l\'homme et la femme étaient tristes',
-            '[0: [2], [6, 9]]', excluded_nlps=['core_news_sm'])
+            'Même s\'ils semblaient heureux, l\'homme et la femme étaient tristes',
+            '[0: [2], [7, 10]]', excluded_nlps=['core_news_sm', "core_news_md"])
 
 
     def test_possessive_pronoun_within_threeway_coordination(self):
         self.compare_annotations(
-            'Nous vîment Jacques, ses amis et son chien.',
+            'Nous voyons Jacques, ses amis et son chien.',
             '[0: [2], [4], [7]]')
 
     def test_crossed_demonstrative_anaphors(self):
@@ -156,7 +157,7 @@ class FrenchSmokeTest(unittest.TestCase):
     def test_proadverb_location(self):
         self.compare_annotations(
             'Claire a acheté une nouvelle maison. C\'est là qu\'on ira manger demain avec elle et son mari.',
-            '[0: [0], [16], [18], 1: [5], [9]]', excluded_nlps=["core_news_md"])
+            '[0: [0], [16], [18], 1: [5], [9]]', excluded_nlps=["core_news_sm", "core_news_md"])
             
     def test_reflexive_noun(self):
         self.compare_annotations(
@@ -179,14 +180,14 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_titles_noun_pair_titles(self):
         self.compare_annotations(
-            "M. Lauret et Madame Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
-            '[0: [0], [14], 1: [3], [22]]', excluded_nlps=['core_news_sm', 'core_news_md'],
+            "Hier, Monsieur Lauret et Madame Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
+            '[0: [2], [16], 1: [5], [24]]', excluded_nlps=['core_news_sm', 'core_news_md'],
             )
 
     def test_titles_noun_pair_titles_abbrev(self):
         self.compare_annotations(
-            "M. Lauret et Mme Ferrière sont allés voir une pièce de théâtre. Le pompier a passé une excellente soirée mais la dame n'était pas ravie.",
-            '[0: [0], [14], 1: [3], [22]]', excluded_nlps=['core_news_sm', 'core_news_md'],
+            "Hier, M. Lauret et Mme Ferrière sont allés voir une pièce de théâtre. Le facteur a passé une excellente soirée mais la dame n'était pas ravie.",
+            '[0: [2], [16], 1: [5], [24]]', excluded_nlps=['core_news_sm', 'core_news_md'],
             )
 
     @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
@@ -196,10 +197,17 @@ class FrenchSmokeTest(unittest.TestCase):
             '[0: [2], [7], [10], [17], [19], 1: [8], [11], 2: [17, 20], [23], [29], [34], 3: [32], [37]]',
             excluded_nlps = ['core_news_sm']
         )
+    
+    def test_documentation_example_1(self):
+        self.compare_annotations(
+            'Même si il était très occupé par son travail, Pierre en avait marre. Alors, lui et sa femme décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
+            '[0: [2], [7], [10], [17], [19], 1: [8], [11], 2: [17, 20], [23], [29], [34], 3: [32], [37]]',
+            excluded_nlps = ['core_news_sm', "core_news_md"]
+        )
      
     def test_documentation_example_2(self):
         self.compare_annotations(
-            'La femme se leva et regarda Dominique. Elle se tourna et la salua',
+            'La femme se leva et regarda Dominique. Elle se tourna pour la saluer',
             '[0: [1], [2], [12], 1: [6], [8], [9]]',
             excluded_nlps=['core_news_md', 'core_news_sm'],
             alternative_expected_coref_chains='[0: [1], [2], [8], [9], 1: [6], [12]]')
@@ -213,7 +221,7 @@ class FrenchSmokeTest(unittest.TestCase):
 
     def test_documentation_example_4(self):
         self.compare_annotations(
-            'Marc et Léa étaient en Espagne. Ils adorèrent le pays et prévoient d\'y retourner l\'an prochain avec leurs parents.',
-            '[0: [0, 2], [7], [20], 1: [5], [10], [14]]',
+            'Marc et Léa étaient partis en Espagne. Ils adorèrent le pays et prévoient d\'y retourner l\'an prochain avec leurs parents.',
+            '[0: [0, 2], [8], [21], 1: [6], [11], [15]]',
             excluded_nlps=['core_news_md','core_news_sm']
         )
