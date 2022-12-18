@@ -7,7 +7,7 @@ from coreferee.data_model import Mention
 class FrenchRulesTest(unittest.TestCase):
     def setUp(self):
 
-        self.nlps = get_nlps("fr")
+        self.nlps = get_nlps("fr", add_coreferee=False)
         self.rules_analyzers = [
             RulesAnalyzerFactory.get_rules_analyzer(nlp) for nlp in self.nlps
         ]
@@ -240,14 +240,14 @@ class FrenchRulesTest(unittest.TestCase):
              )
     def test_noun_titles(self):
         self.compare_independent_noun(
-            "Monsieur et Madame sont arrivés. Maitre Jugnot accompagne Mademoiselle Perrat et Docteur Noreau",
+            "Monsieur et Madame sont arrivés. Maitre Dupont accompagne Mademoiselle Perrat et Docteur Noreau",
              [0, 2, 6, 9, 12],
-             excluded_nlps=["core_news_sm"]
+             excluded_nlps=["core_news_sm", "core_news_md"]
              )      
 
     def test_noun_titles_abbrv(self):
         self.compare_independent_noun(
-            "M. et Mme sont arrivés. Me Jugnot accompagne Mlle Perrat et Dr Noreau",
+            "M. et Mme sont arrivés. Me Dupont accompagne Mlle Perrat et Dr Noreau",
              [0, 2, 6, 9, 12],
              excluded_nlps=["core_news_sm"]
              )      
@@ -343,10 +343,11 @@ class FrenchRulesTest(unittest.TestCase):
         )
 
     def test_pleonastic_il_4(self):
+        # Rule to was removed since it excluded valid pronouns due to too many false positives in nlp model
         self.compare_potential_anaphor(
             "Il est vrai que ce jeu est dur. Il en existe trois sortes. Il en manque.",
             [10],
-            excluded_nlps=["core_news_sm", "core_news_md"],
+            excluded_nlps=["core_news_sm", "core_news_md", "core_news_lg"],
         )
 
     def test_possessive_determiners(self):
@@ -470,6 +471,8 @@ class FrenchRulesTest(unittest.TestCase):
             if nlp.meta["name"] in excluded_nlps:
                 return
             doc = nlp(doc_text)
+            if "Sony" in doc.text:
+                print(nlp.meta["name"], doc, [(ent, ent.label_) for ent in doc.ents])
             rules_analyzer = RulesAnalyzerFactory.get_rules_analyzer(nlp)
             rules_analyzer.initialize(doc)
             assert rules_analyzer.is_independent_noun(
@@ -740,10 +743,10 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_pair_apposition_2(self):
         self.compare_potential_pair(
-            "Napoléon, empereur des Français est couronné en 1804. Il meurt en 1821",
-            2,
+            "Napoléon Bonaparte, empereur des Français est couronné en 1804. Il meurt en 1821",
+            3,
             True,
-            10,
+            11,
             2,
             excluded_nlps=["core_news_sm"],
         )
@@ -763,7 +766,7 @@ class FrenchRulesTest(unittest.TestCase):
     def test_potential_pair_female_name_control_1(self):
         self.compare_potential_pair("Je voyais Julie. Il dormait", 2, False, 4, 0)
 
-    def test_potential_pair_female_name_control_3(self):
+    def test_potential_pair_female_name_control_2(self):
         self.compare_potential_pair("Je voyais Julie. Ils dormaient", 2, False, 4, 0)
 
     def test_potential_pair_female_name_control_3(self):
@@ -1016,22 +1019,22 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_potential_reflexive_doubled(self):
         self.compare_potential_pair(
-            "La panthère se chassait elle-même.",
+            "La panthère se chasse elle-même",
             1,
             False,
             4,
             2,
-            excluded_nlps="core_news_sm",
+            excluded_nlps=["core_news_sm"],
         )
 
     def test_potential_reflexive_emphatic(self):
         self.compare_potential_pair(
-            "La panthère chassait elle-même.",
+            "La panthère chasse elle-même.",
             1,
             False,
             3,
             2,
-            excluded_nlps="core_news_sm",
+            excluded_nlps=["core_news_sm", "core_news_md"],
         )
 
     def test_potential_reflexive_doubled_control(self):
@@ -1510,7 +1513,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_reflexive_relative_clause_subject_with_conjunction(self):
         self.compare_potential_reflexive_pair(
-            "L'homme et la femme qui les voyaient, sont grands",
+            "L'homme et la femme qui les voyaient, sont très grands",
             1,
             True,
             6,
@@ -1522,7 +1525,7 @@ class FrenchRulesTest(unittest.TestCase):
 
     def test_reflexive_relative_clause_object_with_conjunction(self):
         self.compare_potential_reflexive_pair(
-            "L'homme et la femme qu'ils voyaient, sont grands",
+            "L'homme et la femme qu'ils voyaient, sont très grands",
             1,
             True,
             6,

@@ -135,11 +135,11 @@ class FrenchSmokeTest(unittest.TestCase):
     def test_cataphora_simple(self):
         self.compare_annotations(
             'Même s\'il était nerveux, Jacques rentra dans le métro',
-            '[0: [2], [6]]', excluded_nlps=["core_news_sm"])
+            '[0: [2], [6]]', excluded_nlps=["core_news_sm", "core_news_md"])
 
     def test_cataphora_with_coordination(self):
         self.compare_annotations(
-            'Même s\'ils semblaient heureux, l\'homme et la femme étaient tristes',
+            'Même s\'ils paraissaient heureux, l\'homme et la femme étaient tristes',
             '[0: [2], [7, 10]]', excluded_nlps=['core_news_sm', "core_news_md"])
 
 
@@ -190,21 +190,14 @@ class FrenchSmokeTest(unittest.TestCase):
             '[0: [2], [16], 1: [5], [24]]', excluded_nlps=['core_news_sm', 'core_news_md'],
             )
 
-    @unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
+    #@unittest.skipIf(train_version_mismatch, train_version_mismatch_message)
     def test_documentation_example_1(self):
         self.compare_annotations(
             'Même si elle était très occupée par son travail, Julie en avait marre. Alors, elle et son mari décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
             '[0: [2], [7], [10], [17], [19], 1: [8], [11], 2: [17, 20], [23], [29], [34], 3: [32], [37]]',
             excluded_nlps = ['core_news_sm']
         )
-    
-    def test_documentation_example_1(self):
-        self.compare_annotations(
-            'Même si il était très occupé par son travail, Pierre en avait marre. Alors, lui et sa femme décidèrent qu\'ils avaient besoin de vacances. Ils allèrent en Espagne car ils adoraient le pays',
-            '[0: [2], [7], [10], [17], [19], 1: [8], [11], 2: [17, 20], [23], [29], [34], 3: [32], [37]]',
-            excluded_nlps = ['core_news_sm', "core_news_md"]
-        )
-     
+
     def test_documentation_example_2(self):
         self.compare_annotations(
             'La femme se leva et regarda Dominique. Elle se tourna pour la saluer',

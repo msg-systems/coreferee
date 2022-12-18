@@ -195,7 +195,7 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
             # dr Jugnot ...
             return True
         if token.pos_ == "PROPN" and re.match("[^A-ZÂÊÎÔÛÄËÏÖÜÀÆÇÉÈŒÙ]", token.lemma_):
-            # mistagged propns
+            # mistagged propns that are not capitalized
             return False
         if (
             token.lemma_ in {"un", "certains", "certain"}
@@ -220,7 +220,8 @@ class LanguageSpecificRulesAnalyzer(RulesAnalyzer):
         if (
             token.head.lemma_.lower() in self.person_titles and
             token.dep_ == "nmod" and
-            token.pos_ == "PROPN"
+            token.pos_ == "PROPN" and
+            token.head.i == token.i - 1
         ):
             # Docteur Jugnot ...
             return False
